@@ -1,4 +1,4 @@
-use frontend::{app::App, logging::init_logging};
+use frontend::{App, init_logging};
 
 fn main() {
     init_logging();

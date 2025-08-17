@@ -2,8 +2,8 @@ use tracing_subscriber::{fmt::format::Pretty, prelude::*};
 use tracing_web::{MakeWebConsoleWriter, performance_layer};
 
 pub fn init_logging() {
-    console_error_panic_hook::set_once();
     color_eyre::install().unwrap();
+    console_error_panic_hook::set_once();
 
     let filter_layer =
         tracing_subscriber::filter::Targets::new().with_default(tracing::Level::INFO);

@@ -84,6 +84,8 @@ pub fn CompilationResults(#[prop(into)] results: Signal<TypstCompilationResult>)
         info!(results = ?*r);
         if r.document.is_none() && !r.messages.is_empty() {
             tab.set(MESSAGES.to_string());
+        } else if r.messages.is_empty() && r.document.is_some() {
+            tab.set(PREVIEW.to_string());
         }
     });
 

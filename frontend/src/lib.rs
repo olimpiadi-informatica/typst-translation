@@ -1,6 +1,11 @@
-pub mod app;
-pub mod compilation_results;
-pub mod editor;
-pub mod header;
-pub mod logging;
-pub mod typst;
+mod app;
+mod compilation_manager;
+mod compilation_results;
+mod editor;
+mod header;
+mod logging;
+mod typst;
+
+pub use app::App;
+pub use logging::init_logging;
+pub use typst::TypstWorker;

@@ -1,4 +1,4 @@
-use frontend::{logging::init_logging, typst::TypstWorker};
+use frontend::{TypstWorker, init_logging};
 use gloo_worker::Registrable;
 
 fn main() {

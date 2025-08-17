@@ -1,11 +1,6 @@
-use std::sync::{Arc, Mutex};
-
-use async_channel::{Receiver, Sender, unbounded};
-use gloo_timers::future::TimeoutFuture;
-use leptos::{prelude::*, reactive::spawn_local};
+use leptos::prelude::*;
 use leptos_use::ColorMode;
 use serde::{Deserialize, Serialize};
-use tracing::info;
 use wasm_bindgen::prelude::*;
 use web_sys::js_sys::Function;
 
@@ -38,42 +33,6 @@ extern "C" {
     fn set_keymap(this: &CM6Editor, kbh: &str);
 }
 
-// TODO(veluca): rethink this.
-pub struct EditorText {
-    data: String,
-    num_pending_changes: Arc<Mutex<usize>>,
-    sender: Sender<()>,
-    receiver: Receiver<()>,
-}
-
-impl EditorText {
-    pub fn from_text(text: String) -> EditorText {
-        let (sender, receiver) = unbounded();
-        EditorText {
-            data: text,
-            num_pending_changes: Arc::new(Mutex::new(0)),
-            sender,
-            receiver,
-        }
-    }
-    pub fn from_str(text: &str) -> EditorText {
-        EditorText::from_text(text.to_string())
-    }
-    pub fn text(&self) -> &String {
-        &self.data
-    }
-    pub async fn await_all_changes(&self) -> () {
-        let num_pending_changes = self.num_pending_changes.clone();
-        let receiver = self.receiver.clone();
-        loop {
-            if *num_pending_changes.lock().unwrap() == 0 {
-                return;
-            }
-            receiver.recv().await.expect("sender dropped");
-        }
-    }
-}
-
 #[derive(
     PartialEq, Eq, Clone, Copy, Hash, Debug, Serialize, Deserialize, Default, strum::VariantArray,
 )]
@@ -86,49 +45,32 @@ pub enum KeyboardMode {
 
 #[component]
 pub fn Editor(
-    // TODO(veluca): why is this a RwSignal???
-    contents: RwSignal<EditorText>,
+    contents: RwSignal<String>,
     name: &'static str,
     #[prop(into)] readonly: Signal<bool>,
     #[prop(optional)] ctrl_enter: Option<Box<dyn Fn()>>,
+    #[prop(optional)] on_change: Option<Box<dyn Fn()>>,
     #[prop(into)] kb_mode: Signal<KeyboardMode>,
     color_mode: Signal<ColorMode>,
 ) -> impl IntoView {
     let cm6 = RwSignal::new_local(None);
 
-    let onchange = move |_: JsValue| {
-        contents.update_untracked(|val| {
-            *val.num_pending_changes.lock().unwrap() += 1;
-        });
-        spawn_local(async move {
-            TimeoutFuture::new(100).await;
-            let mut do_update = false;
-            contents.update_untracked(|val| {
-                let mut v = val.num_pending_changes.lock().unwrap();
-                if *v != 0 {
-                    *v -= 1;
-                    do_update = *v == 0;
-                }
-            });
-            if !do_update {
-                return;
+    let onchange = {
+        let contents = contents.clone();
+        move |_: JsValue| {
+            if let Some(on_change) = on_change.as_ref() {
+                on_change();
             }
             cm6.with_untracked(|x: &Option<CM6Editor>| {
                 let Some(cm6) = x else {
                     return;
                 };
                 let data = cm6.get_text();
-                contents.update_untracked(|val| {
-                    val.data = data;
-                    info!("onchange: {name} {}", val.data.len());
-                    // save(cache_key, val);
+                contents.update(|val| {
+                    *val = data;
                 })
             });
-            let sender = contents.with_untracked(|c| c.sender.clone());
-            for _ in 0..sender.receiver_count() {
-                sender.send(()).await.expect("receiver dropped");
-            }
-        });
+        }
     };
 
     let id = format!("{name}-editor");
@@ -162,7 +104,7 @@ pub fn Editor(
             let Some(cm6) = x else {
                 return;
             };
-            cm6.set_text(contents.with(|x| x.text().to_string()));
+            cm6.set_text(contents.get_untracked().clone());
         });
     });
 
