@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Translation system</title>
+    <link data-trunk rel="scss" href="scss/main.scss" />
+    <meta charset="utf-8">
+
+    <link data-trunk rel="rust" data-type="worker" data-wasm-opt="z" data-bin="typst_translation_worker" data-weak-refs data-loader-shim />
+    <link data-trunk rel="rust" data-wasm-opt="z" data-bin="typst_translation_main" />
+  </head>
+  <body>
+    <!--<link data-trunk rel="rust" href="worker/Cargo.toml" data-wasm-opt="4" data-type="worker" data-bindgen-target="web" />-->
+  </body>
+</html>
+
