@@ -1,14 +1,28 @@
 [build]
 public_url = "."
+target = "index.html"
+minify = "on_release"
+inject_scripts = true
 
 [[hooks]]
 stage = "build"
 command = "bash"
 command_arguments = ["-c", """
-  npm install && \
+  cd codemirror && npm install && \
   node_modules/.bin/rollup codemirror_interface.ts -f es \
       -o $TRUNK_STAGING_DIR/codemirror.js \
       -p @rollup/plugin-node-resolve \
       -p @rollup/plugin-typescript
   """]
 
+
+[watch]
+watch = [
+  "src/",
+  "../common/src/",
+  "index.html",
+  "Cargo.toml",
+  "../common/Cargo.toml",
+  "scss",
+  "codemirror/codemirror_interface.ts",
+]

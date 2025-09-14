@@ -1,3 +1,15 @@
 frontend/target
+frontend/codemirror/node_modules
+*/target/
 frontend/dist
-frontend/node_modules
+frontend/dist-release
+frontend/dist-e2e
+**/*.rs.bk
+**/.*.swp
+backend/db.sqlite*
+backend/files
+.env
+config.toml
+*/tarpaulin-report.html
+e2e_tests/node_modules
+e2e_tests/test-results
