@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n            id,\n            username,\n            password,\n            login_epoch,\n            automatic_translation_budget\n        FROM\n            users\n        WHERE\n            username = ?\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "username",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "password",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "login_epoch",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "automatic_translation_budget",
+        "ordinal": 4,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "51f92e45f113f2e4528fabe56ffe74ac0cfccab56f2c8ea627175e6607cadf6e"
+}

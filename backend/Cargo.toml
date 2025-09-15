@@ -1,0 +1,29 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sqlx = { version = "0.8.6", features = [
+  "runtime-tokio-rustls",
+  "sqlite",
+  "migrate",
+] }
+common = { path = "../common", features = ["server-side"] }
+axum = { version = "0.8.4", features = ["macros"] }
+axum-extra = { version = "0.10.1", features = ["cookie", "attachment"] }
+jsonwebtoken = "9.3.1"
+time = "0.3.36"
+color-eyre = "0.6.5"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+blake3 = "1.8.2"
+tokio = { version = "1.38.0", features = ["full"] }
+chrono = "0.4.38"
+serde = { version = "1.0.221", features = ["derive"] }
+clap = { version = "4.5.4", features = ["derive"] }
+dotenvy = "0.15.7"
+tower-http = { version = "0.5.2", features = ["fs"] }
+
+[profile.dev.package."*"]
+opt-level = 3

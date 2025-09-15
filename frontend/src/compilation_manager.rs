@@ -50,6 +50,7 @@ impl CompilationManager {
         self.result.read_only().into()
     }
 
+    #[allow(dead_code)]
     pub fn get_status(&self) -> Signal<CompilationStatus> {
         self.status.read_only().into()
     }

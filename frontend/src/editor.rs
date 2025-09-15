@@ -56,7 +56,6 @@ pub fn Editor(
     let cm6 = RwSignal::new_local(None);
 
     let onchange = {
-        let contents = contents.clone();
         move |_: JsValue| {
             if let Some(on_change) = on_change.as_ref() {
                 on_change();

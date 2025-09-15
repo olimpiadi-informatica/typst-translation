@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE users\n            SET\n                username = ?,\n                password = ?,\n                login_epoch = ?,\n                automatic_translation_budget = ?\n            WHERE\n                id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "6a1a840ed4a6a3dc958833efbf2850fb82be216007a5a94db6265fe4f41651a4"
+}

@@ -8,8 +8,8 @@ use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlAnchorElement;
 
-const PREVIEW: &'static str = "preview";
-const MESSAGES: &'static str = "messages";
+const PREVIEW: &str = "preview";
+const MESSAGES: &str = "messages";
 
 #[component]
 fn CompilationMessage(message: Signal<TypstCompilationMessage>) -> impl IntoView {
@@ -142,8 +142,7 @@ pub fn CompilationResults(#[prop(into)] results: Signal<TypstCompilationResult>)
                                     .read()
                                     .document
                                     .as_ref()
-                                    .map(|x| x.svg_pages.get(idx).cloned())
-                                    .flatten()
+                                    .and_then(|x| x.svg_pages.get(idx).cloned())
                                     .unwrap_or("".to_string())
                             }
                         />

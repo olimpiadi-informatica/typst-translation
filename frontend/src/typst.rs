@@ -154,7 +154,7 @@ impl TypstCompiler {
             &self.files
         };
         let path = id.vpath().as_rootless_path();
-        let path = path.strip_prefix("./").unwrap_or(&path);
+        let path = path.strip_prefix("./").unwrap_or(path);
         Ok(file_store
             .get(path)
             .ok_or(FileError::NotFound(path.to_owned()))?)

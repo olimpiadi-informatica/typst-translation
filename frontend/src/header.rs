@@ -18,9 +18,7 @@ fn select_kb_mode_str(kb_mode: KeyboardMode) -> &'static str {
 fn kb_mode_from_str(s: &str) -> KeyboardMode {
     KeyboardMode::VARIANTS
         .iter()
-        .copied()
-        .filter(|x| select_kb_mode_str(*x) == s)
-        .next()
+        .copied().find(|x| select_kb_mode_str(*x) == s)
         .unwrap()
 }
 
