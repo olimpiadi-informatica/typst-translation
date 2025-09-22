@@ -4,11 +4,13 @@ use async_channel::{Receiver, Sender, bounded};
 use futures_util::StreamExt;
 use gloo_timers::future::sleep;
 use gloo_worker::Spawnable;
-use leptos::{prelude::*, reactive::spawn_local};
+use leptos::prelude::*;
+use leptos::reactive::spawn_local;
 use tracing::info;
 use web_time::Instant;
 
-use crate::{TypstWorker, typst::TypstCompilationResult};
+use crate::TypstWorker;
+use crate::typst::TypstCompilationResult;
 
 pub enum CompilationStatus {
     Ready,

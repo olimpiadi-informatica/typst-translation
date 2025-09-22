@@ -11,7 +11,8 @@ use serde::de::DeserializeOwned;
 // `show_error!` macro is specific to the current project's error handling and would need replacement
 // use crate::show_error;
 
-async fn request<T: DeserializeOwned + Any>(request: Request) -> Result<T, String> { // Changed Error to String for simplicity
+async fn request<T: DeserializeOwned + Any>(request: Request) -> Result<T, String> {
+    // Changed Error to String for simplicity
     // let lb = LoadingBarInjection::expect_context(); // Specific to 'thaw'
     let resp = async move {
         // lb.start(); // Specific to 'thaw'
@@ -50,23 +51,37 @@ fn get_url(relative_url: &str) -> String {
     )
 }
 
-pub async fn api_get<T: DeserializeOwned + Any>(url: &str) -> Result<T, String> { // Changed Error to String
-    request(Request::get(&get_url(url)).build().map_err(|e| e.to_string())?).await // Convert gloo_net::Error to String
+pub async fn api_get<T: DeserializeOwned + Any>(url: &str) -> Result<T, String> {
+    // Changed Error to String
+    request(
+        Request::get(&get_url(url))
+            .build()
+            .map_err(|e| e.to_string())?,
+    )
+    .await // Convert gloo_net::Error to String
 }
 
 pub async fn api_post<Req: Serialize, Resp: DeserializeOwned + Any>(
     url: &str,
     req: &Req,
-) -> Result<Resp, String> { // Changed Error to String
+) -> Result<Resp, String> {
+    // Changed Error to String
     let json_body = serde_json::to_string(req).map_err(|e| e.to_string())?; // Convert serde_json::Error to String
     request(
         Request::post(&get_url(url))
             .header("Content-Type", "application/json")
-            .body(json_body).map_err(|e| e.to_string())?, // Convert gloo_net::Error to String
+            .body(json_body)
+            .map_err(|e| e.to_string())?, // Convert gloo_net::Error to String
     )
     .await
 }
 
-pub async fn api_delete(url: &str, id: i64) -> Result<(), String> { // Changed Error to String
-    request(Request::delete(&get_url(&format!("{}/{}", url, id))).build().map_err(|e| e.to_string())?).await // Convert gloo_net::Error to String
+pub async fn api_delete(url: &str, id: i64) -> Result<(), String> {
+    // Changed Error to String
+    request(
+        Request::delete(&get_url(&format!("{}/{}", url, id)))
+            .build()
+            .map_err(|e| e.to_string())?,
+    )
+    .await // Convert gloo_net::Error to String
 }
