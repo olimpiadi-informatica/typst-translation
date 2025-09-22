@@ -31,16 +31,20 @@ impl AppState {
     }
 
     pub async fn serve(self, listen_address: std::net::SocketAddr) -> Result<(), Error> {
-        let app = Router::new()
-            .route("/api/login", post(auth::login))
-            .fallback_service(
-                ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
-            )
-            .with_state(self);
+        let app = self.app();
 
         let listener = tokio::net::TcpListener::bind(listen_address).await?;
         axum::serve(listener, app).await?;
 
         Ok(())
     }
-}
+
+    pub fn app(self) -> Router {
+        Router::new()
+            .route("/api/login", post(auth::login))
+            .route("/api/admin/login", post(auth::admin_login))
+            .fallback_service(
+                ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
+            )
+            .with_state(self)
+    }}

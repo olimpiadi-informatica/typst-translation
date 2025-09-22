@@ -15,3 +15,9 @@ pub struct LoginParams {
     pub username: String,
     pub password: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum WhoAmIResponse {
+    RegularUser(User),
+    AdminUser,
+}
