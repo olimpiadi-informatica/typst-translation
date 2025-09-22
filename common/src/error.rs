@@ -1,9 +1,8 @@
-use thiserror::Error;
-
-#[cfg(feature = "server-side")]
-use axum::response::IntoResponse;
 #[cfg(feature = "server-side")]
 use axum::http::StatusCode;
+#[cfg(feature = "server-side")]
+use axum::response::IntoResponse;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {

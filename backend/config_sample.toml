@@ -1,0 +1,17 @@
+# Sample configuration file for the backend.
+# This file should be copied to `config.toml` and values should be updated.
+
+# JWT signing key for authentication tokens.
+# IMPORTANT: This should be a long, securely generated, random string (e.g. 128
+# characters or more). DO NOT use this example value. Generate your own using a
+# tool like `openssl rand -base64 128`.
+jwt_signing_key = "012345679abcdef"
+
+# Password for the admin account.
+admin_password = "your_admin_password_here"
+
+# Password for the staff account.
+staff_password = "your_staff_password_here"
+
+# Address and port for the server to listen on.
+listen_address = "0.0.0.0:3000"

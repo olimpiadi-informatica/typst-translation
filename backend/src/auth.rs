@@ -1,6 +1,3 @@
-use std::env;
-use std::sync::LazyLock;
-
 use axum::Json;
 use axum::extract::{FromRequestParts, State};
 use axum::http::request::Parts;
@@ -19,6 +16,7 @@ use crate::db_ops::{DatabaseOps, get_user_by_username};
 pub enum AuthUser {
     RegularUser(User),
     AdminUser,
+    StaffUser,
 }
 
 impl AuthUser {
@@ -26,17 +24,12 @@ impl AuthUser {
         match self {
             AuthUser::RegularUser(user) => Some(user),
             AuthUser::AdminUser => None,
+            AuthUser::StaffUser => None,
         }
     }
 }
 
 pub const COOKIE_NAME: &str = "__Host-typst-translation-login";
-
-static JWT_SECRET: LazyLock<String> =
-    LazyLock::new(|| env::var("JWT_SIGNING_KEY").expect("JWT_SIGNING_KEY must be set"));
-
-static ADMIN_PASSWORD: LazyLock<String> =
-    LazyLock::new(|| env::var("ADMIN_PASSWORD").expect("ADMIN_PASSWORD must be set"));
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -48,10 +41,11 @@ pub struct Claims {
 pub enum AuthSubject {
     User { user_id: i64, login_epoch: i64 },
     Admin,
+    Staff,
 }
 
 #[instrument(skip_all)]
-pub fn generate_jwt(subject: AuthSubject) -> String {
+pub fn generate_jwt(subject: AuthSubject, jwt_signing_key: &str) -> String {
     let expiration = chrono::Utc::now()
         .checked_add_signed(chrono::Duration::hours(24))
         .expect("valid timestamp")
@@ -65,14 +59,14 @@ pub fn generate_jwt(subject: AuthSubject) -> String {
     encode(
         &header,
         &claims,
-        &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+        &EncodingKey::from_secret(jwt_signing_key.as_bytes()),
     )
     .expect("Failed to encode JWT")
 }
 
 #[instrument(skip_all)]
-pub fn add_cookie(cookies: CookieJar, subject: AuthSubject) -> CookieJar {
-    let token = generate_jwt(subject);
+pub fn add_cookie(cookies: CookieJar, subject: AuthSubject, state: &AppState) -> CookieJar {
+    let token = generate_jwt(subject, &state.config.jwt_signing_key);
     cookies.add(
         Cookie::build((COOKIE_NAME, token))
             .path("/")
@@ -114,7 +108,7 @@ impl FromRequestParts<AppState> for AuthUser {
         }
 
         let jwt = cookie.value();
-        let decoding_key = DecodingKey::from_secret(JWT_SECRET.as_bytes());
+        let decoding_key = DecodingKey::from_secret(state.config.jwt_signing_key.as_bytes());
         let validation = Validation::new(jsonwebtoken::Algorithm::HS256);
 
         let token_data = match decode::<Claims>(jwt, &decoding_key, &validation) {
@@ -127,6 +121,7 @@ impl FromRequestParts<AppState> for AuthUser {
 
         match token_data.claims.sub {
             AuthSubject::Admin => Ok(AuthUser::AdminUser),
+            AuthSubject::Staff => Ok(AuthUser::StaffUser),
             AuthSubject::User {
                 user_id,
                 login_epoch,
@@ -179,6 +174,7 @@ pub async fn login(
             user_id: user.id,
             login_epoch: user.login_epoch,
         },
+        &state,
     );
 
     Ok(cookies)
@@ -186,16 +182,27 @@ pub async fn login(
 
 #[instrument(skip_all)]
 pub async fn admin_login(
-    mut cookies: CookieJar,
+    State(state): State<AppState>,
+    cookies: CookieJar,
     Json(password): Json<String>,
 ) -> Result<CookieJar, Error> {
-    if password != *ADMIN_PASSWORD {
+    if password != state.config.admin_password {
+        return Err(Error::Forbidden);
+    }
+    Ok(add_cookie(cookies, AuthSubject::Admin, &state))
+}
+
+#[instrument(skip_all)]
+pub async fn staff_login(
+    State(state): State<AppState>,
+    cookies: CookieJar,
+    Json(password): Json<String>,
+) -> Result<CookieJar, Error> {
+    if password != state.config.staff_password {
         return Err(Error::Forbidden);
     }
 
-    cookies = add_cookie(cookies, AuthSubject::Admin);
-
-    Ok(cookies)
+    Ok(add_cookie(cookies, AuthSubject::Staff, &state))
 }
 
 pub async fn whoami(current_user: Option<AuthUser>) -> Result<Json<WhoAmIResponse>, Error> {
@@ -206,5 +213,6 @@ pub async fn whoami(current_user: Option<AuthUser>) -> Result<Json<WhoAmIRespons
     match current_user {
         AuthUser::RegularUser(user) => Ok(Json(WhoAmIResponse::RegularUser(user))),
         AuthUser::AdminUser => Ok(Json(WhoAmIResponse::AdminUser)),
+        AuthUser::StaffUser => Ok(Json(WhoAmIResponse::StaffUser)),
     }
 }
