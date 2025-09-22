@@ -1,22 +1,24 @@
-use std::{collections::HashMap, fmt::Debug, path::PathBuf, sync::Arc};
+use std::collections::HashMap;
+use std::fmt::Debug;
+use std::path::PathBuf;
+use std::sync::Arc;
 
 use color_eyre::eyre::Result;
 use futures_util::{SinkExt, StreamExt};
 use gloo_worker::reactor::{ReactorScope, reactor};
 use serde::{Deserialize, Serialize};
-use typst::{
-    Library, World, WorldExt,
-    diag::{
-        FileError, FileResult, PackageError, PackageResult, Severity, SourceDiagnostic,
-        SourceResult, Warned,
-    },
-    ecow::{EcoString, EcoVec},
-    foundations::{Bytes, Datetime},
-    layout::PagedDocument,
-    syntax::{FileId, Source, VirtualPath, package::PackageSpec},
-    text::{Font, FontBook},
-    utils::LazyHash,
+use typst::diag::{
+    FileError, FileResult, PackageError, PackageResult, Severity, SourceDiagnostic, SourceResult,
+    Warned,
 };
+use typst::ecow::{EcoString, EcoVec};
+use typst::foundations::{Bytes, Datetime};
+use typst::layout::PagedDocument;
+use typst::syntax::package::PackageSpec;
+use typst::syntax::{FileId, Source, VirtualPath};
+use typst::text::{Font, FontBook};
+use typst::utils::LazyHash;
+use typst::{Library, World, WorldExt};
 use typst_kit::fonts::{FontSearcher, FontSlot};
 use typst_pdf::PdfOptions;
 

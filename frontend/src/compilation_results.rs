@@ -1,4 +1,3 @@
-use crate::typst::{TypstCompilationMessage, TypstCompilationResult};
 use leptos::prelude::*;
 use thaw::{
     Badge, BadgeAppearance, BadgeColor, Button, ButtonAppearance, Flex, FlexJustify, Tab, TabList,
@@ -7,6 +6,8 @@ use thaw::{
 use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlAnchorElement;
+
+use crate::typst::{TypstCompilationMessage, TypstCompilationResult};
 
 const PREVIEW: &str = "preview";
 const MESSAGES: &str = "messages";

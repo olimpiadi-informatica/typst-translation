@@ -1,4 +1,5 @@
-use tracing_subscriber::{fmt::format::Pretty, prelude::*};
+use tracing_subscriber::fmt::format::Pretty;
+use tracing_subscriber::prelude::*;
 use tracing_web::{MakeWebConsoleWriter, performance_layer};
 
 pub fn init_logging() {

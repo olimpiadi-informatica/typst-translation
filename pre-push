@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e
+
+for crate in common frontend backend; do
+  pushd $crate
+  cargo +nightly fmt --check
+  cargo clippy --all-targets --all-features -- -D warnings
+  popd
+done
+
+pushd backend
+cargo sqlx prepare --check
+RUST_LOG=none cargo test --release
+popd
+
+pushd frontend
+trunk build
+popd

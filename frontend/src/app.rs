@@ -1,14 +1,13 @@
-use crate::{
-    compilation_manager::CompilationManager,
-    compilation_results::CompilationResults,
-    editor::{Editor, KeyboardMode},
-    header::Header,
-};
-use leptos::{prelude::*, server::codee::string::JsonSerdeCodec};
-use leptos_use::{
-    ColorMode, UseColorModeOptions, storage::use_local_storage, use_color_mode_with_options,
-};
+use leptos::prelude::*;
+use leptos::server::codee::string::JsonSerdeCodec;
+use leptos_use::storage::use_local_storage;
+use leptos_use::{ColorMode, UseColorModeOptions, use_color_mode_with_options};
 use thaw::{ConfigProvider, Flex, Layout, LayoutHeader, Theme};
+
+use crate::compilation_manager::CompilationManager;
+use crate::compilation_results::CompilationResults;
+use crate::editor::{Editor, KeyboardMode};
+use crate::header::Header;
 
 fn theme_from_color_mode(color_mode: ColorMode) -> Theme {
     if color_mode == ColorMode::Dark {
