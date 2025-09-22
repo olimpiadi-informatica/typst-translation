@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
     let state = AppState::new(config.clone(), &database_url).await?;
     state
         .clone()
-        .serve(state.config.listen_address.parse()?)
+        .serve(state.config().listen_address.parse()?)
         .await?;
 
     Ok(())

@@ -34,7 +34,8 @@ pub const COOKIE_NAME: &str = "__Host-typst-translation-login";
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: AuthSubject,
-    pub exp: usize, // Expiration time (as UTC timestamp)
+    /// Expiration time (as UTC timestamp)
+    pub exp: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -53,7 +54,7 @@ pub fn generate_jwt(subject: AuthSubject, jwt_signing_key: &str) -> String {
 
     let claims = Claims {
         sub: subject,
-        exp: expiration as usize,
+        exp: expiration,
     };
     let header = Header::new(jsonwebtoken::Algorithm::HS256);
     encode(
@@ -205,11 +206,8 @@ pub async fn staff_login(
     Ok(add_cookie(cookies, AuthSubject::Staff, &state))
 }
 
-pub async fn whoami(current_user: Option<AuthUser>) -> Result<Json<WhoAmIResponse>, Error> {
+pub async fn whoami(current_user: AuthUser) -> Result<Json<WhoAmIResponse>, Error> {
     tracing::info!(user = ?current_user, "whoami");
-    let Some(current_user) = current_user else {
-        return Err(Error::Forbidden);
-    };
     match current_user {
         AuthUser::RegularUser(user) => Ok(Json(WhoAmIResponse::RegularUser(user))),
         AuthUser::AdminUser => Ok(Json(WhoAmIResponse::AdminUser)),

@@ -18,8 +18,8 @@ use crate::config::AppConfig;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: SqlitePool,
-    pub config: AppConfig,
+    db: SqlitePool,
+    config: AppConfig,
 }
 
 impl AppState {
@@ -33,6 +33,10 @@ impl AppState {
 
     pub fn db(&self) -> &SqlitePool {
         &self.db
+    }
+
+    pub fn config(&self) -> &AppConfig {
+        &self.config
     }
 
     pub async fn serve(self, listen_address: std::net::SocketAddr) -> Result<(), Error> {
@@ -49,6 +53,7 @@ impl AppState {
             .route("/api/login", post(auth::login))
             .route("/api/admin/login", post(auth::admin_login))
             .route("/api/staff/login", post(auth::staff_login))
+            .route("/api/whoami", post(auth::whoami))
             .fallback_service(
                 ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
             )

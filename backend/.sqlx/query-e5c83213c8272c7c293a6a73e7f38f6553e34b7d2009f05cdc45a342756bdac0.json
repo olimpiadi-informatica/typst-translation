@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT\n            id,\n            username,\n            password,\n            login_epoch,\n            automatic_translation_budget\n        FROM\n            users\n        WHERE\n            username = ?\n        LIMIT 1\n        ",
+  "query": "\n        SELECT\n            id,\n            username,\n            password,\n            login_epoch,\n            automatic_translation_budget\n        FROM\n            users\n        WHERE\n            username = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "51f92e45f113f2e4528fabe56ffe74ac0cfccab56f2c8ea627175e6607cadf6e"
+  "hash": "e5c83213c8272c7c293a6a73e7f38f6553e34b7d2009f05cdc45a342756bdac0"
 }

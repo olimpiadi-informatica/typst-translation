@@ -21,7 +21,6 @@ where
             users
         WHERE
             username = ?
-        LIMIT 1
         "#,
         username
     )
