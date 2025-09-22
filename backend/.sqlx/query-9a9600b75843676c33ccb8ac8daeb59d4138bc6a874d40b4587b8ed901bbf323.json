@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            SELECT\n                id,\n                contestant_id,\n                statement_version_id,\n                language_id,\n                printed_at\n            FROM\n                printed_documents\n            ORDER BY\n                id DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "contestant_id",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "statement_version_id",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "language_id",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "printed_at",
+        "ordinal": 4,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "9a9600b75843676c33ccb8ac8daeb59d4138bc6a874d40b4587b8ed901bbf323"
+}

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            INSERT INTO contests (\n                name\n            )\n            VALUES (?)\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "4e7484b2ca0481814a4e6046be767e19aea3b3c2b6f4b805875bca60c0d33fb6"
+}

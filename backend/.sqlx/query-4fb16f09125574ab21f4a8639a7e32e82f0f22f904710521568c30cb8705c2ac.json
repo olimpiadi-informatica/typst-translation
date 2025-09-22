@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            UPDATE contests\n            SET\n                name = ?\n            WHERE\n                id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "4fb16f09125574ab21f4a8639a7e32e82f0f22f904710521568c30cb8705c2ac"
+}

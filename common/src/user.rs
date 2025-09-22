@@ -1,13 +1,15 @@
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct User {
     pub id: i64,
     pub username: String,
-    pub password: String,
+    pub password: String, // This is the password hash
     pub login_epoch: i64,
     pub automatic_translation_budget: i64,
+    pub tokens_used: i64, // Added
+    pub name: String,     // Added
 }
 
 #[derive(Debug, Deserialize)]

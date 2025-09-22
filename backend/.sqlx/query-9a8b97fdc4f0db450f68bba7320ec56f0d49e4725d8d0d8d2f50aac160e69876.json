@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            UPDATE statement_versions\n            SET\n                task_id = ?,\n                version_hash = ?,\n                content_manifest = ?,\n                is_live = ?,\n                created_at = ?\n            WHERE\n                id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "9a8b97fdc4f0db450f68bba7320ec56f0d49e4725d8d0d8d2f50aac160e69876"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM rendered_pdf_cache WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "b8316b4c0fb0cb8bbc8c395540a28e52c897956fd238c95d216f56a1c22c2ebf"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            UPDATE rendered_pdf_cache\n            SET\n                statement_version_id = ?,\n                language_id = ?,\n                pdf_hash = ?\n            WHERE\n                id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "7efa741d2e27d211de4d0445c4ee551f8eff048abe0a3605a9b9b4d2d827e848"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM printed_documents WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "ebec9b229b72e9e0093e5407b57c3ffd71fed14f2d9945dc8c6ec083f5455b4e"
+}

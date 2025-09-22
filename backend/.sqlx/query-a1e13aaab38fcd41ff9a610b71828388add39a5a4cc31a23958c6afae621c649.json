@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            SELECT\n                id,\n                statement_version_id,\n                language_id,\n                pdf_hash\n            FROM\n                rendered_pdf_cache\n            ORDER BY\n                id DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "statement_version_id",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "language_id",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "pdf_hash",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "a1e13aaab38fcd41ff9a610b71828388add39a5a4cc31a23958c6afae621c649"
+}

@@ -129,8 +129,11 @@ impl FromRequestParts<AppState> for AuthUser {
             } => {
                 let pool = state.db(); // Use state.db() here
                 let user = User::get_by_id(pool, user_id).await.map_err(|e| {
-                    error!("Failed to fetch user from DB: {:?}", e);
-                    (remove_cookie(cookies.clone()), Error::InternalServerError)
+                    error!("Failed to fetch user from DB: {e}");
+                    (
+                        remove_cookie(cookies.clone()),
+                        Error::InternalServerError(format!("Failed to fetch user from DB: {e}")),
+                    )
                 })?;
 
                 let Some(user) = user else {

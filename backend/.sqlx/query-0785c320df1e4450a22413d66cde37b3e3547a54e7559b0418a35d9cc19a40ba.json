@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            INSERT INTO draft_print_queue (\n                statement_version_id,\n                language_id,\n                added_at\n            )\n            VALUES (?, ?, ?)\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "0785c320df1e4450a22413d66cde37b3e3547a54e7559b0418a35d9cc19a40ba"
+}

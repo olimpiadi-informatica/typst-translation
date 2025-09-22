@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            SELECT\n                id,\n                task_id,\n                version_hash,\n                content_manifest as \"content_manifest: Json<std::collections::HashMap<String, String>>\",\n                is_live,\n                created_at\n            FROM\n                statement_versions\n            ORDER BY\n                id DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "task_id",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "version_hash",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "content_manifest: Json<std::collections::HashMap<String, String>>",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "is_live",
+        "ordinal": 4,
+        "type_info": "Bool"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 5,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4479da4033e82771e5e778283df67c1f52e0d8805efbd918bb31360fc10a9d0b"
+}

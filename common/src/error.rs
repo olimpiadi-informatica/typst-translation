@@ -6,10 +6,6 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Database error: {0}")]
-    DbError(#[from] sqlx::Error),
-    #[error("Migration error: {0}")]
-    MigrationError(#[from] sqlx::migrate::MigrateError),
     #[error("Network error: {0}")]
     NetworkError(String),
     #[error("Login required")]
@@ -24,8 +20,8 @@ pub enum Error {
     InvalidInput(String),
     #[error("Unauthorized change")]
     UnauthorizedChange,
-    #[error("Internal server error")]
-    InternalServerError,
+    #[error("Internal server error: {0}")]
+    InternalServerError(String),
     #[error("CSV error: {0}")]
     CsvError(#[from] csv::Error),
     #[error("IO error: {0}")]
@@ -62,5 +58,13 @@ impl IntoResponse for Error {
         };
 
         (status, self.to_string()).into_response()
+    }
+}
+
+#[cfg(feature = "server-side")]
+impl From<sqlx::Error> for Error {
+    fn from(err: sqlx::Error) -> Self {
+        tracing::warn!(error = ?err, "SQLx error");
+        Error::InternalServerError(format!("{err}"))
     }
 }

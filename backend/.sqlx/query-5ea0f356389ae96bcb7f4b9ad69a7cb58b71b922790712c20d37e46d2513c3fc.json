@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            INSERT INTO rendered_pdf_cache (\n                statement_version_id,\n                language_id,\n                pdf_hash\n            )\n            VALUES (?, ?, ?)\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5ea0f356389ae96bcb7f4b9ad69a7cb58b71b922790712c20d37e46d2513c3fc"
+}

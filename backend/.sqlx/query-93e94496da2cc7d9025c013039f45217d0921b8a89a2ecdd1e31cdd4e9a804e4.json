@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            UPDATE printed_documents\n            SET\n                contestant_id = ?,\n                statement_version_id = ?,\n                language_id = ?,\n                printed_at = ?\n            WHERE\n                id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "93e94496da2cc7d9025c013039f45217d0921b8a89a2ecdd1e31cdd4e9a804e4"
+}

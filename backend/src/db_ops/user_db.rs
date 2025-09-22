@@ -10,18 +10,20 @@ where
 {
     let user = sqlx::query_as!(
         User,
-        r#"
+        r###" 
         SELECT
             id,
             username,
             password,
             login_epoch,
-            automatic_translation_budget
+            automatic_translation_budget,
+            tokens_used,
+            name
         FROM
             users
         WHERE
             username = ?
-        "#,
+        "###,
         username
     )
     .fetch_optional(executor)
@@ -35,20 +37,24 @@ impl DatabaseOps for User {
         E: Executor<'e, Database = Sqlite>,
     {
         let row = sqlx::query!(
-            r#"
+            r###" 
             INSERT INTO users (
                 username,
                 password,
                 login_epoch,
-                automatic_translation_budget
+                automatic_translation_budget,
+                tokens_used,
+                name
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             RETURNING id
-            "#,
+            "###,
             self.username,
             self.password,
             self.login_epoch,
             self.automatic_translation_budget,
+            self.tokens_used,
+            self.name,
         )
         .fetch_one(executor)
         .await?;
@@ -61,20 +67,24 @@ impl DatabaseOps for User {
         E: Executor<'e, Database = Sqlite>,
     {
         sqlx::query!(
-            r#"
+            r###" 
             UPDATE users
             SET
                 username = ?,
                 password = ?,
                 login_epoch = ?,
-                automatic_translation_budget = ?
+                automatic_translation_budget = ?,
+                tokens_used = ?,
+                name = ?
             WHERE
                 id = ?
-            "#,
+            "###,
             self.username,
             self.password,
             self.login_epoch,
             self.automatic_translation_budget,
+            self.tokens_used,
+            self.name,
             self.id
         )
         .execute(executor)
@@ -98,18 +108,20 @@ impl DatabaseOps for User {
     {
         let user = sqlx::query_as!(
             User,
-            r#"
+            r###" 
             SELECT
                 id,
                 username,
                 password,
                 login_epoch,
-                automatic_translation_budget
+                automatic_translation_budget,
+                tokens_used,
+                name
             FROM
                 users
             WHERE
                 id = ?
-            "#,
+            "###,
             id
         )
         .fetch_optional(executor)
@@ -123,18 +135,20 @@ impl DatabaseOps for User {
     {
         let users = sqlx::query_as!(
             User,
-            r#"
+            r###" 
             SELECT
                 id,
                 username,
                 password,
                 login_epoch,
-                automatic_translation_budget
+                automatic_translation_budget,
+                tokens_used,
+                name
             FROM
                 users
             ORDER BY
                 id DESC
-            "#,
+            "###,
         )
         .fetch_all(executor)
         .await?;

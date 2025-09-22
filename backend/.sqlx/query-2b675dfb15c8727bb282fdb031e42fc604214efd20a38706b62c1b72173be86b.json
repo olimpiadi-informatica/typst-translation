@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": " \n            UPDATE translations\n            SET\n                task_id = ?,\n                language_id = ?,\n                content_hash = ?,\n                last_updated_at = ?\n            WHERE\n                id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "2b675dfb15c8727bb282fdb031e42fc604214efd20a38706b62c1b72173be86b"
+}
