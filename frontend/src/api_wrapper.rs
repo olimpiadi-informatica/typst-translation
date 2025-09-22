@@ -11,7 +11,7 @@ use serde::de::DeserializeOwned;
 // `show_error!` macro is specific to the current project's error handling and would need replacement
 // use crate::show_error;
 
-async fn request<T: DeserializeOwned + Any>(request: Request) -> Result<T, String> {
+pub async fn request<T: DeserializeOwned + Any>(request: Request) -> Result<T, String> {
     // Changed Error to String for simplicity
     // let lb = LoadingBarInjection::expect_context(); // Specific to 'thaw'
     let resp = async move {
@@ -25,7 +25,7 @@ async fn request<T: DeserializeOwned + Any>(request: Request) -> Result<T, Strin
             };
             Ok::<_, String>(Ok(resp))
         } else {
-            let resp = response.json().await.map_err(|e| e.to_string())?; // Convert gloo_net::Error to String
+            let resp = response.text().await.map_err(|e| e.to_string())?; // Convert gloo_net::Error to String
             // lb.error(); // Specific to 'thaw'
             Ok(Err(resp))
         }
@@ -40,25 +40,9 @@ async fn request<T: DeserializeOwned + Any>(request: Request) -> Result<T, Strin
     }
 }
 
-fn get_url(relative_url: &str) -> String {
-    format!(
-        "{}{relative_url}",
-        leptos::prelude::window()
-            .location()
-            .origin()
-            .expect("invalid origin")
-            .as_str()
-    )
-}
-
 pub async fn api_get<T: DeserializeOwned + Any>(url: &str) -> Result<T, String> {
     // Changed Error to String
-    request(
-        Request::get(&get_url(url))
-            .build()
-            .map_err(|e| e.to_string())?,
-    )
-    .await // Convert gloo_net::Error to String
+    request(Request::get(url).build().map_err(|e| e.to_string())?).await // Convert gloo_net::Error to String
 }
 
 pub async fn api_post<Req: Serialize, Resp: DeserializeOwned + Any>(
@@ -66,12 +50,8 @@ pub async fn api_post<Req: Serialize, Resp: DeserializeOwned + Any>(
     req: &Req,
 ) -> Result<Resp, String> {
     // Changed Error to String
-    let json_body = serde_json::to_string(req).map_err(|e| e.to_string())?; // Convert serde_json::Error to String
     request(
-        Request::post(&get_url(url))
-            .header("Content-Type", "application/json")
-            .body(json_body)
-            .map_err(|e| e.to_string())?, // Convert gloo_net::Error to String
+        Request::post(url).json(req).map_err(|e| e.to_string())?, // Convert gloo_net::Error to String
     )
     .await
 }
@@ -79,7 +59,7 @@ pub async fn api_post<Req: Serialize, Resp: DeserializeOwned + Any>(
 pub async fn api_delete(url: &str, id: i64) -> Result<(), String> {
     // Changed Error to String
     request(
-        Request::delete(&get_url(&format!("{}/{}", url, id)))
+        Request::delete(&format!("{}/{}", url, id))
             .build()
             .map_err(|e| e.to_string())?,
     )

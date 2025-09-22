@@ -5,6 +5,8 @@ mod compilation_results;
 mod editor;
 mod header;
 mod logging;
+mod login;
+mod toast;
 mod typst;
 
 pub use app::App;

@@ -1,8 +1,9 @@
+use std::collections::HashMap;
+
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "server-side")]
 use sqlx::types::Json;
-use std::collections::HashMap;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StatementVersion {

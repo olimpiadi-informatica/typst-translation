@@ -1,7 +1,6 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DraftPrintQueueItem {
     pub id: i64,

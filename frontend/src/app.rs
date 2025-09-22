@@ -1,13 +1,21 @@
 use leptos::prelude::*;
 use leptos::server::codee::string::JsonSerdeCodec;
+use leptos_router::components::{Route, Router, Routes};
+use leptos_router::path;
 use leptos_use::storage::use_local_storage;
 use leptos_use::{ColorMode, UseColorModeOptions, use_color_mode_with_options};
-use thaw::{ConfigProvider, Flex, Layout, LayoutHeader, Theme};
+use thaw::{ConfigProvider, Flex, Layout, LayoutHeader, Theme, ToasterProvider};
 
 use crate::compilation_manager::CompilationManager;
 use crate::compilation_results::CompilationResults;
 use crate::editor::{Editor, KeyboardMode};
 use crate::header::Header;
+use crate::login::LoginPage;
+
+pub fn wrap_with_current_owner(cl: impl Fn() + Clone) -> impl Fn() + Clone {
+    let owner = Owner::current().unwrap();
+    move || owner.with(cl.clone())
+}
 
 fn theme_from_color_mode(color_mode: ColorMode) -> Theme {
     if color_mode == ColorMode::Dark {
@@ -51,8 +59,11 @@ pub fn App() -> impl IntoView {
     // Compile initial state.
     compilation_manager.do_compile(true);
 
-    view! {
-        <ConfigProvider theme>
+    let root = move || {
+        let ctrl_enter = ctrl_enter.clone();
+        let on_change = on_change.clone();
+        let compilation_manager = compilation_manager.clone();
+        view! {
             <Layout attr:style="height: 100vh">
                 <LayoutHeader attr:style="height: 64px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between;">
                     <Header
@@ -70,13 +81,26 @@ pub fn App() -> impl IntoView {
                         kb_mode
                         color_mode=color_mode.mode
                         attr:style="width: 50%; height: calc(100vh - 65px);"
-                    ></Editor>
+                    />
                     <CompilationResults
                         results=compilation_manager.get_result()
                         attr:style="width: 50%; height: calc(100vh - 65px);"
-                    ></CompilationResults>
+                    />
                 </Flex>
             </Layout>
+        }
+    };
+
+    view! {
+        <ConfigProvider theme>
+            <ToasterProvider>
+                <Router>
+                    <Routes fallback=|| "Not found.">
+                        <Route path=path!("/") view=root />
+                        <Route path=path!("/login") view=LoginPage />
+                    </Routes>
+                </Router>
+            </ToasterProvider>
         </ConfigProvider>
     }
 }
