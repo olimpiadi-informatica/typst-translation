@@ -6,6 +6,7 @@ use sqlx::SqlitePool;
 use sqlx::sqlite::SqlitePoolOptions;
 use tower_http::services::{ServeDir, ServeFile};
 
+pub mod api_handlers;
 pub mod auth;
 pub mod config;
 pub mod db_ops;
@@ -55,6 +56,26 @@ impl AppState {
             .route("/api/staff/login", post(auth::staff_login))
             .route("/api/whoami", post(auth::whoami))
             .route("/api/logout", post(auth::logout))
+            .route(
+                "/api/user/contestants_with_languages",
+                post(api_handlers::languages::get_user_contestants),
+            )
+            .route(
+                "/api/user/translation_languages",
+                post(api_handlers::languages::get_user_translation_languages),
+            )
+            .route(
+                "/api/user/available_languages",
+                post(api_handlers::languages::get_available_languages),
+            )
+            .route(
+                "/api/user/assign_language_to_contestant",
+                post(api_handlers::languages::assign_language_to_contestant),
+            )
+            .route(
+                "/api/user/toggle_language_public_status",
+                post(api_handlers::languages::toggle_language_public_status),
+            )
             .fallback_service(
                 ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
             )

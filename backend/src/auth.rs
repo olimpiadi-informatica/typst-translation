@@ -5,6 +5,7 @@ use axum_extra::extract::CookieJar;
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use common::error::Error;
 use common::user::{ExtUser, LoginParams, User, WhoAmIResponse};
+use derive_more::{Deref, DerefMut};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
@@ -74,7 +75,7 @@ pub fn remove_cookie(cookies: CookieJar) -> CookieJar {
     )
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deref, DerefMut)]
 pub struct AuthUser(ExtUser);
 
 impl FromRequestParts<AppState> for AuthUser {
@@ -130,7 +131,7 @@ impl FromRequestParts<AppState> for AuthUser {
                     return Err((remove_cookie(cookies), Error::LoginInvalidated));
                 }
 
-                Ok(AuthUser(ExtUser::Regular(user)))
+                Ok(AuthUser(ExtUser::User(user)))
             }
         }
     }
@@ -189,7 +190,7 @@ impl OptionalFromRequestParts<AppState> for AuthUser {
                     return Err((remove_cookie(cookies), Error::LoginInvalidated));
                 }
 
-                Ok(Some(AuthUser(ExtUser::Regular(user))))
+                Ok(Some(AuthUser(ExtUser::User(user))))
             }
         }
     }

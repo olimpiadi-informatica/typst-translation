@@ -91,7 +91,7 @@ pub fn Header(
             {
                 let user_context = expect_context::<UserContext>();
                 match user_context.get_user() {
-                    ExtUser::Regular(user) => user.username,
+                    ExtUser::User(user) => user.username,
                     _ => todo!(),
                 }
             }

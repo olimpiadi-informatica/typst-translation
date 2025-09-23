@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            INSERT INTO languages (\n                code,\n                user_id,\n                public\n            )\n            VALUES (?, ?, ?)\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "26989d0d68438fcc24a983a133f51aa76f25e1115c1d59354fa3e4705111806b"
+}

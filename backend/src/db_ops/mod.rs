@@ -2,9 +2,9 @@ use common::error::Error;
 use sqlx::{Executor, Sqlite};
 
 mod contest_db;
-mod contestant_db;
+pub mod contestant_db;
 mod draft_print_queue_item_db;
-mod language_db;
+pub mod language_db;
 mod printed_document_db;
 mod rendered_pdf_cache_item_db;
 mod statement_version_db;

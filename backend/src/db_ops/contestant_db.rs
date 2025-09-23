@@ -1,6 +1,7 @@
 use common::contestant::Contestant;
 use common::error::Error;
-use sqlx::{Executor, Sqlite};
+use common::language::Language;
+use sqlx::{Executor, Pool, Sqlite};
 
 use crate::db_ops::DatabaseOps;
 
@@ -121,4 +122,85 @@ impl DatabaseOps for Contestant {
         .await?;
         Ok(contestants)
     }
+}
+
+pub async fn get_contestants_by_language_id<'e, E>(
+    executor: E,
+    language_id: i64,
+) -> Result<Vec<Contestant>, Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let contestants = sqlx::query_as!(
+        Contestant,
+        r###"
+        SELECT
+            id,
+            code,
+            name,
+            online_bit,
+            user_id,
+            language_id
+        FROM
+            contestants
+        WHERE
+            language_id = ?
+        "###,
+        language_id
+    )
+    .fetch_all(executor)
+    .await?;
+    Ok(contestants)
+}
+
+pub async fn get_contestants_by_user_id<'e, E>(
+    executor: E,
+    user_id: i64,
+) -> Result<Vec<Contestant>, Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let contestants = sqlx::query_as!(
+        Contestant,
+        "SELECT * FROM contestants WHERE user_id = ?",
+        user_id
+    )
+    .fetch_all(executor)
+    .await?;
+    Ok(contestants)
+}
+
+pub async fn assign_language_to_contestant(
+    pool: &Pool<Sqlite>,
+    contestant_id: i64,
+    language_id: Option<i64>,
+    user_id: i64,
+) -> Result<(), Error> {
+    let mut tx = pool.begin().await?;
+
+    if let Some(lang_id) = language_id {
+        let language = Language::get_by_id(&mut *tx, lang_id)
+            .await?
+            .ok_or(Error::NotFound)?;
+
+        if !language.public && language.user_id != user_id {
+            return Err(Error::InvalidInput("Cannot assign language to contestant: language is not public and not owned by the user.".to_string()));
+        }
+    }
+
+    sqlx::query!(
+        r###"
+        UPDATE contestants
+        SET
+            language_id = ?
+        WHERE
+            id = ?
+        "###,
+        language_id,
+        contestant_id
+    )
+    .execute(&mut *tx)
+    .await?;
+
+    Ok(())
 }

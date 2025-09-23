@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": " \n            SELECT\n                id,\n                code,\n                user_id\n            FROM\n                languages\n            WHERE\n                id = ?\n            ",
+  "query": "\n        SELECT\n            id,\n            code,\n            user_id,\n            public\n        FROM\n            languages\n        WHERE\n            user_id = ?\n        ORDER BY\n            id DESC\n        ",
   "describe": {
     "columns": [
       {
@@ -17,6 +17,11 @@
         "name": "user_id",
         "ordinal": 2,
         "type_info": "Integer"
+      },
+      {
+        "name": "public",
+        "ordinal": 3,
+        "type_info": "Bool"
       }
     ],
     "parameters": {
@@ -25,8 +30,9 @@
     "nullable": [
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "54ea8643b966f599df491c03f16b11ad44163f1e58e71af15ff220c88ef1aa71"
+  "hash": "e6f7863cb7385dfe6dc56e10505d829c41d5c496c24d20384e859a3c16b683bf"
 }
