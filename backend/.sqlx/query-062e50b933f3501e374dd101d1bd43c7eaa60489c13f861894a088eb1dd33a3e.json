@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n            id,\n            code,\n            name,\n            online_bit,\n            user_id,\n            language_id\n        FROM\n            contestants\n        WHERE\n            id = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "code",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "online_bit",
+        "ordinal": 3,
+        "type_info": "Bool"
+      },
+      {
+        "name": "user_id",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "language_id",
+        "ordinal": 5,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "062e50b933f3501e374dd101d1bd43c7eaa60489c13f861894a088eb1dd33a3e"
+}

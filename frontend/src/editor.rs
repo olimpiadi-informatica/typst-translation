@@ -73,9 +73,10 @@ pub fn Editor(
     };
 
     let id = format!("{name}-editor");
+    let editor_div_ref = NodeRef::new();
     {
         let id = id.clone();
-        queue_microtask(move || {
+        editor_div_ref.on_load(move |_| {
             let editor = CM6Editor::new(&id);
             if let Some(ctrl_enter) = ctrl_enter {
                 editor.set_exec(Closure::wrap(ctrl_enter).into_js_value().unchecked_into());
@@ -129,5 +130,11 @@ pub fn Editor(
         });
     });
 
-    view! { <div id=id style="height: 100%; width: 100%; max-height: 75vh; font-size: 1.2em;"></div> }
+    view! {
+        <div
+            id=id
+            node_ref=editor_div_ref
+            style="height: 100%; width: 100%; max-height: 75vh; font-size: 1.2em;"
+        ></div>
+    }
 }

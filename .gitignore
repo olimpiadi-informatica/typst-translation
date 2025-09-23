@@ -4,6 +4,7 @@ frontend/codemirror/node_modules
 frontend/dist
 frontend/dist-release
 frontend/dist-e2e
+frontend/dist-check
 **/*.rs.bk
 **/.*.swp
 backend/db.sqlite*

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE languages\n        SET\n            code = ?,\n            user_id = ?,\n            public = ?\n        WHERE\n            id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "9d344f296b3fd4237a66f3bc0fd49af9fe993885944e156bd7ef65a5a12bfa21"
+}

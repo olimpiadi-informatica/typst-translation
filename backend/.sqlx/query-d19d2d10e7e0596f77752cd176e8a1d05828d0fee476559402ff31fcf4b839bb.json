@@ -1,0 +1,56 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n            id,\n            username,\n            password,\n            login_epoch,\n            automatic_translation_budget,\n            tokens_used,\n            name\n        FROM\n            users\n        ORDER BY\n            id DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "username",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "password",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "login_epoch",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "automatic_translation_budget",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "tokens_used",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 6,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d19d2d10e7e0596f77752cd176e8a1d05828d0fee476559402ff31fcf4b839bb"
+}
