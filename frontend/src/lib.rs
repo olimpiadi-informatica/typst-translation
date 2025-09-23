@@ -4,6 +4,7 @@ mod compilation_manager;
 mod compilation_results;
 mod editor;
 mod header;
+mod home;
 mod logging;
 mod login;
 mod toast;
