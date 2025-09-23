@@ -122,9 +122,7 @@ pub fn Editor(
                 return;
             };
             match kb_mode.get() {
-                KeyboardMode::Standard => {
-                    cm6.set_keymap("");
-                }
+                KeyboardMode::Standard => cm6.set_keymap(""),
                 KeyboardMode::Vim => cm6.set_keymap("vim"),
                 KeyboardMode::Emacs => cm6.set_keymap("emacs"),
             }

@@ -2,6 +2,7 @@ pub mod api_wrapper;
 mod app;
 mod compilation_manager;
 mod compilation_results;
+mod edit;
 mod editor;
 mod header;
 mod home;

@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 use leptos_use::ColorMode;
 use strum::VariantArray;
-use thaw::{Button, ButtonAppearance, Icon, Select, Text};
+use thaw::{Button, ButtonAppearance, Flex, Icon, Select, Text};
 
 use crate::api_wrapper::api_post;
 use crate::editor::KeyboardMode;
@@ -73,7 +73,7 @@ pub fn Header(
     };
 
     view! {
-        <div style="display: flex;">
+        <Flex>
             <Button on_click=change_theme appearance=ButtonAppearance::Subtle>
                 {move || {
                     let (name, icon) = name_and_icon.get();
@@ -88,14 +88,16 @@ pub fn Header(
                     <option>{move || select_kb_mode_str(*v)}</option>
                 </For>
             </Select>
-            {
-                let user_context = expect_context::<UserContext>();
-                match user_context.get_user() {
-                    ExtUser::User(user) => user.username,
-                    _ => todo!(),
+            <p>
+                {
+                    let user_context = expect_context::<UserContext>();
+                    match user_context.get_user() {
+                        ExtUser::User(user) => user.username,
+                        _ => todo!(),
+                    }
                 }
-            }
+            </p>
             <Button on_click=do_logout>"Logout"</Button>
-        </div>
+        </Flex>
     }
 }

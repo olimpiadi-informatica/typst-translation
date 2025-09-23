@@ -14,7 +14,7 @@ pub struct UserContext {
 impl UserContext {
     pub fn get_user(&self) -> ExtUser {
         self.resource
-            .get()
+            .get_untracked()
             .flatten()
             .expect("User resource should be loaded")
     }

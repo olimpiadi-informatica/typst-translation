@@ -1,7 +1,10 @@
 use leptos::prelude::*;
+use leptos_router::components::{Route, Router, Routes};
+use leptos_router::path;
 use leptos_use::{ColorMode, UseColorModeOptions, use_color_mode_with_options};
 use thaw::{ConfigProvider, Theme, ToasterProvider};
 
+use crate::edit::EditPage;
 use crate::home::HomePage;
 use crate::user::UserProvider;
 
@@ -36,13 +39,12 @@ pub fn App() -> impl IntoView {
         <ConfigProvider theme>
             <ToasterProvider>
                 <UserProvider>
-                    // <Router>
-                    // <Routes fallback=|| "Not found.">
-                    // <Route path=path!("/") view=HomePage />
-                    // <Route path=path!("/login") view=LoginPage />
-                    // </Routes>
-                    // </Router>
-                    <HomePage />
+                    <Router>
+                        <Routes fallback=|| "Not found.">
+                            <Route path=path!("/") view=HomePage />
+                            <Route path=path!("/edit") view=EditPage />
+                        </Routes>
+                    </Router>
                 </UserProvider>
             </ToasterProvider>
         </ConfigProvider>
