@@ -1,9 +1,11 @@
-use leptos::prelude::*;
+use leptos::{prelude::*, task::spawn_local_scoped};
 use leptos_use::ColorMode;
 use strum::VariantArray;
 use thaw::{Button, ButtonAppearance, Icon, Select, Text};
 
-use crate::editor::KeyboardMode;
+use crate::{
+    api_wrapper::api_post, editor::KeyboardMode, show_error, show_success, user::UserContext,
+};
 
 type SignalPair<T> = (Signal<T>, WriteSignal<T>);
 
@@ -48,6 +50,25 @@ pub fn Header(
         set_kb_mode.set(kb_mode_from_str(&s));
     });
 
+    let owner = Owner::current().unwrap();
+    let do_logout = move |_| {
+        owner.with(move || {
+            spawn_local_scoped(async move {
+                match api_post("/api/logout", &()).await {
+                    Ok(()) => {}
+                    Err(e) => {
+                        show_error!("Failed to logout: {e}");
+                        return;
+                    }
+                }
+
+                show_success!("Logout successful");
+                let user_context = expect_context::<UserContext>();
+                user_context.refetch();
+            })
+        })
+    };
+
     view! {
         <div style="display: flex;">
             <Button on_click=change_theme appearance=ButtonAppearance::Subtle>
@@ -64,6 +85,14 @@ pub fn Header(
                     <option>{move || select_kb_mode_str(*v)}</option>
                 </For>
             </Select>
+            {
+                let user_context = expect_context::<UserContext>();
+                match user_context.get_user() {
+                    common::user::WhoAmIResponse::RegularUser(user) => user.username,
+                    _ => todo!(),
+                }
+            }
+            <Button on_click=do_logout>"Logout"</Button>
         </div>
     }
 }

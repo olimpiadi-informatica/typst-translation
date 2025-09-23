@@ -268,7 +268,7 @@ pub async fn staff_login(
     Ok(add_cookie(cookies, AuthSubject::Staff, &state))
 }
 
-#[axum::debug_handler(state = AppState)]
+#[instrument(skip_all)]
 pub async fn whoami(current_user: Option<AuthUser>) -> Result<Json<WhoAmIResponse>, Error> {
     tracing::info!(user = ?current_user, "whoami");
     let Some(current_user) = current_user else {
@@ -279,4 +279,9 @@ pub async fn whoami(current_user: Option<AuthUser>) -> Result<Json<WhoAmIRespons
         AuthUser::AdminUser => Ok(Json(WhoAmIResponse::AdminUser)),
         AuthUser::StaffUser => Ok(Json(WhoAmIResponse::StaffUser)),
     }
+}
+
+#[instrument(skip_all)]
+pub async fn logout(cookies: CookieJar) -> Result<CookieJar, Error> {
+    Ok(remove_cookie(cookies))
 }

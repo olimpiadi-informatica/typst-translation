@@ -54,6 +54,7 @@ impl AppState {
             .route("/api/admin/login", post(auth::admin_login))
             .route("/api/staff/login", post(auth::staff_login))
             .route("/api/whoami", post(auth::whoami))
+            .route("/api/logout", post(auth::logout))
             .fallback_service(
                 ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
             )
