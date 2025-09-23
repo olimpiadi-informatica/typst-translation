@@ -1,5 +1,5 @@
 use axum::Json;
-use axum::extract::{FromRequestParts, State};
+use axum::extract::{FromRequestParts, OptionalFromRequestParts, State};
 use axum::http::request::Parts;
 use axum_extra::extract::CookieJar;
 use axum_extra::extract::cookie::{Cookie, SameSite};
@@ -33,7 +33,7 @@ pub const COOKIE_NAME: &str = "__Host-typst-translation-login";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: AuthSubject,
+    pub subj: AuthSubject,
     /// Expiration time (as UTC timestamp)
     pub exp: i64,
 }
@@ -53,7 +53,7 @@ pub fn generate_jwt(subject: AuthSubject, jwt_signing_key: &str) -> String {
         .timestamp();
 
     let claims = Claims {
-        sub: subject,
+        subj: subject,
         exp: expiration,
     };
     let header = Header::new(jsonwebtoken::Algorithm::HS256);
@@ -120,7 +120,7 @@ impl FromRequestParts<AppState> for AuthUser {
             }
         };
 
-        match token_data.claims.sub {
+        match token_data.claims.subj {
             AuthSubject::Admin => Ok(AuthUser::AdminUser),
             AuthSubject::Staff => Ok(AuthUser::StaffUser),
             AuthSubject::User {
@@ -145,6 +145,65 @@ impl FromRequestParts<AppState> for AuthUser {
                 }
 
                 Ok(AuthUser::RegularUser(user))
+            }
+        }
+    }
+}
+
+impl OptionalFromRequestParts<AppState> for AuthUser {
+    type Rejection = (CookieJar, Error);
+
+    #[instrument(skip_all)]
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Option<Self>, Self::Rejection> {
+        let cookies = CookieJar::from_request_parts(parts, state).await.unwrap();
+        let Some(cookie) = cookies.get(COOKIE_NAME) else {
+            return Ok(None);
+        };
+
+        if cookie.value().is_empty() {
+            return Ok(None);
+        }
+
+        let jwt = cookie.value();
+        let decoding_key = DecodingKey::from_secret(state.config.jwt_signing_key.as_bytes());
+        let validation = Validation::new(jsonwebtoken::Algorithm::HS256);
+
+        let token_data = match decode::<Claims>(jwt, &decoding_key, &validation) {
+            Ok(data) => data,
+            Err(e) => {
+                error!("JWT decoding error: {:?}", e);
+                return Err((remove_cookie(cookies), Error::LoginInvalidated));
+            }
+        };
+
+        match token_data.claims.subj {
+            AuthSubject::Admin => Ok(Some(AuthUser::AdminUser)),
+            AuthSubject::Staff => Ok(Some(AuthUser::StaffUser)),
+            AuthSubject::User {
+                user_id,
+                login_epoch,
+            } => {
+                let pool = state.db(); // Use state.db() here
+                let user = User::get_by_id(pool, user_id).await.map_err(|e| {
+                    error!("Failed to fetch user from DB: {e}");
+                    (
+                        remove_cookie(cookies.clone()),
+                        Error::InternalServerError(format!("Failed to fetch user from DB: {e}")),
+                    )
+                })?;
+
+                let Some(user) = user else {
+                    return Err((remove_cookie(cookies), Error::LoginInvalidated));
+                };
+
+                if user.login_epoch != login_epoch {
+                    return Err((remove_cookie(cookies), Error::LoginInvalidated));
+                }
+
+                Ok(Some(AuthUser::RegularUser(user)))
             }
         }
     }
@@ -209,8 +268,12 @@ pub async fn staff_login(
     Ok(add_cookie(cookies, AuthSubject::Staff, &state))
 }
 
-pub async fn whoami(current_user: AuthUser) -> Result<Json<WhoAmIResponse>, Error> {
+#[axum::debug_handler(state = AppState)]
+pub async fn whoami(current_user: Option<AuthUser>) -> Result<Json<WhoAmIResponse>, Error> {
     tracing::info!(user = ?current_user, "whoami");
+    let Some(current_user) = current_user else {
+        return Ok(Json(WhoAmIResponse::Nobody));
+    };
     match current_user {
         AuthUser::RegularUser(user) => Ok(Json(WhoAmIResponse::RegularUser(user))),
         AuthUser::AdminUser => Ok(Json(WhoAmIResponse::AdminUser)),

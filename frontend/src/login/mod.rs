@@ -8,6 +8,7 @@ use thaw::{
 
 use crate::api_wrapper::api_post;
 use crate::app::wrap_with_current_owner;
+use crate::user::UserContext;
 use crate::{show_error, show_success};
 
 #[component]
@@ -30,8 +31,9 @@ pub fn LoginPage() -> impl IntoView {
                 }
             }
 
-            // TODO
             show_success!("Login successful");
+            let user_context = expect_context::<UserContext>();
+            user_context.refetch();
         })
     });
 

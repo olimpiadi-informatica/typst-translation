@@ -23,4 +23,5 @@ pub enum WhoAmIResponse {
     RegularUser(User),
     AdminUser,
     StaffUser,
+    Nobody,
 }

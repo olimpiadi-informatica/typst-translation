@@ -1,11 +1,9 @@
 use leptos::prelude::*;
-use leptos_router::components::{Route, Router, Routes};
-use leptos_router::path;
 use leptos_use::{ColorMode, UseColorModeOptions, use_color_mode_with_options};
 use thaw::{ConfigProvider, Theme, ToasterProvider};
 
 use crate::home::HomePage;
-use crate::login::LoginPage;
+use crate::user::UserProvider;
 
 pub fn wrap_with_current_owner(cl: impl Fn() + Clone) -> impl Fn() + Clone {
     let owner = Owner::current().unwrap();
@@ -37,12 +35,15 @@ pub fn App() -> impl IntoView {
     view! {
         <ConfigProvider theme>
             <ToasterProvider>
-                <Router>
-                    <Routes fallback=|| "Not found.">
-                        <Route path=path!("/") view=HomePage />
-                        <Route path=path!("/login") view=LoginPage />
-                    </Routes>
-                </Router>
+                <UserProvider>
+                    // <Router>
+                    // <Routes fallback=|| "Not found.">
+                    // <Route path=path!("/") view=HomePage />
+                    // <Route path=path!("/login") view=LoginPage />
+                    // </Routes>
+                    // </Router>
+                    <HomePage />
+                </UserProvider>
             </ToasterProvider>
         </ConfigProvider>
     }
