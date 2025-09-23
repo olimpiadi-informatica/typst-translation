@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT user_contest_status.*\n            FROM user_contest_status\n            JOIN tasks ON user_contest_status.contest_id = tasks.contest_id\n            WHERE tasks.id = ? AND user_contest_status.user_id = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "user_id",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "contest_id",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "finalized_translations",
+        "ordinal": 3,
+        "type_info": "Bool"
+      },
+      {
+        "name": "skip_envelope_verification",
+        "ordinal": 4,
+        "type_info": "Bool"
+      },
+      {
+        "name": "envelope_received_at",
+        "ordinal": 5,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "eae05aca33022ebef1055e0c5ca4a5e8da5987fa2c719803c612ce49e4ac91be"
+}

@@ -8,4 +8,5 @@ pub struct Translation {
     pub language_id: i64,
     pub content_hash: String,
     pub last_updated_at: NaiveDateTime,
+    pub session_token: Option<String>,
 }

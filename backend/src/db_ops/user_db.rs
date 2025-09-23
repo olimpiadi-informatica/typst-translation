@@ -1,6 +1,6 @@
 use common::error::Error;
 use common::user::User;
-use sqlx::{Executor, Sqlite};
+use sqlx::{Executor, Sqlite, SqlitePool};
 
 pub async fn get_user_by_username<'e, E>(executor: E, username: &str) -> Result<Option<User>, Error>
 where
@@ -150,4 +150,35 @@ where
     .fetch_all(executor)
     .await?;
     Ok(users)
+}
+
+pub async fn set_skip_envelope_verification(
+    pool: &SqlitePool,
+    user_id: i64,
+    contest_id: i64,
+    skip: bool,
+) -> Result<(), Error> {
+    let mut tx = pool.begin().await?;
+
+    let result = sqlx::query!(
+        r#"
+            UPDATE user_contest_status
+            SET skip_envelope_verification = ?
+            WHERE user_id = ? AND contest_id = ? AND finalized_translations = FALSE
+        "#,
+        skip,
+        user_id,
+        contest_id
+    )
+    .execute(&mut *tx)
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(Error::InvalidInput(
+            "Cannot change skip_envelope_verification for a finalized translation.".to_string(),
+        ));
+    }
+
+    tx.commit().await?;
+    Ok(())
 }

@@ -43,6 +43,15 @@ pub async fn get_available_languages(
     Ok(Json(languages))
 }
 
+pub async fn get_all_languages(
+    State(app_state): State<AppState>,
+    _current_user: AuthUser,
+) -> Result<Json<Vec<Language>>, Error> {
+    let pool = app_state.db();
+    let languages = language_db::get_all(pool).await?;
+    Ok(Json(languages))
+}
+
 pub async fn assign_language_to_contestant(
     State(app_state): State<AppState>,
     current_user: AuthUser,

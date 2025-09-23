@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE translations SET session_token = ? WHERE task_id = ? AND language_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "c7f664e6cb2a7da1db9a98afacce19a7ea0f27bc9426f4e8117263077c4d9996"
+}

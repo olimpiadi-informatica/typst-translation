@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE user_contest_status\n            SET skip_envelope_verification = ?\n            WHERE user_id = ? AND contest_id = ? AND finalized_translations = FALSE\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "44a4a57c1519532f8e41505f8f258e6e6c70db3b53c6f26ee2d42f27015bf6b5"
+}

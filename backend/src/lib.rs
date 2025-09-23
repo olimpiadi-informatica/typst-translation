@@ -1,5 +1,5 @@
 use axum::Router;
-use axum::routing::post;
+use axum::routing::{get, post};
 use color_eyre::eyre::Result;
 use logging::trace_requests;
 use sqlx::SqlitePool;
@@ -78,6 +78,26 @@ impl AppState {
             .route(
                 "/api/user/toggle_language_public_status",
                 post(api_handlers::languages::toggle_language_public_status),
+            )
+            .route(
+                "/api/user/all_languages",
+                get(api_handlers::languages::get_all_languages),
+            )
+            .route(
+                "/api/user/translation_status",
+                get(api_handlers::user::get_user_translation_status),
+            )
+            .route(
+                "/api/user/skip_envelope_verification",
+                post(api_handlers::user::skip_envelope_verification),
+            )
+            .route(
+                "/api/user/finalize_translation",
+                post(api_handlers::user::finalize_translation),
+            )
+            .route(
+                "/api/user/set_translation_session_token",
+                post(api_handlers::user::set_translation_session_token),
             )
             .fallback_service(
                 ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
