@@ -4,30 +4,13 @@ use axum::http::request::Parts;
 use axum_extra::extract::CookieJar;
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use common::error::Error;
-use common::user::{LoginParams, User, WhoAmIResponse};
+use common::user::{ExtUser, LoginParams, User, WhoAmIResponse};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
 
 use crate::AppState;
 use crate::db_ops::{DatabaseOps, get_user_by_username};
-
-#[derive(Debug)]
-pub enum AuthUser {
-    RegularUser(User),
-    AdminUser,
-    StaffUser,
-}
-
-impl AuthUser {
-    pub fn as_user(&self) -> Option<&User> {
-        match self {
-            AuthUser::RegularUser(user) => Some(user),
-            AuthUser::AdminUser => None,
-            AuthUser::StaffUser => None,
-        }
-    }
-}
 
 pub const COOKIE_NAME: &str = "__Host-typst-translation-login";
 
@@ -91,6 +74,9 @@ pub fn remove_cookie(cookies: CookieJar) -> CookieJar {
     )
 }
 
+#[derive(Debug)]
+pub struct AuthUser(ExtUser);
+
 impl FromRequestParts<AppState> for AuthUser {
     type Rejection = (CookieJar, Error);
 
@@ -121,8 +107,8 @@ impl FromRequestParts<AppState> for AuthUser {
         };
 
         match token_data.claims.subj {
-            AuthSubject::Admin => Ok(AuthUser::AdminUser),
-            AuthSubject::Staff => Ok(AuthUser::StaffUser),
+            AuthSubject::Admin => Ok(AuthUser(ExtUser::Admin)),
+            AuthSubject::Staff => Ok(AuthUser(ExtUser::Staff)),
             AuthSubject::User {
                 user_id,
                 login_epoch,
@@ -144,7 +130,7 @@ impl FromRequestParts<AppState> for AuthUser {
                     return Err((remove_cookie(cookies), Error::LoginInvalidated));
                 }
 
-                Ok(AuthUser::RegularUser(user))
+                Ok(AuthUser(ExtUser::Regular(user)))
             }
         }
     }
@@ -180,8 +166,8 @@ impl OptionalFromRequestParts<AppState> for AuthUser {
         };
 
         match token_data.claims.subj {
-            AuthSubject::Admin => Ok(Some(AuthUser::AdminUser)),
-            AuthSubject::Staff => Ok(Some(AuthUser::StaffUser)),
+            AuthSubject::Admin => Ok(Some(AuthUser(ExtUser::Admin))),
+            AuthSubject::Staff => Ok(Some(AuthUser(ExtUser::Staff))),
             AuthSubject::User {
                 user_id,
                 login_epoch,
@@ -203,7 +189,7 @@ impl OptionalFromRequestParts<AppState> for AuthUser {
                     return Err((remove_cookie(cookies), Error::LoginInvalidated));
                 }
 
-                Ok(Some(AuthUser::RegularUser(user)))
+                Ok(Some(AuthUser(ExtUser::Regular(user))))
             }
         }
     }
@@ -269,16 +255,9 @@ pub async fn staff_login(
 }
 
 #[instrument(skip_all)]
-pub async fn whoami(current_user: Option<AuthUser>) -> Result<Json<WhoAmIResponse>, Error> {
+pub async fn whoami(current_user: Option<AuthUser>) -> Json<WhoAmIResponse> {
     tracing::info!(user = ?current_user, "whoami");
-    let Some(current_user) = current_user else {
-        return Ok(Json(WhoAmIResponse::Nobody));
-    };
-    match current_user {
-        AuthUser::RegularUser(user) => Ok(Json(WhoAmIResponse::RegularUser(user))),
-        AuthUser::AdminUser => Ok(Json(WhoAmIResponse::AdminUser)),
-        AuthUser::StaffUser => Ok(Json(WhoAmIResponse::StaffUser)),
-    }
+    Json(current_user.map(|u| u.0))
 }
 
 #[instrument(skip_all)]

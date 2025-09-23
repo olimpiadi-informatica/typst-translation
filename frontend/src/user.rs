@@ -1,4 +1,4 @@
-use common::user::WhoAmIResponse;
+use common::user::{ExtUser, WhoAmIResponse};
 use leptos::prelude::*;
 
 use crate::api_wrapper::api_post;
@@ -7,14 +7,14 @@ use crate::show_error;
 
 #[derive(Clone)]
 pub struct UserContext {
-    resource: LocalResource<WhoAmIResponse>,
+    resource: LocalResource<Option<ExtUser>>,
 }
 
 impl UserContext {
-    pub fn get_user(&self) -> WhoAmIResponse {
+    pub fn get_user(&self) -> ExtUser {
         self.resource
             .get()
-            .clone()
+            .flatten()
             .expect("User resource should be loaded")
     }
 
@@ -33,7 +33,7 @@ where
             Ok(user) => user,
             Err(e) => {
                 show_error!("Failed to fetch user info: {e}");
-                WhoAmIResponse::Nobody
+                None
             }
         }
     });
@@ -42,8 +42,8 @@ where
 
     let children = children.into_inner();
     move || match user.get() {
-        Some(WhoAmIResponse::Nobody) => view! { <LoginPage /> }.into_any(),
-        Some(_) => view! { {children()} }.into_any(),
-        None => view! { "Loading" }.into_any(),
+        Some(Some(_)) => children().into_any(),
+        Some(None) => view! { <LoginPage /> }.into_any(),
+        None => "Loading".into_any(),
     }
 }

@@ -1,11 +1,14 @@
-use leptos::{prelude::*, task::spawn_local_scoped};
+use common::user::ExtUser;
+use leptos::prelude::*;
+use leptos::task::spawn_local_scoped;
 use leptos_use::ColorMode;
 use strum::VariantArray;
 use thaw::{Button, ButtonAppearance, Icon, Select, Text};
 
-use crate::{
-    api_wrapper::api_post, editor::KeyboardMode, show_error, show_success, user::UserContext,
-};
+use crate::api_wrapper::api_post;
+use crate::editor::KeyboardMode;
+use crate::user::UserContext;
+use crate::{show_error, show_success};
 
 type SignalPair<T> = (Signal<T>, WriteSignal<T>);
 
@@ -88,7 +91,7 @@ pub fn Header(
             {
                 let user_context = expect_context::<UserContext>();
                 match user_context.get_user() {
-                    common::user::WhoAmIResponse::RegularUser(user) => user.username,
+                    ExtUser::Regular(user) => user.username,
                     _ => todo!(),
                 }
             }
