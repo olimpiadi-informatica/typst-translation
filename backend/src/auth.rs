@@ -81,57 +81,18 @@ pub struct AuthUser(ExtUser);
 impl FromRequestParts<AppState> for AuthUser {
     type Rejection = (CookieJar, Error);
 
-    #[instrument(skip_all)] // Removed err(level = "error")
+    #[instrument(skip_all)]
     async fn from_request_parts(
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        let cookies = CookieJar::from_request_parts(parts, state).await.unwrap();
-        let Some(cookie) = cookies.get(COOKIE_NAME) else {
-            return Err((cookies, Error::LoginRequired));
-        };
-
-        if cookie.value().is_empty() {
-            return Err((cookies, Error::LoginRequired));
-        }
-
-        let jwt = cookie.value();
-        let decoding_key = DecodingKey::from_secret(state.config.jwt_signing_key.as_bytes());
-        let validation = Validation::new(jsonwebtoken::Algorithm::HS256);
-
-        let token_data = match decode::<Claims>(jwt, &decoding_key, &validation) {
-            Ok(data) => data,
-            Err(e) => {
-                error!("JWT decoding error: {:?}", e);
-                return Err((remove_cookie(cookies), Error::LoginInvalidated));
-            }
-        };
-
-        match token_data.claims.subj {
-            AuthSubject::Admin => Ok(AuthUser(ExtUser::Admin)),
-            AuthSubject::Staff => Ok(AuthUser(ExtUser::Staff)),
-            AuthSubject::User {
-                user_id,
-                login_epoch,
-            } => {
-                let pool = state.db(); // Use state.db() here
-                let user = User::get_by_id(pool, user_id).await.map_err(|e| {
-                    error!("Failed to fetch user from DB: {e}");
-                    (
-                        remove_cookie(cookies.clone()),
-                        Error::InternalServerError(format!("Failed to fetch user from DB: {e}")),
-                    )
-                })?;
-
-                let Some(user) = user else {
-                    return Err((remove_cookie(cookies), Error::LoginInvalidated));
-                };
-
-                if user.login_epoch != login_epoch {
-                    return Err((remove_cookie(cookies), Error::LoginInvalidated));
-                }
-
-                Ok(AuthUser(ExtUser::User(user)))
+        let user =
+            <Self as OptionalFromRequestParts<AppState>>::from_request_parts(parts, state).await?;
+        match user {
+            Some(u) => Ok(u),
+            None => {
+                let cookies = CookieJar::from_request_parts(parts, state).await.unwrap();
+                Err((remove_cookie(cookies), Error::LoginInvalidated))
             }
         }
     }
@@ -173,7 +134,7 @@ impl OptionalFromRequestParts<AppState> for AuthUser {
                 user_id,
                 login_epoch,
             } => {
-                let pool = state.db(); // Use state.db() here
+                let pool = state.db();
                 let user = User::get_by_id(pool, user_id).await.map_err(|e| {
                     error!("Failed to fetch user from DB: {e}");
                     (

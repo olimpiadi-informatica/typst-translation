@@ -14,4 +14,4 @@ admin_password = "your_admin_password_here"
 staff_password = "your_staff_password_here"
 
 # Address and port for the server to listen on.
-listen_address = "0.0.0.0:3000"
+listen_address = "0.0.0.0:9000"

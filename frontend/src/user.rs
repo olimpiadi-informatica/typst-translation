@@ -1,5 +1,6 @@
 use common::user::{ExtUser, WhoAmIResponse};
 use leptos::prelude::*;
+use thaw::Spinner;
 
 use crate::api_wrapper::api_post;
 use crate::login::LoginPage;
@@ -44,6 +45,6 @@ where
     move || match user.get() {
         Some(Some(_)) => children().into_any(),
         Some(None) => view! { <LoginPage /> }.into_any(),
-        None => "Loading".into_any(),
+        None => view! { <Spinner /> }.into_any(),
     }
 }

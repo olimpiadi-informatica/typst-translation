@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-common = { path = "../common" }
+common = { path = "../common", features = ["client-side"] }
 async-channel = "2.5.0"
 base64 = "0.22.1"
 color-eyre = "0.6.5"

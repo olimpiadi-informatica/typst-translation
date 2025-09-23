@@ -1,12 +1,10 @@
-#[cfg(feature = "server-side")]
-use axum::http::StatusCode;
-#[cfg(feature = "server-side")]
-use axum::response::IntoResponse;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Error {
-    #[error("Network error: {0}")]
+    #[cfg(feature = "client-side")]
+    #[error("Error communicating with server: {0}")]
     NetworkError(String),
     #[error("Login required")]
     LoginRequired,
@@ -22,12 +20,6 @@ pub enum Error {
     UnauthorizedChange,
     #[error("Internal server error: {0}")]
     InternalServerError(String),
-    #[error("CSV error: {0}")]
-    CsvError(#[from] csv::Error),
-    #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
-    #[error("Url parse error: {0}")]
-    UrlParseError(#[from] url::ParseError),
     #[error("Other error: {0}")]
     Other(String),
 }
@@ -45,8 +37,10 @@ impl From<&str> for Error {
 }
 
 #[cfg(feature = "server-side")]
-impl IntoResponse for Error {
+impl axum::response::IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
+        use axum::Json;
+        use axum::http::StatusCode;
         let status = match self {
             Error::LoginRequired => StatusCode::UNAUTHORIZED,
             Error::LoginInvalidated => StatusCode::UNAUTHORIZED,
@@ -57,7 +51,7 @@ impl IntoResponse for Error {
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
-        (status, self.to_string()).into_response()
+        (status, Json(self)).into_response()
     }
 }
 
@@ -66,5 +60,19 @@ impl From<sqlx::Error> for Error {
     fn from(err: sqlx::Error) -> Self {
         tracing::warn!(error = ?err, "SQLx error");
         Error::InternalServerError(format!("{err}"))
+    }
+}
+
+#[cfg(feature = "client-side")]
+impl From<gloo_net::Error> for Error {
+    fn from(err: gloo_net::Error) -> Self {
+        Error::NetworkError(format!("{err}"))
+    }
+}
+
+#[cfg(feature = "client-side")]
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
+        Error::NetworkError(format!("{err}"))
     }
 }

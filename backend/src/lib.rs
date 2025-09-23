@@ -1,7 +1,7 @@
 use axum::Router;
 use axum::routing::post;
 use color_eyre::eyre::Result;
-use common::error::Error;
+use logging::trace_requests;
 use sqlx::SqlitePool;
 use sqlx::sqlite::SqlitePoolOptions;
 use tower_http::services::{ServeDir, ServeFile};
@@ -40,10 +40,13 @@ impl AppState {
         &self.config
     }
 
-    pub async fn serve(self, listen_address: std::net::SocketAddr) -> Result<(), Error> {
+    pub async fn serve(self, listen_address: std::net::SocketAddr) -> Result<()> {
         let app = self.app();
 
-        let listener = tokio::net::TcpListener::bind(listen_address).await?;
+        let listener = tokio::net::TcpListener::bind(&listen_address)
+            .await
+            .unwrap();
+        tracing::info!("listening on http://{}", &listen_address);
         axum::serve(listener, app).await?;
 
         Ok(())
@@ -79,6 +82,7 @@ impl AppState {
             .fallback_service(
                 ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
             )
+            .layer(axum::middleware::from_fn(trace_requests))
             .with_state(self)
     }
 }

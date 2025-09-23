@@ -26,3 +26,6 @@ watch = [
   "scss",
   "codemirror/codemirror_interface.ts",
 ]
+
+[[proxy]]
+backend = "http://localhost:9000/api/"
