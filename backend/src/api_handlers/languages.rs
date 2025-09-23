@@ -6,7 +6,7 @@ use common::language::{AssignLanguagePayload, Language, ToggleLanguagePublicStat
 
 use crate::AppState;
 use crate::auth::AuthUser;
-use crate::db_ops::{DatabaseOps, contestant_db, language_db};
+use crate::db_ops::{contestant_db, language_db};
 
 pub async fn get_user_contestants(
     State(app_state): State<AppState>,
@@ -71,7 +71,7 @@ pub async fn toggle_language_public_status(
     let pool = app_state.db();
 
     // First, check if the user owns the language
-    let language = Language::get_by_id(pool, payload.language_id)
+    let language = language_db::get_by_id(pool, payload.language_id)
         .await?
         .ok_or(Error::NotFound)?;
     if language.user_id != user.id {

@@ -2,113 +2,109 @@ use common::error::Error;
 use common::language::Language;
 use sqlx::{Executor, Pool, Sqlite};
 
-use crate::db_ops::DatabaseOps;
-
-impl DatabaseOps for Language {
-    async fn insert<'e, E>(&mut self, executor: E) -> Result<(), Error>
-    where
-        E: Executor<'e, Database = Sqlite>,
-    {
-        let row = sqlx::query!(
-            r###"
-            INSERT INTO languages (
-                code,
-                user_id,
-                public
-            )
-            VALUES (?, ?, ?)
-            RETURNING id
-            "###,
-            self.code,
-            self.user_id,
-            self.public,
+pub async fn insert<'e, E>(language: &mut Language, executor: E) -> Result<(), Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let row = sqlx::query!(
+        r###"
+        INSERT INTO languages (
+            code,
+            user_id,
+            public
         )
-        .fetch_one(executor)
-        .await?;
-        self.id = row.id;
-        Ok(())
-    }
+        VALUES (?, ?, ?)
+        RETURNING id
+        "###,
+        language.code,
+        language.user_id,
+        language.public,
+    )
+    .fetch_one(executor)
+    .await?;
+    language.id = row.id;
+    Ok(())
+}
 
-    async fn update<'e, E>(&self, executor: E) -> Result<(), Error>
-    where
-        E: Executor<'e, Database = Sqlite>,
-    {
-        sqlx::query!(
-            r###"
-            UPDATE languages
-            SET
-                code = ?,
-                user_id = ?,
-                public = ?
-            WHERE
-                id = ?
-            "###,
-            self.code,
-            self.user_id,
-            self.public,
-            self.id
-        )
+pub async fn update<'e, E>(language: &Language, executor: E) -> Result<(), Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    sqlx::query!(
+        r###"
+        UPDATE languages
+        SET
+            code = ?,
+            user_id = ?,
+            public = ?
+        WHERE
+            id = ?
+        "###,
+        language.code,
+        language.user_id,
+        language.public,
+        language.id
+    )
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn delete<'e, E>(executor: E, id: i64) -> Result<(), Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    sqlx::query!("DELETE FROM languages WHERE id = ?", id)
         .execute(executor)
         .await?;
-        Ok(())
-    }
+    Ok(())
+}
 
-    async fn delete<'e, E>(executor: E, id: i64) -> Result<(), Error>
-    where
-        E: Executor<'e, Database = Sqlite>,
-    {
-        sqlx::query!("DELETE FROM languages WHERE id = ?", id)
-            .execute(executor)
-            .await?;
-        Ok(())
-    }
+pub async fn get_by_id<'e, E>(executor: E, id: i64) -> Result<Option<Language>, Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let language = sqlx::query_as!(
+        Language,
+        r###"
+        SELECT
+            id,
+            code,
+            user_id,
+            public
+        FROM
+            languages
+        WHERE
+            id = ?
+        "###,
+        id
+    )
+    .fetch_optional(executor)
+    .await?;
+    Ok(language)
+}
 
-    async fn get_by_id<'e, E>(executor: E, id: i64) -> Result<Option<Self>, Error>
-    where
-        E: Executor<'e, Database = Sqlite>,
-    {
-        let language = sqlx::query_as!(
-            Language,
-            r###" 
-            SELECT
-                id,
-                code,
-                user_id,
-                public
-            FROM
-                languages
-            WHERE
-                id = ?
-            "###,
-            id
-        )
-        .fetch_optional(executor)
-        .await?;
-        Ok(language)
-    }
-
-    async fn get_all<'e, E>(executor: E) -> Result<Vec<Self>, Error>
-    where
-        E: Executor<'e, Database = Sqlite>,
-    {
-        let languages = sqlx::query_as!(
-            Language,
-            r###" 
-            SELECT
-                id,
-                code,
-                user_id,
-                public
-            FROM
-                languages
-            ORDER BY
-                id DESC
-            "###
-        )
-        .fetch_all(executor)
-        .await?;
-        Ok(languages)
-    }
+pub async fn get_all<'e, E>(executor: E) -> Result<Vec<Language>, Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let languages = sqlx::query_as!(
+        Language,
+        r###"
+        SELECT
+            id,
+            code,
+            user_id,
+            public
+        FROM
+            languages
+        ORDER BY
+            id DESC
+        "###
+    )
+    .fetch_all(executor)
+    .await?;
+    Ok(languages)
 }
 
 pub async fn get_available_languages<'e, E>(
@@ -120,7 +116,7 @@ where
 {
     let languages = sqlx::query_as!(
         Language,
-        r###" 
+        r###"
         SELECT
             id,
             code,
@@ -190,7 +186,7 @@ pub async fn toggle_language_public_status(
     }
 
     sqlx::query!(
-        r###" 
+        r###"
         UPDATE languages
         SET
             public = ?

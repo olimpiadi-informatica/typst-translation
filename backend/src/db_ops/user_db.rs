@@ -2,15 +2,13 @@ use common::error::Error;
 use common::user::User;
 use sqlx::{Executor, Sqlite};
 
-use crate::db_ops::DatabaseOps;
-
 pub async fn get_user_by_username<'e, E>(executor: E, username: &str) -> Result<Option<User>, Error>
 where
     E: Executor<'e, Database = Sqlite>,
 {
     let user = sqlx::query_as!(
         User,
-        r###" 
+        r###"
         SELECT
             id,
             username,
@@ -31,127 +29,125 @@ where
     Ok(user)
 }
 
-impl DatabaseOps for User {
-    async fn insert<'e, E>(&mut self, executor: E) -> Result<(), Error>
-    where
-        E: Executor<'e, Database = Sqlite>,
-    {
-        let row = sqlx::query!(
-            r###" 
-            INSERT INTO users (
-                username,
-                password,
-                login_epoch,
-                automatic_translation_budget,
-                tokens_used,
-                name
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-            RETURNING id
-            "###,
-            self.username,
-            self.password,
-            self.login_epoch,
-            self.automatic_translation_budget,
-            self.tokens_used,
-            self.name,
+pub async fn insert<'e, E>(user: &mut User, executor: E) -> Result<(), Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let row = sqlx::query!(
+        r###"
+        INSERT INTO users (
+            username,
+            password,
+            login_epoch,
+            automatic_translation_budget,
+            tokens_used,
+            name
         )
-        .fetch_one(executor)
-        .await?;
-        self.id = row.id;
-        Ok(())
-    }
+        VALUES (?, ?, ?, ?, ?, ?)
+        RETURNING id
+        "###,
+        user.username,
+        user.password,
+        user.login_epoch,
+        user.automatic_translation_budget,
+        user.tokens_used,
+        user.name,
+    )
+    .fetch_one(executor)
+    .await?;
+    user.id = row.id;
+    Ok(())
+}
 
-    async fn update<'e, E>(&self, executor: E) -> Result<(), Error>
-    where
-        E: Executor<'e, Database = Sqlite>,
-    {
-        sqlx::query!(
-            r###" 
-            UPDATE users
-            SET
-                username = ?,
-                password = ?,
-                login_epoch = ?,
-                automatic_translation_budget = ?,
-                tokens_used = ?,
-                name = ?
-            WHERE
-                id = ?
-            "###,
-            self.username,
-            self.password,
-            self.login_epoch,
-            self.automatic_translation_budget,
-            self.tokens_used,
-            self.name,
-            self.id
-        )
+pub async fn update<'e, E>(user: &User, executor: E) -> Result<(), Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    sqlx::query!(
+        r###"
+        UPDATE users
+        SET
+            username = ?,
+            password = ?,
+            login_epoch = ?,
+            automatic_translation_budget = ?,
+            tokens_used = ?,
+            name = ?
+        WHERE
+            id = ?
+        "###,
+        user.username,
+        user.password,
+        user.login_epoch,
+        user.automatic_translation_budget,
+        user.tokens_used,
+        user.name,
+        user.id
+    )
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn delete<'e, E>(executor: E, id: i64) -> Result<(), Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    sqlx::query!("DELETE FROM users WHERE id = ?", id)
         .execute(executor)
         .await?;
-        Ok(())
-    }
+    Ok(())
+}
 
-    async fn delete<'e, E>(executor: E, id: i64) -> Result<(), Error>
-    where
-        E: Executor<'e, Database = Sqlite>,
-    {
-        sqlx::query!("DELETE FROM users WHERE id = ?", id)
-            .execute(executor)
-            .await?;
-        Ok(())
-    }
+pub async fn get_by_id<'e, E>(executor: E, id: i64) -> Result<Option<User>, Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let user = sqlx::query_as!(
+        User,
+        r###"
+        SELECT
+            id,
+            username,
+            password,
+            login_epoch,
+            automatic_translation_budget,
+            tokens_used,
+            name
+        FROM
+            users
+        WHERE
+            id = ?
+        "###,
+        id
+    )
+    .fetch_optional(executor)
+    .await?;
+    Ok(user)
+}
 
-    async fn get_by_id<'e, E>(executor: E, id: i64) -> Result<Option<Self>, Error>
-    where
-        E: Executor<'e, Database = Sqlite>,
-    {
-        let user = sqlx::query_as!(
-            User,
-            r###" 
-            SELECT
-                id,
-                username,
-                password,
-                login_epoch,
-                automatic_translation_budget,
-                tokens_used,
-                name
-            FROM
-                users
-            WHERE
-                id = ?
-            "###,
-            id
-        )
-        .fetch_optional(executor)
-        .await?;
-        Ok(user)
-    }
-
-    async fn get_all<'e, E>(executor: E) -> Result<Vec<Self>, Error>
-    where
-        E: Executor<'e, Database = Sqlite>,
-    {
-        let users = sqlx::query_as!(
-            User,
-            r###" 
-            SELECT
-                id,
-                username,
-                password,
-                login_epoch,
-                automatic_translation_budget,
-                tokens_used,
-                name
-            FROM
-                users
-            ORDER BY
-                id DESC
-            "###,
-        )
-        .fetch_all(executor)
-        .await?;
-        Ok(users)
-    }
+pub async fn get_all<'e, E>(executor: E) -> Result<Vec<User>, Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let users = sqlx::query_as!(
+        User,
+        r###"
+        SELECT
+            id,
+            username,
+            password,
+            login_epoch,
+            automatic_translation_budget,
+            tokens_used,
+            name
+        FROM
+            users
+        ORDER BY
+            id DESC
+        "###,
+    )
+    .fetch_all(executor)
+    .await?;
+    Ok(users)
 }

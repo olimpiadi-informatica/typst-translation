@@ -14,5 +14,5 @@ RUST_LOG=none cargo test --release
 popd
 
 pushd frontend
-trunk build
+trunk build -d dist-check
 popd

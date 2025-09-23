@@ -4,14 +4,14 @@ use axum::http::request::Parts;
 use axum_extra::extract::CookieJar;
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use common::error::Error;
-use common::user::{ExtUser, LoginParams, User, WhoAmIResponse};
+use common::user::{ExtUser, LoginParams, WhoAmIResponse};
 use derive_more::{Deref, DerefMut};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
 
 use crate::AppState;
-use crate::db_ops::{DatabaseOps, get_user_by_username};
+use crate::db_ops::user_db;
 
 pub const COOKIE_NAME: &str = "__Host-typst-translation-login";
 
@@ -135,7 +135,7 @@ impl OptionalFromRequestParts<AppState> for AuthUser {
                 login_epoch,
             } => {
                 let pool = state.db();
-                let user = User::get_by_id(pool, user_id).await.map_err(|e| {
+                let user = user_db::get_by_id(pool, user_id).await.map_err(|e| {
                     error!("Failed to fetch user from DB: {e}");
                     (
                         remove_cookie(cookies.clone()),
@@ -165,7 +165,7 @@ pub async fn login(
 ) -> Result<CookieJar, Error> {
     let pool = state.db();
 
-    let user = get_user_by_username(pool, &login_data.username).await?;
+    let user = user_db::get_user_by_username(pool, &login_data.username).await?;
 
     let user = match user {
         Some(user) => user,
