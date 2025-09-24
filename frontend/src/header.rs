@@ -91,7 +91,7 @@ pub fn Header(
             <p>
                 {
                     let user_context = expect_context::<UserContext>();
-                    match user_context.get_user() {
+                    match user_context.get_user_untracked() {
                         ExtUser::User(user) => user.username,
                         _ => todo!(),
                     }

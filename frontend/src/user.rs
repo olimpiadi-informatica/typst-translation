@@ -12,7 +12,7 @@ pub struct UserContext {
 }
 
 impl UserContext {
-    pub fn get_user(&self) -> ExtUser {
+    pub fn get_user_untracked(&self) -> ExtUser {
         self.resource
             .get_untracked()
             .flatten()

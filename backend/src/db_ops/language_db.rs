@@ -170,6 +170,8 @@ pub async fn toggle_language_public_status(
     language_id: i64,
     new_status: bool,
 ) -> Result<(), Error> {
+    // TODO: check that language is owned by the user making the request
+
     use crate::db_ops::contestant_db;
 
     let mut tx = pool.begin().await?;
@@ -198,6 +200,8 @@ pub async fn toggle_language_public_status(
     )
     .execute(&mut *tx)
     .await?;
+
+    tx.commit().await?;
 
     Ok(())
 }

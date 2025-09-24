@@ -185,19 +185,26 @@ pub async fn assign_language_to_contestant(
         }
     }
 
-    sqlx::query!(
+    let res = sqlx::query!(
         r###"
         UPDATE contestants
         SET
             language_id = ?
         WHERE
-            id = ?
+            id = ? AND user_id = ?
         "###,
         language_id,
-        contestant_id
+        contestant_id,
+        user_id
     )
     .execute(&mut *tx)
     .await?;
+
+    if res.rows_affected() == 0 {
+        return Err(Error::NotFound);
+    }
+
+    tx.commit().await?;
 
     Ok(())
 }
