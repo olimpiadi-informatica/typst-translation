@@ -170,17 +170,23 @@ pub async fn toggle_language_public_status(
     language_id: i64,
     new_status: bool,
 ) -> Result<(), Error> {
-    // TODO: check that language is owned by the user making the request
-
     use crate::db_ops::contestant_db;
 
     let mut tx = pool.begin().await?;
+
+    let Some(language) = get_by_id(&mut *tx, language_id).await? else {
+        return Err(Error::NotFound);
+    };
 
     if !new_status {
         // If we are trying to make the language private, check if any contestants are assigned to it.
         let assigned_contestants =
             contestant_db::get_contestants_by_language_id(&mut *tx, language_id).await?;
-        if !assigned_contestants.is_empty() {
+        //if !assigned_contestants.is_empty() {
+        if assigned_contestants
+            .into_iter()
+            .any(|c| c.user_id != language.user_id)
+        {
             return Err(Error::InvalidInput(
                 "Cannot make language private while contestants are assigned to it.".to_string(),
             ));
