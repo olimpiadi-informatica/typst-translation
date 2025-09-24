@@ -1,4 +1,5 @@
 use common::user::{ExtUser, WhoAmIResponse};
+use leptos::either::EitherOf3;
 use leptos::prelude::*;
 use thaw::Spinner;
 
@@ -43,8 +44,8 @@ where
 
     let children = children.into_inner();
     move || match user.get() {
-        Some(Some(_)) => children().into_any(),
-        Some(None) => view! { <LoginPage /> }.into_any(),
-        None => view! { <Spinner /> }.into_any(),
+        Some(Some(_)) => EitherOf3::A(children()),
+        Some(None) => EitherOf3::B(view! { <LoginPage /> }),
+        None => EitherOf3::C(view! { <Spinner label="Authenticating..." /> }),
     }
 }

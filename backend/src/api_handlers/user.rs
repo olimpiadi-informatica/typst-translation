@@ -1,7 +1,10 @@
 use axum::Json;
 use axum::extract::State;
+use common::contest::ContestWithTasksAndStatus;
 use common::error::Error;
-use common::user_contest_status::SetTranslationSessionTokenRequest;
+use common::user_contest_status::{
+    SetTranslationSessionTokenRequest, SkipEnvelopeVerificationRequest,
+};
 
 use crate::AppState;
 use crate::auth::AuthUser;
@@ -10,7 +13,7 @@ use crate::db_ops::{contest_db, translation_db, user_db};
 pub async fn get_user_translation_status(
     State(app_state): State<AppState>,
     current_user: AuthUser,
-) -> Result<Json<Vec<common::contest::ContestWithTasksAndStatus>>, Error> {
+) -> Result<Json<Vec<ContestWithTasksAndStatus>>, Error> {
     let user = current_user.as_user().ok_or(Error::Forbidden)?;
     let statuses_with_tasks =
         contest_db::get_user_contest_statuses_and_tasks(app_state.db(), user.id).await?;
@@ -21,7 +24,7 @@ pub async fn get_user_translation_status(
 pub async fn skip_envelope_verification(
     State(app_state): State<AppState>,
     current_user: AuthUser,
-    Json(payload): Json<common::user_contest_status::SkipEnvelopeVerificationRequest>,
+    Json(payload): Json<SkipEnvelopeVerificationRequest>,
 ) -> Result<Json<()>, Error> {
     let user = current_user.as_user().ok_or(Error::Forbidden)?;
     user_db::set_skip_envelope_verification(
