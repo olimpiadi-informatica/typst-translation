@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO translations(task_id, language_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "c14bf20ec8f607ee6888b2b89e78959b536eef26718a49f62a410e7e9bf1f700"
+}

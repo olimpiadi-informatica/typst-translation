@@ -1,6 +1,11 @@
 use std::path::PathBuf;
 
+use axum_extra::response::Attachment;
 use color_eyre::eyre::{Result, bail};
+use common::error::Error;
+use tracing::{info, warn};
+
+use crate::auth::AuthUser;
 
 pub const DOCUMENTS_DIR: &str = "documents";
 pub const FILES_DIR: &str = "files";
@@ -24,26 +29,24 @@ pub async fn save_file(base_dir: &str, data: &[u8]) -> Result<String, tokio::io:
     let hash = hash(data);
     let save_path = path_of_file(base_dir, &hash).map_err(tokio::io::Error::other)?;
     tokio::fs::create_dir_all(&save_path.parent().unwrap()).await?;
-    tokio::fs::write(save_path, data).await?;
+    let tempdir = tempfile::tempdir_in(base_dir)?;
+    let tempfile = tempdir.path().join(&hash);
+    tokio::fs::write(&tempfile, data).await?;
+    tokio::fs::rename(&tempfile, save_path).await?;
     Ok(hash.to_string())
 }
 
-/*
 pub async fn get_file(
     base_dir: &str,
     hash: &str,
     filename: &str,
-    user: Option<UserExtractor>,
-    required_permission: UserPermission,
+    user: AuthUser,
 ) -> Result<Attachment<Vec<u8>>, Error> {
     info!(?user, ?filename, ?hash, "File access attempt");
     let path = path_of_file(base_dir, hash).map_err(|x| {
         warn!("requested invalid hash: {hash} err: {x}");
         Error::NotFound
     })?;
-    if !has_permission(user.as_deref(), required_permission) {
-        return Err(Error::Forbidden);
-    }
     let file_contents = tokio::fs::read(path).await.map_err(|x| {
         warn!("Error retrieving file with hash {hash}: {x}");
         Error::NotFound
@@ -52,4 +55,3 @@ pub async fn get_file(
         .filename(filename)
         .content_type("application/octect-stream"))
 }
-*/

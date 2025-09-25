@@ -24,11 +24,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new(config: AppConfig, database_url: &str) -> Result<Self> {
-        let db = SqlitePoolOptions::new().connect(database_url).await?;
-
-        sqlx::migrate!().run(&db).await?;
-
+    pub async fn new(config: AppConfig, db: SqlitePool) -> Result<Self> {
         Ok(Self { db, config })
     }
 
@@ -105,4 +101,20 @@ impl AppState {
             .layer(axum::middleware::from_fn(trace_requests))
             .with_state(self)
     }
+}
+
+pub async fn init() -> Result<SqlitePool> {
+    color_eyre::install()?;
+
+    // ignore missing .env files.
+    let _ = dotenvy::dotenv();
+
+    init_logging();
+    let database_url = std::env::var("DATABASE_URL").unwrap_or("./db.sqlite".to_string());
+
+    let db = SqlitePoolOptions::new().connect(&database_url).await?;
+
+    sqlx::migrate!().run(&db).await?;
+
+    Ok(db)
 }

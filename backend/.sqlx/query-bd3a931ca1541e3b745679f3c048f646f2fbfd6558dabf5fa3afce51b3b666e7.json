@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO statement_versions(task_id, content_manifest, is_live, created_at)\n        VALUES (?, ?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "bd3a931ca1541e3b745679f3c048f646f2fbfd6558dabf5fa3afce51b3b666e7"
+}

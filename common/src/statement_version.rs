@@ -9,7 +9,6 @@ use sqlx::types::Json;
 pub struct StatementVersion {
     pub id: i64,
     pub task_id: i64,
-    pub version_hash: String,
     #[cfg(feature = "server-side")]
     pub content_manifest: Json<HashMap<String, String>>,
     #[cfg(not(feature = "server-side"))]

@@ -2,6 +2,7 @@
 name = "backend"
 version = "0.1.0"
 edition = "2024"
+default-run = "backend"
 
 [dependencies]
 sqlx = { version = "0.8.6", features = [
@@ -26,6 +27,8 @@ dotenvy = "0.15.7"
 tower-http = { version = "0.5.2", features = ["fs"] }
 toml = "0.9.7"
 derive_more = { version = "2.0.1", features = ["deref", "deref_mut"] }
+zip = "5.1.1"
+tempfile = "3.23.0"
 
 [profile.dev.package."*"]
 opt-level = 3
