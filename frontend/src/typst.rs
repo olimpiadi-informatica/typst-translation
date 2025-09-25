@@ -1,18 +1,20 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use color_eyre::eyre::Result;
+use common::typst_packages::TypstPackagePayload;
 use futures_util::{SinkExt, StreamExt};
 use gloo_worker::reactor::{ReactorScope, reactor};
 use serde::{Deserialize, Serialize};
+use tar::Archive;
 use typst::diag::{
     FileError, FileResult, PackageError, PackageResult, Severity, SourceDiagnostic, SourceResult,
     Warned,
 };
 use typst::ecow::{EcoString, EcoVec};
-use typst::foundations::{Bytes, Datetime};
+use typst::foundations::{Bytes, Datetime, Dict, Str, Value};
 use typst::layout::PagedDocument;
 use typst::syntax::package::PackageSpec;
 use typst::syntax::{FileId, Source, VirtualPath};
@@ -21,6 +23,7 @@ use typst::utils::LazyHash;
 use typst::{Library, World, WorldExt};
 use typst_kit::fonts::{FontSearcher, FontSlot};
 use typst_pdf::PdfOptions;
+use web_sys::XmlHttpRequest;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub struct TypstCompilationMessage {
@@ -63,13 +66,78 @@ impl Default for TypstCompilationResult {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default)]
+struct PackagesCache {
+    packages: HashMap<PackageSpec, HashMap<PathBuf, Vec<u8>>>,
+}
+
+impl PackagesCache {
+    fn get_package_files(
+        &mut self,
+        package: &PackageSpec,
+    ) -> PackageResult<&HashMap<PathBuf, Vec<u8>>> {
+        if !self.packages.contains_key(package) {
+            let PackageSpec {
+                namespace,
+                name,
+                version,
+            } = package;
+
+            let payload = TypstPackagePayload {
+                namespace: namespace.into(),
+                name: name.into(),
+                version: version.to_string(),
+            };
+
+            let xhr = XmlHttpRequest::new().unwrap();
+            xhr.open_with_async("POST", "/api/typst_packages", false)
+                .unwrap();
+            xhr.set_request_header("Content-Type", "application/json")
+                .unwrap();
+            let body = serde_json::to_string(&payload).unwrap();
+            xhr.set_response_type(web_sys::XmlHttpRequestResponseType::Arraybuffer);
+            xhr.send_with_opt_str(Some(&body)).unwrap();
+            if xhr.status().unwrap() < 200 || xhr.status().unwrap() >= 300 {
+                return Err(PackageError::NetworkFailed(Some(EcoString::from(format!(
+                    "HTTP {}",
+                    xhr.status().unwrap()
+                )))));
+            }
+            let res = xhr.response().unwrap();
+            let array: js_sys::Uint8Array = js_sys::Uint8Array::new(&res);
+            let bytes = array.to_vec();
+
+            let mut files = HashMap::new();
+            let mut archive = Archive::new(bytes.as_slice());
+            for entry in archive.entries().unwrap() {
+                let mut entry = entry.unwrap();
+                if !entry.header().entry_type().is_file() {
+                    continue;
+                }
+                let path = entry.path().unwrap().to_path_buf();
+                let path = path.strip_prefix("./").unwrap_or(&path).to_owned();
+                let mut content = vec![];
+                std::io::copy(&mut entry, &mut content).unwrap();
+                files.insert(path, content);
+            }
+
+            tracing::info!("Loaded package {package:?} with {} files", files.len());
+
+            self.packages.insert(package.clone(), files);
+        }
+
+        Ok(self.packages.get(package).unwrap())
+    }
+}
+
+#[derive(Debug)]
 pub struct TypstCompiler {
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
     fonts: Arc<Vec<FontSlot>>,
     main: FileId,
     files: HashMap<PathBuf, Vec<u8>>,
+    packages: Mutex<PackagesCache>,
 }
 
 impl TypstCompiler {
@@ -80,8 +148,18 @@ impl TypstCompiler {
             .include_embedded_fonts(true)
             .search();
 
-        // TODO(veluca): pass inputs.
-        let library = Library::builder().build();
+        let mut inputs = Dict::new();
+        inputs.insert(Str::from("gen_gen"), Value::Str(Str::from("GEN")));
+        inputs.insert(
+            Str::from("constraints_yaml"),
+            Value::Str(Str::from("constraints.yaml")),
+        );
+        inputs.insert(
+            Str::from("contest_yaml"),
+            Value::Str(Str::from("../../contest.yaml")),
+        );
+
+        let library = Library::builder().with_inputs(inputs).build();
 
         TypstCompiler {
             library: LazyHash::new(library),
@@ -89,6 +167,7 @@ impl TypstCompiler {
             fonts: Arc::new(fonts.fonts),
             main: FileId::new(None, VirtualPath::new("booklet.typ")),
             files: HashMap::new(),
+            packages: Mutex::new(PackagesCache::default()),
         }
     }
 
@@ -144,14 +223,10 @@ impl TypstCompiler {
         })
     }
 
-    fn get_package(&self, package: &PackageSpec) -> PackageResult<&HashMap<PathBuf, Vec<u8>>> {
-        // TODO(veluca): figure out how to retrieve packages in a web environment.
-        PackageResult::Err(PackageError::NotFound(package.clone()))
-    }
-
-    fn get_file(&self, id: FileId) -> FileResult<&[u8]> {
+    fn get_file(&self, id: FileId) -> FileResult<Vec<u8>> {
+        let mut packages = self.packages.try_lock().expect("lock poisoned");
         let file_store = if let Some(package) = id.package() {
-            self.get_package(package)?
+            packages.get_package_files(package)?
         } else {
             &self.files
         };
@@ -159,7 +234,8 @@ impl TypstCompiler {
         let path = path.strip_prefix("./").unwrap_or(path);
         Ok(file_store
             .get(path)
-            .ok_or(FileError::NotFound(path.to_owned()))?)
+            .ok_or(FileError::NotFound(path.to_owned()))?
+            .to_owned())
     }
 }
 

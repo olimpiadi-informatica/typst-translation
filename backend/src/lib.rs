@@ -1,15 +1,15 @@
+use std::sync::Arc;
+
 use axum::Router;
 use axum::routing::{get, post};
 use color_eyre::eyre::Result;
 use common::typst_packages::TypstPackagePayload;
+use dashmap::DashMap;
 use logging::trace_requests;
 use reqwest::Client;
 use sqlx::SqlitePool;
 use sqlx::sqlite::SqlitePoolOptions;
 use tower_http::services::{ServeDir, ServeFile};
-use dashmap::DashMap;
-
-use std::sync::Arc;
 
 pub mod api_handlers;
 pub mod auth;
@@ -33,7 +33,12 @@ pub struct AppState {
 
 impl AppState {
     pub async fn new(config: AppConfig, db: SqlitePool) -> Result<Self> {
-        Ok(Self { db, config, reqwest: Client::new(), typst_packages: Arc::new(DashMap::new()) })
+        Ok(Self {
+            db,
+            config,
+            reqwest: Client::new(),
+            typst_packages: Arc::new(DashMap::new()),
+        })
     }
 
     pub fn db(&self) -> &SqlitePool {
