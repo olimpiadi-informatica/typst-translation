@@ -63,6 +63,14 @@ impl From<sqlx::Error> for Error {
     }
 }
 
+#[cfg(feature = "server-side")]
+impl From<reqwest::Error> for Error {
+    fn from(err: reqwest::Error) -> Self {
+        tracing::warn!(error = ?err, "Reqwest error");
+        Error::InternalServerError(format!("{err}"))
+    }
+}
+
 #[cfg(feature = "client-side")]
 impl From<gloo_net::Error> for Error {
     fn from(err: gloo_net::Error) -> Self {

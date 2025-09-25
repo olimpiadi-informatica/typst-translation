@@ -1,10 +1,15 @@
 use axum::Router;
 use axum::routing::{get, post};
 use color_eyre::eyre::Result;
+use common::typst_packages::TypstPackagePayload;
 use logging::trace_requests;
+use reqwest::Client;
 use sqlx::SqlitePool;
 use sqlx::sqlite::SqlitePoolOptions;
 use tower_http::services::{ServeDir, ServeFile};
+use dashmap::DashMap;
+
+use std::sync::Arc;
 
 pub mod api_handlers;
 pub mod auth;
@@ -22,11 +27,13 @@ use crate::config::AppConfig;
 pub struct AppState {
     db: SqlitePool,
     config: AppConfig,
+    reqwest: Client,
+    typst_packages: Arc<DashMap<TypstPackagePayload, Vec<u8>>>,
 }
 
 impl AppState {
     pub async fn new(config: AppConfig, db: SqlitePool) -> Result<Self> {
-        Ok(Self { db, config })
+        Ok(Self { db, config, reqwest: Client::new(), typst_packages: Arc::new(DashMap::new()) })
     }
 
     pub fn db(&self) -> &SqlitePool {
@@ -103,6 +110,10 @@ impl AppState {
             .route(
                 "/api/tasks/{task_id}",
                 get(api_handlers::task::get_task_by_id),
+            )
+            .route(
+                "/api/typst_packages",
+                post(api_handlers::typst_packages::get_typst_package),
             )
             .route("/files/{hash}/{filename}", get(file_storage::get_file))
             .fallback_service(

@@ -11,4 +11,5 @@ pub mod rendered_pdf_cache_item;
 pub mod statement_version;
 pub mod task;
 pub mod translation;
+pub mod typst_packages;
 pub mod user_contest_status;
