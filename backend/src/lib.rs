@@ -95,6 +95,7 @@ impl AppState {
                 "/api/user/set_translation_session_token",
                 post(api_handlers::user::set_translation_session_token),
             )
+            .route("/files/{hash}/{filename}", get(file_storage::get_file))
             .fallback_service(
                 ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
             )

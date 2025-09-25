@@ -111,7 +111,7 @@ async fn main() -> Result<()> {
         };
         let mut data = vec![];
         entry.read_to_end(&mut data)?;
-        let hash = save_file("files", &data).await?;
+        let hash = save_file(&data).await?;
         files.insert(name.to_string_lossy().to_string(), hash);
     }
 
