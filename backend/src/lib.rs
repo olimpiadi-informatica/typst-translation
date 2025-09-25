@@ -95,6 +95,10 @@ impl AppState {
                 "/api/user/set_translation_session_token",
                 post(api_handlers::user::set_translation_session_token),
             )
+            .route(
+                "/api/tasks/{task_id}/statement_versions/latest",
+                get(api_handlers::statement_versions::get_latest_statement_version),
+            )
             .route("/files/{hash}/{filename}", get(file_storage::get_file))
             .fallback_service(
                 ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
