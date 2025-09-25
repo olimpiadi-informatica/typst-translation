@@ -29,3 +29,6 @@ watch = [
 
 [[proxy]]
 backend = "http://localhost:9000/api/"
+
+[[proxy]]
+backend = "http://localhost:9000/files/"

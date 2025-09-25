@@ -1,6 +1,7 @@
 use common::user::ExtUser;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
+use leptos_router::hooks::use_navigate;
 use strum::VariantArray;
 use thaw::{Button, Flex, FlexAlign, FlexJustify, Select};
 
@@ -81,7 +82,8 @@ pub fn Header(#[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>) -> im
                 show_success!("Logout successful");
                 let user_context = expect_context::<UserContext>();
                 user_context.refetch();
-                window().location().set_pathname("/").unwrap();
+                let navigate = use_navigate();
+                navigate("/", Default::default());
             })
         })
     };
@@ -102,7 +104,8 @@ pub fn Header(#[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>) -> im
                 {kb_mode_view}
             </Flex>
             <Flex>
-                <p>
+                <p>"User: "</p>
+                <pre>
                     {
                         let user_context = expect_context::<UserContext>();
                         match user_context.get_user_untracked() {
@@ -110,7 +113,7 @@ pub fn Header(#[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>) -> im
                             _ => todo!(),
                         }
                     }
-                </p>
+                </pre>
                 <Button on_click=do_logout>"Logout"</Button>
             </Flex>
         </Flex>

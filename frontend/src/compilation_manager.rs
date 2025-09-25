@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
 use std::time::Duration;
 
 use async_channel::{Receiver, Sender, bounded};
@@ -29,11 +31,11 @@ pub struct CompilationManager {
     status: RwSignal<CompilationStatus>,
     epoch: RwSignal<usize>,
     wait_until: RwSignal<Instant>,
-    input_text: RwSignal<String>,
+    inputs: HashMap<PathBuf, Signal<String>>,
 }
 
 impl CompilationManager {
-    pub fn new(input_text: RwSignal<String>) -> CompilationManager {
+    pub fn new(inputs: HashMap<PathBuf, Signal<String>>) -> CompilationManager {
         let (sender, recv) = bounded(1);
         let ret = CompilationManager {
             result: RwSignal::new(TypstCompilationResult::default()),
@@ -42,7 +44,7 @@ impl CompilationManager {
             status: RwSignal::new(CompilationStatus::OutOfDate),
             epoch: RwSignal::new(0),
             wait_until: RwSignal::new(Instant::now()),
-            input_text,
+            inputs,
         };
         spawn_local(ret.clone().compile_loop(recv));
         ret
@@ -89,8 +91,12 @@ impl CompilationManager {
             }
             self.wait_until.set(Instant::now() + COMPILE_MIN_INTERVAL);
             let epoch = self.epoch.get_untracked();
-            let input = self.input_text.get_untracked().as_bytes().to_vec();
-            typst_worker.send_input(input);
+            let files = self
+                .inputs
+                .iter()
+                .map(|(k, v)| (k.clone(), v.get_untracked().as_bytes().to_vec()))
+                .collect::<HashMap<_, _>>();
+            typst_worker.send_input(files);
             let response = typst_worker.next().await.unwrap();
             if got_manual_request || response.document.is_some() {
                 self.set_result(response, epoch);

@@ -4,6 +4,7 @@ use common::task::Task;
 use leptos::either::Either;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
+use leptos_router::components::A;
 use thaw::{
     Button, ButtonAppearance, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface,
     DialogTitle, Flex, FlexJustify, Table, TableBody, TableCell, TableCellLayout, TableHeader,
@@ -52,7 +53,6 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
     let finalize_view = move || {
         if finalized.get() {
             Either::Left(view! {
-                // TODO: something better than a disabled button?
                 <Button appearance=ButtonAppearance::Primary disabled=true>
                     "Finalized"
                 </Button>
@@ -64,26 +64,24 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
         }
     };
 
-    let name = contest.name.clone();
+    let contest_name = contest.name.clone();
 
     let all_langs2 = all_langs.clone();
     let draw_task = move |task: Task| {
-        let task_name = task.name.clone();
+        let task_id = task.id;
         let draw_edit = move |lang: Language| {
-            let task_name = task_name.clone();
             view! {
                 <TableCell>
                     <TableCellLayout>
-                        <a href=format!("/edit/task/{}/lang/{}", task_name.clone(), lang.code)>
+                        <A href=format!("/edit/task/{}/lang/{}", task_id, lang.code)>
                             <Button>"Edit"</Button>
-                        </a>
+                        </A>
                     </TableCellLayout>
                 </TableCell>
             }
         };
 
         let all_langs2 = all_langs2.clone();
-        let task_name = task.name.clone();
         view! {
             <TableRow>
                 <TableCell>
@@ -92,9 +90,9 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
                 <For each=move || all_langs2.clone() key=|lang| lang.id children=draw_edit />
                 <TableCell>
                     <TableCellLayout>
-                        <a href=format!("/edit/task/{}/lang/en_ISC", task_name)>
+                        <A href=format!("/edit/task/{}/lang/en_ISC", task_id)>
                             <Button>"View"</Button>
-                        </a>
+                        </A>
                     </TableCellLayout>
                 </TableCell>
             </TableRow>
@@ -104,7 +102,7 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
     view! {
         <Flex vertical=true>
             <Flex justify=FlexJustify::SpaceBetween>
-                <h1>"Contest: " {name}</h1>
+                <h1>"Contest: " {contest_name}</h1>
                 {finalize_view}
             </Flex>
             <Table>

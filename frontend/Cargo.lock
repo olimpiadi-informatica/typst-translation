@@ -990,6 +990,7 @@ dependencies = [
  "color-eyre",
  "common",
  "console_error_panic_hook",
+ "futures",
  "futures-util",
  "gloo-net",
  "gloo-timers",

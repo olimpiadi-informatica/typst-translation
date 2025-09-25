@@ -1,6 +1,7 @@
 use axum::Json;
 use axum::extract::{Path, State};
 use common::error::Error;
+use common::statement_version::StatementVersion;
 
 use crate::AppState;
 use crate::auth::AuthUser;
@@ -10,7 +11,7 @@ pub async fn get_latest_statement_version(
     Path(task_id): Path<i64>,
     _user: AuthUser,
     State(app_state): State<AppState>,
-) -> Result<Json<common::statement_version::StatementVersion>, Error> {
+) -> Result<Json<StatementVersion>, Error> {
     let statement_version =
         statement_version_db::get_latest_statement_version_by_task_id(app_state.db(), task_id)
             .await?;

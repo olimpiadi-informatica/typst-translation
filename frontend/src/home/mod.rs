@@ -7,16 +7,15 @@ use thaw::{Flex, FlexGap, Spinner};
 
 use crate::api_wrapper::{api_get, api_post};
 use crate::header::Header;
+use crate::home::contestants::ContestantsTable;
+use crate::home::languages::LanguagesTable;
+use crate::home::translations::Translations;
 use crate::show_error;
 use crate::user::UserContext;
 
 mod contestants;
 mod languages;
 mod translations;
-
-use contestants::ContestantsTable;
-use languages::LanguagesTable;
-use translations::Translations;
 
 #[component]
 pub fn HomePage() -> impl IntoView {

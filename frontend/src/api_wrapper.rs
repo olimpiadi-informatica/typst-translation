@@ -30,3 +30,13 @@ pub async fn api_post<Req: Serialize, Resp: DeserializeOwned + Any>(
 ) -> Result<Resp, Error> {
     request(Request::post(url).json(req)?).await
 }
+
+pub async fn file_get(hash: &str, name: &str) -> Result<String, Error> {
+    let url = format!("/files/{hash}/{name}");
+    let response = Request::get(&url).send().await?;
+    if response.status() >= 200 && response.status() < 300 {
+        Ok(response.text().await?)
+    } else {
+        Err(response.json().await?)
+    }
+}

@@ -87,13 +87,13 @@ impl TypstCompiler {
             library: LazyHash::new(library),
             book: LazyHash::new(fonts.book),
             fonts: Arc::new(fonts.fonts),
-            main: FileId::new(None, VirtualPath::new("statement.typ")),
+            main: FileId::new(None, VirtualPath::new("booklet.typ")),
             files: HashMap::new(),
         }
     }
 
-    fn set_file_contents(&mut self, path: PathBuf, contents: Vec<u8>) {
-        self.files.insert(path, contents);
+    fn set_files(&mut self, files: HashMap<PathBuf, Vec<u8>>) {
+        self.files = files;
     }
 
     /// Compile the Typst file.
@@ -201,10 +201,12 @@ impl World for TypstCompiler {
 
 // TODO(veluca): better interface.
 #[reactor]
-pub async fn TypstWorker(mut scope: ReactorScope<Vec<u8>, TypstCompilationResult>) {
+pub async fn TypstWorker(
+    mut scope: ReactorScope<HashMap<PathBuf, Vec<u8>>, TypstCompilationResult>,
+) {
     let mut compiler = TypstCompiler::new();
-    while let Some(doc) = scope.next().await {
-        compiler.set_file_contents(PathBuf::new().join("statement.typ"), doc);
+    while let Some(files) = scope.next().await {
+        compiler.set_files(files);
         let result = compiler.compile().unwrap();
         if scope.send(result).await.is_err() {
             break;
