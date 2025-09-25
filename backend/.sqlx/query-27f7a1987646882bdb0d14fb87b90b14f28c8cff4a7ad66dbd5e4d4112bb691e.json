@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT * FROM translations WHERE task_id = ?",
+  "query": "\n        SELECT\n            id,\n            task_id,\n            language_id,\n            content_hash,\n            last_updated_at,\n            session_token\n        FROM translations\n        WHERE task_id = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -46,5 +46,5 @@
       true
     ]
   },
-  "hash": "8df37eb60821bbb10a73456226b725574b473ad0a79dccfbc861f8f777420b82"
+  "hash": "27f7a1987646882bdb0d14fb87b90b14f28c8cff4a7ad66dbd5e4d4112bb691e"
 }

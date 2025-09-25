@@ -11,6 +11,7 @@ pub mod auth;
 pub mod config;
 pub mod db_ops;
 pub mod file_storage;
+mod gemini;
 pub mod logging;
 
 pub use logging::init_logging;
@@ -98,6 +99,10 @@ impl AppState {
             .route(
                 "/api/tasks/{task_id}/statement_versions/latest",
                 get(api_handlers::statement_versions::get_latest_statement_version),
+            )
+            .route(
+                "/api/tasks/{task_id}",
+                get(api_handlers::task::get_task_by_id),
             )
             .route("/files/{hash}/{filename}", get(file_storage::get_file))
             .fallback_service(

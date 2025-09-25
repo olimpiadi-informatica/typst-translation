@@ -1,7 +1,36 @@
 use common::error::Error;
 use common::language::Language;
+use common::translation::Translation;
 use common::user_contest_status::UserContestStatus;
-use sqlx::{SqlitePool, query, query_as};
+use sqlx::{Executor, Sqlite, SqlitePool, query, query_as};
+
+pub async fn get_translations_by_task_id<'e, E>(
+    executor: E,
+    task_id: i64,
+) -> Result<Vec<Translation>, Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let translations = sqlx::query_as!(
+        Translation,
+        r#"
+        SELECT
+            id,
+            task_id,
+            language_id,
+            content_hash,
+            last_updated_at,
+            session_token
+        FROM translations
+        WHERE task_id = ?
+        "#,
+        task_id
+    )
+    .fetch_all(executor)
+    .await?;
+
+    Ok(translations)
+}
 
 pub async fn finalize_translation(
     pool: &SqlitePool,

@@ -29,6 +29,7 @@ toml = "0.9.7"
 derive_more = { version = "2.0.1", features = ["deref", "deref_mut"] }
 zip = "5.1.1"
 tempfile = "3.23.0"
+reqwest = "0.12.23"
 
 [profile.dev.package."*"]
 opt-level = 3

@@ -1,13 +1,15 @@
 use common::contest::{Contest, ContestWithTasksAndStatus};
+use common::error::Error;
 use common::task::{Task, TaskDb};
-use common::translation::Translation;
 use common::user_contest_status::UserContestStatus;
 use sqlx::{SqlitePool, query_as};
+
+use crate::db_ops::translation_db;
 
 pub async fn get_user_contest_statuses_and_tasks(
     pool: &SqlitePool,
     user_id: i64,
-) -> Result<Vec<ContestWithTasksAndStatus>, sqlx::Error> {
+) -> Result<Vec<ContestWithTasksAndStatus>, Error> {
     let contests = query_as!(Contest, "SELECT id, name FROM contests ORDER BY id DESC")
         .fetch_all(pool)
         .await?;
@@ -34,13 +36,8 @@ pub async fn get_user_contest_statuses_and_tasks(
 
         let mut tasks: Vec<Task> = Vec::new();
         for task_db in tasks_db {
-            let translations = query_as!(
-                Translation,
-                "SELECT * FROM translations WHERE task_id = ?",
-                task_db.id
-            )
-            .fetch_all(pool)
-            .await?;
+            let translations =
+                translation_db::get_translations_by_task_id(pool, task_db.id).await?;
             tasks.push(Task {
                 id: task_db.id,
                 contest_id: task_db.contest_id,

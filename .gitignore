@@ -9,6 +9,7 @@ frontend/dist-check
 **/.*.swp
 backend/db.sqlite*
 backend/files
+backend/config.toml
 .env
 config.toml
 */tarpaulin-report.html

@@ -10,6 +10,7 @@ pub struct AppConfig {
     pub admin_password: String,
     pub staff_password: String,
     pub listen_address: String,
+    pub gemini_api_key: String,
 }
 
 impl AppConfig {
