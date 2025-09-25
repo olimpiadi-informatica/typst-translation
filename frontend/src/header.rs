@@ -1,9 +1,8 @@
 use common::user::ExtUser;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
-use leptos_use::ColorMode;
 use strum::VariantArray;
-use thaw::{Button, ButtonAppearance, Flex, Icon, Select, Text};
+use thaw::{Button, Flex, FlexAlign, FlexJustify, Select};
 
 use crate::api_wrapper::api_post;
 use crate::editor::KeyboardMode;
@@ -29,28 +28,42 @@ fn kb_mode_from_str(s: &str) -> KeyboardMode {
 }
 
 #[component]
-pub fn Header(
-    #[prop(name = "color_mode")] (color_mode, set_color_mode): SignalPair<ColorMode>,
-    #[prop(name = "kb_mode")] (kb_mode, set_kb_mode): SignalPair<KeyboardMode>,
-) -> impl IntoView {
-    let name_and_icon = Signal::derive(move || {
-        if color_mode.get() == ColorMode::Light {
-            ("Dark", icondata::BiMoonSolid)
-        } else {
-            ("Light", icondata::BiSunSolid)
-        }
-    });
-    let change_theme = move |_| {
-        if color_mode.get() == ColorMode::Dark {
-            set_color_mode.set(ColorMode::Light)
-        } else {
-            set_color_mode.set(ColorMode::Dark)
-        }
-    };
+pub fn Header(#[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>) -> impl IntoView {
+    //let color_mode = use_color_mode_with_options(
+    //    UseColorModeOptions::default()
+    //        .cookie_enabled(true)
+    //        .cookie_name("typst-translation-color-mode"),
+    //);
+    //let (color_mode, set_color_mode) = (color_mode.mode, color_mode.set_mode);
 
-    let kb_mode_str = Signal::derive(move || select_kb_mode_str(kb_mode.get()).to_string());
-    let set_kb_mode_str = SignalSetter::map(move |s: String| {
-        set_kb_mode.set(kb_mode_from_str(&s));
+    //let name_and_icon = Signal::derive(move || {
+    //    if color_mode.get() == ColorMode::Light {
+    //        ("Dark", icondata::BiMoonSolid)
+    //    } else {
+    //        ("Light", icondata::BiSunSolid)
+    //    }
+    //});
+    //let change_theme = move |_| {
+    //    if color_mode.get_untracked() == ColorMode::Dark {
+    //        set_color_mode.set(ColorMode::Light)
+    //    } else {
+    //        set_color_mode.set(ColorMode::Dark)
+    //    }
+    //};
+
+    let kb_mode_view = kb_mode.map(|(kb_mode, set_kb_mode)| {
+        let kb_mode_str = Signal::derive(move || select_kb_mode_str(kb_mode.get()).to_string());
+        let set_kb_mode_str = SignalSetter::map(move |s: String| {
+            set_kb_mode.set(kb_mode_from_str(&s));
+        });
+
+        view! {
+            <Select value=(kb_mode_str, set_kb_mode_str)>
+                <For each=move || KeyboardMode::VARIANTS key=|x| *x let(v)>
+                    <option>{move || select_kb_mode_str(*v)}</option>
+                </For>
+            </Select>
+        }
     });
 
     let owner = Owner::current().unwrap();
@@ -68,36 +81,38 @@ pub fn Header(
                 show_success!("Logout successful");
                 let user_context = expect_context::<UserContext>();
                 user_context.refetch();
+                window().location().set_pathname("/").unwrap();
             })
         })
     };
 
     view! {
-        <Flex>
-            <Button on_click=change_theme appearance=ButtonAppearance::Subtle>
-                {move || {
-                    let (name, icon) = name_and_icon.get();
-                    view! {
-                        <Icon icon style="padding: 0 5px 0 0;" width="1.5em" height="1.5em" />
-                        <Text>{name}</Text>
+        <Flex justify=FlexJustify::SpaceBetween align=FlexAlign::Center style="height: 64px">
+            <Flex>
+                // TODO: Fix theme handling
+                // <Button on_click=change_theme appearance=ButtonAppearance::Subtle>
+                // {move || {
+                // let (name, icon) = name_and_icon.get();
+                // view! {
+                // <Icon icon style="padding: 0 5px 0 0;" width="1.5em" height="1.5em" />
+                // <Text>{name}</Text>
+                // }
+                // }}
+                // </Button>
+                {kb_mode_view}
+            </Flex>
+            <Flex>
+                <p>
+                    {
+                        let user_context = expect_context::<UserContext>();
+                        match user_context.get_user_untracked() {
+                            ExtUser::User(user) => user.username,
+                            _ => todo!(),
+                        }
                     }
-                }}
-            </Button>
-            <Select value=(kb_mode_str, set_kb_mode_str)>
-                <For each=move || KeyboardMode::VARIANTS key=|x| *x let(v)>
-                    <option>{move || select_kb_mode_str(*v)}</option>
-                </For>
-            </Select>
-            <p>
-                {
-                    let user_context = expect_context::<UserContext>();
-                    match user_context.get_user_untracked() {
-                        ExtUser::User(user) => user.username,
-                        _ => todo!(),
-                    }
-                }
-            </p>
-            <Button on_click=do_logout>"Logout"</Button>
+                </p>
+                <Button on_click=do_logout>"Logout"</Button>
+            </Flex>
         </Flex>
     }
 }

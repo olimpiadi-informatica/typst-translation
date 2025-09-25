@@ -6,6 +6,7 @@ use leptos::prelude::*;
 use thaw::{Flex, FlexGap, Spinner};
 
 use crate::api_wrapper::{api_get, api_post};
+use crate::header::Header;
 use crate::show_error;
 use crate::user::UserContext;
 
@@ -70,6 +71,7 @@ pub fn HomePage() -> impl IntoView {
                 .cloned()
                 .collect::<Vec<_>>();
             Either::Left(view! {
+                <Header />
                 <Flex vertical=true gap=FlexGap::Large style="max-width: 1200px; margin: auto">
                     <Flex gap=FlexGap::Large>
                         <ContestantsTable contestants avail_langs />

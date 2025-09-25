@@ -2,8 +2,8 @@ use common::user::LoginParams;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 use thaw::{
-    Button, ButtonAppearance, ButtonType, Field, FieldOrientation, Flex, Input, InputRule,
-    InputType,
+    Button, ButtonAppearance, ButtonType, Field, FieldOrientation, Flex, FlexAlign, FlexJustify,
+    Input, InputRule, InputType,
 };
 
 use crate::api_wrapper::api_post;
@@ -38,7 +38,7 @@ pub fn LoginPage() -> impl IntoView {
     });
 
     view! {
-        <Flex style="height: 100vh; width: 100vw; justify-content: center; align-items: center;">
+        <Flex justify=FlexJustify::Center align=FlexAlign::Center style="height: 100vh">
             <form on:submit=move |ev| {
                 ev.prevent_default();
                 do_login()

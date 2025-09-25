@@ -39,11 +39,8 @@ pub fn EditPage() -> impl IntoView {
 
     view! {
         <Layout attr:style="height: 100vh">
-            <LayoutHeader attr:style="height: 64px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between;">
-                <Header
-                    color_mode=(color_mode.mode, color_mode.set_mode)
-                    kb_mode=(kb_mode, set_kb_mode)
-                />
+            <LayoutHeader>
+                <Header kb_mode=(kb_mode, set_kb_mode) />
             </LayoutHeader>
             <Flex>
                 <Editor
