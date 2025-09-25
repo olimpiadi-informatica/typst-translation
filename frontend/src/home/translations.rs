@@ -34,6 +34,12 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
         user_contest_status,
     } = contest;
 
+    let transl_langs = all_langs
+        .iter()
+        .filter(|lang| lang.user_id == user_contest_status.user_id)
+        .cloned()
+        .collect::<Vec<_>>();
+
     let finalized = RwSignal::new(user_contest_status.finalized_translations);
     let open_finalize_dialog = RwSignal::new(false);
     let do_finalize = wrap_with_current_owner(move || {
@@ -66,7 +72,7 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
 
     let contest_name = contest.name.clone();
 
-    let all_langs2 = all_langs.clone();
+    let transl_langs2 = transl_langs.clone();
     let draw_task = move |task: Task| {
         let task_id = task.id;
         let draw_edit = move |lang: Language| {
@@ -81,13 +87,13 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
             }
         };
 
-        let all_langs2 = all_langs2.clone();
+        let transl_langs2 = transl_langs2.clone();
         view! {
             <TableRow>
                 <TableCell>
                     <TableCellLayout>{task.name}</TableCellLayout>
                 </TableCell>
-                <For each=move || all_langs2.clone() key=|lang| lang.id children=draw_edit />
+                <For each=move || transl_langs2.clone() key=|lang| lang.id children=draw_edit />
                 <TableCell>
                     <TableCellLayout>
                         <A href=format!("/edit/task/{}/lang/en_ISC", task_id)>
@@ -109,7 +115,7 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
                 <TableHeader>
                     <TableRow>
                         <TableHeaderCell>"Task"</TableHeaderCell>
-                        <For each=move || all_langs.clone() key=|lang| lang.id let(lang)>
+                        <For each=move || transl_langs.clone() key=|lang| lang.id let(lang)>
                             <TableHeaderCell>"Lang " {lang.code}</TableHeaderCell>
                         </For>
                         <TableHeaderCell>"ISC"</TableHeaderCell>
