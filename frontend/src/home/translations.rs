@@ -6,7 +6,8 @@ use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 use thaw::{
     Button, ButtonAppearance, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface,
-    DialogTitle, Flex, FlexJustify,
+    DialogTitle, Flex, FlexJustify, Table, TableBody, TableCell, TableCellLayout, TableHeader,
+    TableHeaderCell, TableRow,
 };
 
 use crate::api_wrapper::api_post;
@@ -18,31 +19,25 @@ pub fn Translations(
     contests: Vec<ContestWithTasksAndStatus>,
     all_langs: Vec<Language>,
 ) -> impl IntoView {
-    view! {
-        <h1>"Translations"</h1>
-        {contests
-            .into_iter()
-            .map(move |contest| view! { <Contest contest all_langs=all_langs.clone() /> })
-            .collect::<Vec<_>>()}
-    }
+    contests
+        .into_iter()
+        .map(move |contest| view! { <Contest contest all_langs=all_langs.clone() /> })
+        .collect::<Vec<_>>()
 }
 
 #[component]
 fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl IntoView {
-    let rows = contest
-        .tasks
-        .into_iter()
-        .map(|task| {
-            view! { <Task task all_langs=all_langs.clone() /> }
-        })
-        .collect::<Vec<_>>();
+    let ContestWithTasksAndStatus {
+        contest,
+        tasks,
+        user_contest_status,
+    } = contest;
 
-    let finalized = RwSignal::new(contest.user_contest_status.finalized_translations);
+    let finalized = RwSignal::new(user_contest_status.finalized_translations);
     let open_finalize_dialog = RwSignal::new(false);
-
     let do_finalize = wrap_with_current_owner(move || {
         spawn_local_scoped(async move {
-            match api_post("/api/user/finalize_translation", &contest.contest.id).await {
+            match api_post("/api/user/finalize_translation", &contest.id).await {
                 Ok(()) => {
                     show_success!("Contest finalized!");
                     finalized.set(true);
@@ -54,42 +49,84 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
             }
         })
     });
+    let finalize_view = move || {
+        if finalized.get() {
+            Either::Left(view! {
+                // TODO: something better than a disabled button?
+                <Button appearance=ButtonAppearance::Primary disabled=true>
+                    "Finalized"
+                </Button>
+            })
+        } else {
+            Either::Right(
+                view! { <Button on_click=move |_| open_finalize_dialog.set(true)>"Finalize"</Button> },
+            )
+        }
+    };
 
-    let name = contest.contest.name.clone();
+    let name = contest.name.clone();
+
+    let all_langs2 = all_langs.clone();
+    let draw_task = move |task: Task| {
+        let task_name = task.name.clone();
+        let draw_edit = move |lang: Language| {
+            let task_name = task_name.clone();
+            view! {
+                <TableCell>
+                    <TableCellLayout>
+                        <a href=format!("/edit/task/{}/lang/{}", task_name.clone(), lang.code)>
+                            <Button>"Edit"</Button>
+                        </a>
+                    </TableCellLayout>
+                </TableCell>
+            }
+        };
+
+        let all_langs2 = all_langs2.clone();
+        let task_name = task.name.clone();
+        view! {
+            <TableRow>
+                <TableCell>
+                    <TableCellLayout>{task.name}</TableCellLayout>
+                </TableCell>
+                <For each=move || all_langs2.clone() key=|lang| lang.id children=draw_edit />
+                <TableCell>
+                    <TableCellLayout>
+                        <a href=format!("/edit/task/{}/lang/en_ISC", task_name)>
+                            <Button>"View"</Button>
+                        </a>
+                    </TableCellLayout>
+                </TableCell>
+            </TableRow>
+        }
+    };
 
     view! {
-        <Flex
-            vertical=true
-            style="margin-bottom: 2em; padding: 1em; border: 2px solid #000; border-radius: 6px;"
-        >
+        <Flex vertical=true>
             <Flex justify=FlexJustify::SpaceBetween>
-                <h2>"Contest: " {name}</h2>
-                {move || {
-                    if finalized.get() {
-                        Either::Left(
-                            view! {
-                                // TODO: something better than a disabled button?
-                                <Button appearance=ButtonAppearance::Primary disabled=true>"Finalized"</Button>
-                            },
-                        )
-                    } else {
-                        Either::Right(
-                            view! {
-                                <Button on_click=move |_| {
-                                    open_finalize_dialog.set(true)
-                                }>"Finalize"</Button>
-                            },
-                        )
-                    }
-                }}
+                <h1>"Contest: " {name}</h1>
+                {finalize_view}
             </Flex>
-            {rows}
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHeaderCell>"Task"</TableHeaderCell>
+                        <For each=move || all_langs.clone() key=|lang| lang.id let(lang)>
+                            <TableHeaderCell>"Lang " {lang.code}</TableHeaderCell>
+                        </For>
+                        <TableHeaderCell>"ISC"</TableHeaderCell>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <For each=move || tasks.clone() key=|task| task.id children=draw_task />
+                </TableBody>
+            </Table>
         </Flex>
 
         <Dialog open=open_finalize_dialog>
             <DialogSurface>
                 <DialogBody>
-                    <DialogTitle>"Finalize contest " {contest.contest.name} "?"</DialogTitle>
+                    <DialogTitle>"Finalize contest " {contest.name} "?"</DialogTitle>
                     <DialogContent>
                         "Once the contest is finalized you will not be able to edit the statements anymore."
                     </DialogContent>
@@ -104,31 +141,5 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
                 </DialogBody>
             </DialogSurface>
         </Dialog>
-    }
-}
-
-#[component]
-fn Task(task: Task, all_langs: Vec<Language>) -> impl IntoView {
-    let langs = task
-        .translations
-        .into_iter()
-        .map(move |transl| {
-            let code = all_langs
-                .iter()
-                .find(|lang| lang.id == transl.language_id)
-                .map(|lang| lang.code.clone())
-                .unwrap_or_default();
-            view! { {code} }
-        })
-        .collect::<Vec<_>>();
-
-    view! {
-        <Flex
-            vertical=true
-            style="margin-bottom: 1em; padding: 0.5em; border: 1px solid #ccc; border-radius: 4px;"
-        >
-            <p>"Task: " {task.name}</p>
-            <div style="margin-left: 1em;">{langs}</div>
-        </Flex>
     }
 }

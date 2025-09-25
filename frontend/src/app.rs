@@ -40,9 +40,10 @@ pub fn App() -> impl IntoView {
             <ToasterProvider>
                 <UserProvider>
                     <Router>
-                        <Routes fallback=|| "Not found.">
+                        <Routes fallback=|| view! { <h1>"404 Not found."</h1> }>
                             <Route path=path!("/") view=HomePage />
                             <Route path=path!("/edit") view=EditPage />
+                            <Route path=path!("/edit/task/:task/lang/:lang") view=EditPage />
                         </Routes>
                     </Router>
                 </UserProvider>
