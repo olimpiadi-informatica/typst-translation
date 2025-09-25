@@ -8,11 +8,11 @@ use sqlx::{Executor, Sqlite};
 pub async fn get_latest_statement_version_by_task_id<'e, E>(
     executor: E,
     task_id: i64,
-) -> Result<Option<StatementVersion>, Error>
+) -> Result<StatementVersion, Error>
 where
     E: Executor<'e, Database = Sqlite>,
 {
-    let statement_version = sqlx::query_as!(
+    sqlx::query_as!(
         StatementVersion,
         r#"
         SELECT
@@ -29,7 +29,6 @@ where
         task_id
     )
     .fetch_optional(executor)
-    .await?;
-
-    Ok(statement_version)
+    .await?
+    .ok_or(Error::NotFound)
 }

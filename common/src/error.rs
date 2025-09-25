@@ -16,8 +16,10 @@ pub enum Error {
     NotFound,
     #[error("Invalid input: {0}")]
     InvalidInput(String),
-    #[error("Unauthorized change")]
-    UnauthorizedChange,
+    #[error("Unauthorized")]
+    Unauthorized,
+    #[error("Translation budget exhausted")]
+    TranslationBudgetExhausted,
     #[error("Internal server error: {0}")]
     InternalServerError(String),
     #[error("Other error: {0}")]
@@ -47,7 +49,7 @@ impl axum::response::IntoResponse for Error {
             Error::Forbidden => StatusCode::FORBIDDEN,
             Error::NotFound => StatusCode::NOT_FOUND,
             Error::InvalidInput(_) => StatusCode::BAD_REQUEST,
-            Error::UnauthorizedChange => StatusCode::FORBIDDEN,
+            Error::Unauthorized => StatusCode::UNAUTHORIZED,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
@@ -67,6 +69,14 @@ impl From<sqlx::Error> for Error {
 impl From<reqwest::Error> for Error {
     fn from(err: reqwest::Error) -> Self {
         tracing::warn!(error = ?err, "Reqwest error");
+        Error::InternalServerError(format!("{err}"))
+    }
+}
+
+#[cfg(feature = "server-side")]
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Self {
+        tracing::warn!(error = ?err, "I/O error");
         Error::InternalServerError(format!("{err}"))
     }
 }

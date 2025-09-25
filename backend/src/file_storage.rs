@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use axum::extract::Path;
 use axum_extra::response::Attachment;
-use color_eyre::eyre::{Result, bail};
 use common::error::Error;
 use tracing::{info, warn};
 
@@ -14,9 +13,9 @@ pub fn hash(data: &[u8]) -> String {
     blake3::hash(data).to_hex().to_string()
 }
 
-pub fn path_of_file(hash: &str) -> Result<PathBuf> {
+pub fn path_of_file(hash: &str) -> Result<PathBuf, Error> {
     if !hash.chars().all(|x| x.is_ascii_hexdigit()) || hash.len() != blake3::OUT_LEN * 2 {
-        bail!("invalid hash")
+        return Err(Error::InternalServerError("invalid hash".to_string()));
     }
     Ok(PathBuf::new()
         .join(FILES_DIR)

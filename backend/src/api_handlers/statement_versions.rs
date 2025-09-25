@@ -12,12 +12,8 @@ pub async fn get_latest_statement_version(
     _user: AuthUser,
     State(app_state): State<AppState>,
 ) -> Result<Json<StatementVersion>, Error> {
-    let statement_version =
+    Ok(Json(
         statement_version_db::get_latest_statement_version_by_task_id(app_state.db(), task_id)
-            .await?;
-
-    match statement_version {
-        Some(sv) => Ok(Json(sv)),
-        None => Err(Error::NotFound),
-    }
+            .await?,
+    ))
 }

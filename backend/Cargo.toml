@@ -30,7 +30,8 @@ derive_more = { version = "2.0.1", features = ["deref", "deref_mut"] }
 zip = "5.1.1"
 tempfile = "3.23.0"
 dashmap = "6.1.0"
-reqwest = "0.12.23"
+reqwest = { version = "0.12.23", features = ["json"] }
+serde_json = "1.0.145"
 
 [profile.dev.package."*"]
 opt-level = 3

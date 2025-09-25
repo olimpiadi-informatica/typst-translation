@@ -108,6 +108,7 @@ impl AppState {
                 "/api/user/set_translation_session_token",
                 post(api_handlers::user::set_translation_session_token),
             )
+            .route("/api/get_ai_translation", post(gemini::get_ai_translation))
             .route(
                 "/api/tasks/{task_id}/statement_versions/latest",
                 get(api_handlers::statement_versions::get_latest_statement_version),
