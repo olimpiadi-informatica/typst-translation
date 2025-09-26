@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT languages.code, content_hash AS \"content_hash!\", tasks.name\n        FROM translations\n          JOIN languages ON translations.language_id = languages.id\n          JOIN tasks ON translations.task_id = tasks.id\n        WHERE content_hash IS NOT NULL\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "code",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "content_hash!",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "a45c10d110131bb66f54ad4dc730abb8b6982bbeb07b8e657dd50b1dc07f552f"
+}
