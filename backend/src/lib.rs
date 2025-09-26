@@ -114,8 +114,16 @@ impl AppState {
                 get(api_handlers::statement_versions::get_latest_statement_version),
             )
             .route(
+                "/api/update_translation",
+                post(api_handlers::task::update_translation),
+            )
+            .route(
                 "/api/tasks/{task_id}",
                 get(api_handlers::task::get_task_by_id),
+            )
+            .route(
+                "/api/languages/{language_id}",
+                get(api_handlers::languages::get_language_by_id),
             )
             .route(
                 "/api/typst_packages",

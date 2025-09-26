@@ -1,5 +1,5 @@
 use axum::Json;
-use axum::extract::State;
+use axum::extract::{Path, State};
 use common::contestant::Contestant;
 use common::error::Error;
 use common::language::{AssignLanguagePayload, Language, ToggleLanguagePublicStatusPayload};
@@ -80,9 +80,7 @@ pub async fn toggle_language_public_status(
     let pool = app_state.db();
 
     // First, check if the user owns the language
-    let language = language_db::get_by_id(pool, payload.language_id)
-        .await?
-        .ok_or(Error::NotFound)?;
+    let language = language_db::get_by_id(pool, payload.language_id).await?;
     if language.user_id != user.id {
         return Err(Error::Forbidden);
     }
@@ -90,4 +88,14 @@ pub async fn toggle_language_public_status(
     language_db::toggle_language_public_status(pool, payload.language_id, payload.public).await?;
 
     Ok(())
+}
+
+pub async fn get_language_by_id(
+    Path(language_id): Path<i64>,
+    _user: AuthUser,
+    State(app_state): State<AppState>,
+) -> Result<Json<Language>, Error> {
+    Ok(Json(
+        language_db::get_by_id(app_state.db(), language_id).await?,
+    ))
 }

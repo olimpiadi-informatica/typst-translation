@@ -60,27 +60,14 @@ where
     Ok(())
 }
 
-pub async fn get_by_id<'e, E>(executor: E, id: i64) -> Result<Option<Language>, Error>
+pub async fn get_by_id<'e, E>(executor: E, id: i64) -> Result<Language, Error>
 where
     E: Executor<'e, Database = Sqlite>,
 {
-    let language = sqlx::query_as!(
-        Language,
-        r###"
-        SELECT
-            id,
-            code,
-            user_id,
-            public
-        FROM
-            languages
-        WHERE
-            id = ?
-        "###,
-        id
-    )
-    .fetch_optional(executor)
-    .await?;
+    let language = sqlx::query_as!(Language, "SELECT * FROM languages WHERE id = ?", id)
+        .fetch_optional(executor)
+        .await?
+        .ok_or(Error::NotFound)?;
     Ok(language)
 }
 
@@ -174,9 +161,7 @@ pub async fn toggle_language_public_status(
 
     let mut tx = pool.begin().await?;
 
-    let Some(language) = get_by_id(&mut *tx, language_id).await? else {
-        return Err(Error::NotFound);
-    };
+    let language = get_by_id(&mut *tx, language_id).await?;
 
     if !new_status {
         // If we are trying to make the language private, check if any contestants are assigned to it.

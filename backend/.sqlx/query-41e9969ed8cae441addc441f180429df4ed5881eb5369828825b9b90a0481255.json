@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT\n            id,\n            code,\n            user_id,\n            public\n        FROM\n            languages\n        WHERE\n            id = ?\n        ",
+  "query": "SELECT * FROM languages WHERE id = ?",
   "describe": {
     "columns": [
       {
@@ -34,5 +34,5 @@
       false
     ]
   },
-  "hash": "48f69456e41f1b221b4a25efccd7519f87670123efa5339ee1d375fd2c3b47ed"
+  "hash": "41e9969ed8cae441addc441f180429df4ed5881eb5369828825b9b90a0481255"
 }

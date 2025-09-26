@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE translations SET content_hash = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "ea98a66c980cca4dda128c0f8ae9cd1cde634581cdb553ab8497a6df4b8cb259"
+}

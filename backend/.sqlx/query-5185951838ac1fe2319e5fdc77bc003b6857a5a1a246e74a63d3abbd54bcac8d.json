@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT * FROM translations WHERE task_id = ? AND language_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "task_id",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "language_id",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "content_hash",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "last_updated_at",
+        "ordinal": 4,
+        "type_info": "Datetime"
+      },
+      {
+        "name": "session_token",
+        "ordinal": 5,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "5185951838ac1fe2319e5fdc77bc003b6857a5a1a246e74a63d3abbd54bcac8d"
+}

@@ -176,9 +176,7 @@ pub async fn assign_language_to_contestant(
     let mut tx = pool.begin().await?;
 
     if let Some(lang_id) = language_id {
-        let language = language_db::get_by_id(&mut *tx, lang_id)
-            .await?
-            .ok_or(Error::NotFound)?;
+        let language = language_db::get_by_id(&mut *tx, lang_id).await?;
 
         if !language.public && language.user_id != user_id {
             return Err(Error::InvalidInput("Cannot assign language to contestant: language is not public and not owned by the user.".to_string()));
