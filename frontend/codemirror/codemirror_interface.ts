@@ -50,6 +50,7 @@ export class CM6Editor {
             this.onchangeCallback();
           }
         }),
+        EditorView.lineWrapping,
       ],
       parent: element,
     });
