@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use async_channel::{Receiver, Sender, bounded};
@@ -23,49 +24,56 @@ pub enum CompilationStatus {
 const COMPILE_MIN_INTERVAL: Duration = Duration::from_millis(50);
 const LIVE_COMPILE_FAILURE_DELAY: Duration = Duration::from_secs(3);
 
-#[derive(Debug, Clone)]
-pub struct CompilationManager {
+#[derive(Debug)]
+pub struct CompilationManagerInner {
     result: RwSignal<TypstCompilationResult>,
     got_manual_request: RwSignal<bool>,
     sender: Sender<()>,
     status: RwSignal<CompilationStatus>,
     epoch: RwSignal<usize>,
     wait_until: RwSignal<Instant>,
-    inputs: HashMap<PathBuf, Signal<Vec<u8>>>,
+    inputs: Mutex<HashMap<PathBuf, Signal<Vec<u8>>>>,
 }
 
+#[derive(Debug, Clone)]
+pub struct CompilationManager(Arc<CompilationManagerInner>);
+
 impl CompilationManager {
-    pub fn new(inputs: HashMap<PathBuf, Signal<Vec<u8>>>) -> CompilationManager {
+    pub fn new() -> CompilationManager {
         let (sender, recv) = bounded(1);
-        let ret = CompilationManager {
+        let ret = CompilationManager(Arc::new(CompilationManagerInner {
             result: RwSignal::new(TypstCompilationResult::default()),
             got_manual_request: RwSignal::new(false),
             sender,
             status: RwSignal::new(CompilationStatus::OutOfDate),
             epoch: RwSignal::new(0),
             wait_until: RwSignal::new(Instant::now()),
-            inputs,
-        };
+            inputs: Mutex::new(HashMap::new()),
+        }));
         spawn_local(ret.clone().compile_loop(recv));
         ret
     }
 
+    pub fn set_inputs(&self, inputs: HashMap<PathBuf, Signal<Vec<u8>>>) {
+        *self.0.inputs.lock().unwrap() = inputs;
+    }
+
     pub fn get_result(&self) -> Signal<TypstCompilationResult> {
-        self.result.read_only().into()
+        self.0.result.read_only().into()
     }
 
     #[allow(dead_code)]
     pub fn get_status(&self) -> Signal<CompilationStatus> {
-        self.status.read_only().into()
+        self.0.status.read_only().into()
     }
 
     pub fn do_compile(&self, manual_request: bool) {
         if manual_request {
-            self.got_manual_request.set(true);
+            self.0.got_manual_request.set(true);
         }
-        self.status.set(CompilationStatus::OutOfDate);
-        self.epoch.update(|x| *x += 1);
-        let _ = self.sender.try_send(()); // ignore channel being full.
+        self.0.status.set(CompilationStatus::OutOfDate);
+        self.0.epoch.update(|x| *x += 1);
+        let _ = self.0.sender.try_send(()); // ignore channel being full.
     }
 
     async fn compile_loop(self, compilation_requested: Receiver<()>) {
@@ -73,9 +81,10 @@ impl CompilationManager {
             TypstWorker::spawner().spawn_with_loader("/typst_translation_worker_loader.js");
         loop {
             compilation_requested.recv().await.unwrap();
-            let mut got_manual_request = *self.got_manual_request.read_untracked();
+            let mut got_manual_request = *self.0.got_manual_request.read_untracked();
             if !got_manual_request {
                 if let Some(delay) = self
+                    .0
                     .wait_until
                     .get_untracked()
                     .checked_duration_since(Instant::now())
@@ -84,15 +93,18 @@ impl CompilationManager {
                 }
                 // Flush additional requests that happened while waiting.
                 let _ = compilation_requested.try_recv();
-                got_manual_request = *self.got_manual_request.read_untracked();
+                got_manual_request = *self.0.got_manual_request.read_untracked();
             }
             if got_manual_request {
-                self.got_manual_request.set(false);
+                self.0.got_manual_request.set(false);
             }
-            self.wait_until.set(Instant::now() + COMPILE_MIN_INTERVAL);
-            let epoch = self.epoch.get_untracked();
+            self.0.wait_until.set(Instant::now() + COMPILE_MIN_INTERVAL);
+            let epoch = self.0.epoch.get_untracked();
             let files = self
+                .0
                 .inputs
+                .lock()
+                .unwrap()
                 .iter()
                 .map(|(k, v)| (k.clone(), v.get_untracked().to_vec()))
                 .collect::<HashMap<_, _>>();
@@ -111,15 +123,15 @@ impl CompilationManager {
     }
 
     fn set_result(&self, result: TypstCompilationResult, epoch: usize) {
-        info!(epoch, cur_epoch = self.epoch.get_untracked());
-        if self.epoch.get_untracked() != epoch {
+        info!(epoch, cur_epoch = self.0.epoch.get_untracked());
+        if self.0.epoch.get_untracked() != epoch {
             return;
         }
-        self.status.set(if result.document.is_some() {
+        self.0.status.set(if result.document.is_some() {
             CompilationStatus::Ready
         } else {
             CompilationStatus::CompilationFailure
         });
-        self.result.set(result);
+        self.0.result.set(result);
     }
 }

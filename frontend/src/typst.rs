@@ -147,12 +147,7 @@ impl TypstCompiler {
             .chain(typst_assets::fonts())
             .flat_map(|x| Font::iter(Bytes::new(x)))
             .collect();
-        for font in fonts.iter() {
-            info!(info = ?font.info());
-        }
         let book = FontBook::from_fonts(&fonts);
-        info!(?book);
-
         let mut inputs = Dict::new();
         inputs.insert(Str::from("gen_gen"), Value::Str(Str::from("GEN")));
         inputs.insert(

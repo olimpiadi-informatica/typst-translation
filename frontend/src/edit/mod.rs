@@ -116,7 +116,8 @@ fn Inner(task: Task, files: HashMap<String, Vec<u8>>) -> impl IntoView {
         PathBuf::from(text_path),
         Signal::derive(move || text.get().as_bytes().to_vec()),
     );
-    let compilation_manager = CompilationManager::new(files);
+    let compilation_manager = expect_context::<CompilationManager>();
+    compilation_manager.set_inputs(files);
 
     let on_change = {
         let compilation_manager = compilation_manager.clone();

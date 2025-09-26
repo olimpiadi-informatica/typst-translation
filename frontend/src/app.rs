@@ -4,6 +4,7 @@ use leptos_router::path;
 use leptos_use::{ColorMode, UseColorModeOptions, use_color_mode_with_options};
 use thaw::{ConfigProvider, Theme, ToasterProvider};
 
+use crate::compilation_manager::CompilationManager;
 use crate::edit::EditPage;
 use crate::home::HomePage;
 use crate::user::UserProvider;
@@ -30,6 +31,8 @@ pub fn App() -> impl IntoView {
     );
 
     let theme = RwSignal::new(Theme::dark());
+
+    provide_context(CompilationManager::new());
 
     Effect::new(move || {
         theme.set(theme_from_color_mode(color_mode.mode.get()));
