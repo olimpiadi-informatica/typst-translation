@@ -65,9 +65,14 @@ pub fn Editor(
                     return;
                 };
                 let data = cm6.get_text();
-                contents.update(|val| {
-                    *val = data;
-                })
+                contents.maybe_update(|x| {
+                    if *x != data {
+                        *x = data;
+                        true
+                    } else {
+                        false
+                    }
+                });
             });
         }
     };
@@ -104,7 +109,10 @@ pub fn Editor(
             let Some(cm6) = x else {
                 return;
             };
-            cm6.set_text(contents.get_untracked().clone());
+            let text = contents.get();
+            if text != cm6.get_text() {
+                cm6.set_text(text);
+            }
         });
     });
 

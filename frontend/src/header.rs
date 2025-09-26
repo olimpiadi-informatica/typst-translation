@@ -34,7 +34,7 @@ fn kb_mode_from_str(s: &str) -> KeyboardMode {
 #[component]
 pub fn Header(
     #[prop(optional)] go_back: Option<String>,
-    #[prop(optional)] title: Option<String>,
+    #[prop(optional, into)] title: Option<Signal<String>>,
     #[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>,
     #[prop(optional)] children: Option<Children>,
 ) -> impl IntoView {
@@ -112,7 +112,7 @@ pub fn Header(
                             </A>
                         }
                     })} // TODO: Fix theme handling
-                {title.map(|title| view! { <h1>{title}</h1> })}
+                {move || title.get().map(|title| view! { <h1>{title}</h1> })}
                 // <Button on_click=change_theme appearance=ButtonAppearance::Subtle>
                 // {move || {
                 // let (name, icon) = name_and_icon.get();

@@ -14,12 +14,12 @@ const PROMPT_TEMPLATE: &str = r#"Translate the following task statement for a pr
 
 #[component]
 pub fn Gemini(
-    task_id: i64,
-    lang_code: String,
+    task_id: Signal<i64>,
+    lang_code: Signal<String>,
     #[prop(into)] text: SignalSetter<String>,
 ) -> impl IntoView {
     let open = RwSignal::new(false);
-    let value = RwSignal::new(PROMPT_TEMPLATE.replace("$LANGUAGE", lang_code.as_str()));
+    let value = Signal::derive(move || PROMPT_TEMPLATE.replace("$LANGUAGE", &lang_code.get()));
     let model = RwSignal::new("".to_owned());
     let loading = RwSignal::new(false);
 
@@ -32,7 +32,7 @@ pub fn Gemini(
                 _ => unreachable!(),
             };
             let payload = GeminiRequest {
-                task_id,
+                task_id: task_id.get_untracked(),
                 prompt: value.get_untracked(),
                 model,
             };
@@ -65,7 +65,11 @@ pub fn Gemini(
                             <p>
                                 "WARNING: The translation will replace the current text in the editor!"
                             </p>
-                            <Textarea attr:style="height: 200px" size=TextareaSize::Large value />
+                            <Textarea
+                                attr:style="height: 200px"
+                                size=TextareaSize::Large
+                                value=value.get_untracked()
+                            />
                             <Select value=model>
                                 <option value="flash" selected>
                                     "Gemini 2.5 Flash"

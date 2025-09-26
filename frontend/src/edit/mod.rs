@@ -9,27 +9,26 @@ use common::translation::{Translation, UpdateTranslationRequest};
 use common::user_contest_status::SetTranslationSessionTokenRequest;
 use futures::StreamExt;
 use gloo_timers::future::TimeoutFuture;
-use leptos::either::{Either, EitherOf3};
 use leptos::prelude::*;
 use leptos::server::codee::string::JsonSerdeCodec;
 use leptos::task::{spawn_local, spawn_local_scoped};
 use leptos_router::hooks::use_params_map;
 use leptos_use::storage::use_local_storage;
 use leptos_use::{UseColorModeOptions, signal_throttled, use_color_mode_with_options};
-use thaw::{Button, Flex, FlexAlign, Layout, LayoutHeader, Spinner};
+use thaw::{Button, Flex, Layout, LayoutHeader, Spinner};
 
 use crate::api_wrapper::{api_get, api_post, file_get};
-use crate::app::wrap_with_current_owner;
 use crate::compilation_manager::CompilationManager;
 use crate::compilation_results::CompilationResults;
 use crate::edit::gemini::Gemini;
 use crate::editor::{Editor, KeyboardMode};
 use crate::header::Header;
 use crate::session_token::get_session_token;
-use crate::user::UserContext;
 use crate::{show_error, show_success};
 
 mod gemini;
+
+const INTERVAL: u32 = 20000;
 
 #[component]
 pub fn EditPage() -> impl IntoView {
@@ -138,6 +137,16 @@ pub fn EditPage() -> impl IntoView {
         }
     });
 
+    let statement_path = Signal::derive(move || {
+        format!(
+            "{}/statement/statement.typ",
+            task.get()
+                .flatten()
+                .map(|x| x.name.clone())
+                .unwrap_or_default()
+        )
+    });
+
     let orig_text = LocalResource::<Option<String>>::new(move || async move {
         let translation = translation.read();
         let Some(translation) = translation.deref() else {
@@ -148,16 +157,12 @@ pub fn EditPage() -> impl IntoView {
             ..
         }) = translation
         else {
-            let task = task.read();
-            let Some(Some(task)) = task.deref() else {
-                return None;
-            };
             let files = files.read();
             let Some(Some(files)) = files.deref() else {
                 return None;
             };
             return files
-                .get(&format!("{}/statement/statement.typ", task.name))
+                .get(&statement_path.get())
                 .map(|x| String::from_utf8_lossy(x).to_string());
         };
         match file_get(hash, "statement.typ").await {
@@ -169,123 +174,178 @@ pub fn EditPage() -> impl IntoView {
         }
     });
 
-    move || match (
-        task.get().flatten(),
-        lang.get().flatten(),
-        files.get().flatten(),
-        orig_text.get().flatten(),
-    ) {
-        (Some(task_val), Some(lang), Some(files), Some(orig_text)) => {
-            let readonly = readonly.get();
-            Either::Left(
-                view! { <Inner task_resource=task task=task_val lang files readonly orig_text /> },
-            )
-        }
-        _ => Either::Right(view! { <Spinner label="Loading statement..." /> }),
-    }
-}
+    let loaded = RwSignal::new(false);
 
-#[component]
-fn Inner(
-    task_resource: LocalResource<Option<Task>>,
-    task: Task,
-    lang: Option<Language>,
-    files: HashMap<String, Vec<u8>>,
-    readonly: bool,
-    orig_text: String,
-) -> impl IntoView {
+    let compilation_manager = expect_context::<CompilationManager>();
+
+    Effect::new(move || {
+        if task.get().is_some()
+            && lang.get().is_some()
+            && files.get().is_some()
+            && orig_text.get().is_some()
+        {
+            loaded.set(true);
+            // Compile initial state.
+            compilation_manager.do_compile(true);
+        } else {
+            loaded.set(false);
+        }
+    });
+
+    let title = Signal::derive(move || {
+        let lang_code = lang
+            .get()
+            .flatten()
+            .flatten()
+            .map(|l| l.code.clone())
+            .unwrap_or("en_ISC".to_owned());
+        let task = task.get().flatten().map(|x| x.name).unwrap_or_default();
+        format!("Task: {} - Lang: {}", task, lang_code)
+    });
+
+    let can_edit = Signal::derive(move || lang_id.get().is_some());
+
+    let on_ask_edit = move || {
+        spawn_local_scoped(async move {
+            let lang = lang.await.flatten().unwrap().id;
+            let task_id = task.await.unwrap().id;
+            let payload = SetTranslationSessionTokenRequest {
+                task_id,
+                language_id: lang,
+                session_token: get_session_token(),
+            };
+            match api_post("/api/user/set_translation_session_token", &payload).await {
+                Ok(()) => {
+                    show_success!("You can now edit this translation.");
+                    task.refetch();
+                }
+                Err(e) => {
+                    show_error!("Failed to set session token: {e}");
+                }
+            }
+        });
+    };
+
+    let contents = RwSignal::new(String::new());
+
+    Effect::new(move || {
+        if let Some(text) = orig_text.get()
+            && contents.with_untracked(|x| x.is_empty())
+        {
+            tracing::info!(ot = ?text);
+            contents.set(text.unwrap_or_default());
+        }
+    });
+
+    spawn_local(async move {
+        loop {
+            TimeoutFuture::new(INTERVAL).await;
+            if loaded.try_get_untracked() != Some(true) {
+                continue;
+            }
+            if !readonly.get_untracked() {
+                continue;
+            }
+            let task = task.await.unwrap();
+            let Some(lang) = lang.await.unwrap() else {
+                continue;
+            };
+            let task: Task = match api_get(&format!("/api/tasks/{}", task.id)).await {
+                Ok(task) => task,
+                Err(e) => {
+                    show_error!("Failed to fetch task: {e}");
+                    continue;
+                }
+            };
+            let translation = task
+                .translations
+                .into_iter()
+                .find(|t| t.language_id == lang.id)
+                .expect("translation should exist");
+            let Some(hash) = translation.content_hash else {
+                continue;
+            };
+            match file_get(&hash, "statement.typ").await {
+                Ok(content) => {
+                    let new_text = String::from_utf8_lossy(&content).to_string();
+                    let res = contents.try_set(new_text);
+                    if res.is_some() {
+                        break;
+                    }
+                }
+                Err(e) => {
+                    show_error!("Failed to fetch original statement: {e}");
+                }
+            }
+        }
+    });
+
+    let throttled: Signal<String> = signal_throttled(contents, 200.0);
+
+    let compilation_manager = expect_context::<CompilationManager>();
+
+    Effect::new(move |_| {
+        throttled.with(|_| ());
+        let mut files = files
+            .get()
+            .flatten()
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(k, v)| (k.into(), v.into()))
+            .collect::<HashMap<PathBuf, Signal<Vec<u8>>>>();
+        files.insert(
+            PathBuf::from(statement_path.get()),
+            Signal::derive(move || contents.get_untracked().as_bytes().to_vec()),
+        );
+        compilation_manager.set_inputs(files);
+    });
+
+    let throttled: Signal<String> = signal_throttled(contents, INTERVAL as f64);
+    let stored = RwSignal::new("".to_owned());
+
+    Effect::new(move |_| {
+        if loaded.try_get() != Some(true) {
+            return;
+        }
+        if readonly.get() {
+            return;
+        }
+        throttled.with(|_| ());
+        let text = contents.get_untracked();
+        spawn_local_scoped(async move {
+            let task = task.await.unwrap().id;
+            let Some(lang) = lang.await.unwrap() else {
+                return;
+            };
+            let payload = UpdateTranslationRequest {
+                task_id: task,
+                language_id: lang.id,
+                content: text.clone().into(),
+                session_token: get_session_token(),
+            };
+            match api_post("/api/update_translation", &payload).await {
+                Ok(()) => {
+                    stored.set(text);
+                }
+                Err(e) => {
+                    show_error!("Failed to auto-save translation: {e}");
+                }
+            }
+        });
+    });
+
+    let saved = Memo::new(move |_| stored.get() == contents.get());
+
+    let (kb_mode, set_kb_mode, _) =
+        use_local_storage::<KeyboardMode, JsonSerdeCodec>("typst-translation-kb-mode");
+
+    let compilation_manager = expect_context::<CompilationManager>();
+
     let color_mode = use_color_mode_with_options(
         UseColorModeOptions::default()
             .cookie_enabled(true)
             .cookie_name("typst-translation-color-mode"),
     );
-
-    let (kb_mode, set_kb_mode, _) =
-        use_local_storage::<KeyboardMode, JsonSerdeCodec>("typst-translation-kb-mode");
-
-    let text_path = format!("{}/statement/statement.typ", task.name);
-    let text = RwSignal::new(orig_text);
-
-    let mut saved_view = None;
-
-    const INTERVAL: u32 = 20000;
-    if readonly {
-        if let Some(Language { id: lang_id, .. }) = lang {
-            let task = task.clone();
-            spawn_local(async move {
-                loop {
-                    TimeoutFuture::new(INTERVAL).await;
-                    let task: Task = match api_get(&format!("/api/tasks/{}", task.id)).await {
-                        Ok(task) => task,
-                        Err(e) => {
-                            show_error!("Failed to fetch task: {e}");
-                            continue;
-                        }
-                    };
-                    let translation = task
-                        .translations
-                        .into_iter()
-                        .find(|t| t.language_id == lang_id)
-                        .expect("translation should exist");
-                    let Some(hash) = translation.content_hash else {
-                        continue;
-                    };
-                    match file_get(&hash, "statement.typ").await {
-                        Ok(content) => {
-                            let new_text = String::from_utf8_lossy(&content).to_string();
-                            let res = text.try_set(new_text);
-                            if res.is_some() {
-                                break;
-                            }
-                        }
-                        Err(e) => {
-                            show_error!("Failed to fetch original statement: {e}");
-                        }
-                    }
-                }
-            });
-        }
-    } else {
-        let throttled: Signal<String> = signal_throttled(text, INTERVAL as f64);
-        let stored = RwSignal::new("".to_owned());
-
-        let lang_id = lang.as_ref().unwrap().id;
-        Effect::new(move |_| {
-            let text = throttled.get();
-            spawn_local_scoped(async move {
-                let payload = UpdateTranslationRequest {
-                    task_id: task.id,
-                    language_id: lang_id,
-                    content: text.clone().into(),
-                    session_token: get_session_token(),
-                };
-                match api_post("/api/update_translation", &payload).await {
-                    Ok(()) => {
-                        stored.set(text);
-                    }
-                    Err(e) => {
-                        show_error!("Failed to auto-save translation: {e}");
-                    }
-                }
-            });
-        });
-
-        let saved = Memo::new(move |_| stored.get() == text.get());
-        saved_view = Some(
-            view! { <div>{move || if saved.get() { "Saved" } else { "Unsaved changes." }}</div> },
-        );
-    }
-
-    let mut files = files
-        .into_iter()
-        .map(|(k, v)| (k.into(), v.into()))
-        .collect::<HashMap<PathBuf, Signal<Vec<u8>>>>();
-    files.insert(
-        PathBuf::from(text_path),
-        Signal::derive(move || text.get().as_bytes().to_vec()),
-    );
-    let compilation_manager = expect_context::<CompilationManager>();
-    compilation_manager.set_inputs(files);
 
     let on_change = {
         let compilation_manager = compilation_manager.clone();
@@ -297,75 +357,37 @@ fn Inner(
         Box::new(move || compilation_manager.do_compile(true))
     };
 
-    // Compile initial state.
-    compilation_manager.do_compile(true);
-
-    let user_context = expect_context::<UserContext>();
-    let user = user_context.get_user_untracked();
-    let user_id = user.as_user().unwrap().id;
-
-    let lang2 = lang.clone();
-    let do_set_token = wrap_with_current_owner(move || {
-        let lang2 = lang2.clone();
-        spawn_local_scoped(async move {
-            let payload = SetTranslationSessionTokenRequest {
-                task_id: task.id,
-                language_id: lang2.unwrap().id,
-                session_token: get_session_token(),
-            };
-            match api_post("/api/user/set_translation_session_token", &payload).await {
-                Ok(()) => {
-                    show_success!("You can now edit this translation.");
-                    task_resource.refetch();
-                }
-                Err(e) => {
-                    show_error!("Failed to set session token: {e}");
-                }
-            }
-        });
-    });
-
-    let lang_code = lang
-        .as_ref()
-        .map(|l| l.code.clone())
-        .unwrap_or("en_ISC".to_owned());
     view! {
-        <Layout attr:style="height: 100vh">
+        <Spinner label="Loading statement..." class:hidden=move || loaded.get() />
+        <Layout attr:style="height: 100vh" class:hidden=move || !loaded.get()>
             <LayoutHeader>
-                <Header
-                    go_back="/".to_owned()
-                    title=format!("Task: {} - Lang: {}", task.name, lang_code)
-                    kb_mode=(kb_mode, set_kb_mode)
-                >
-                    <Flex align=FlexAlign::Center>
-                        {if lang.as_ref().map(|l| l.user_id) == Some(user_id) {
-                            if readonly {
-                                EitherOf3::A(
-                                    view! {
-                                        <Button on_click=move |_| do_set_token()>"Edit"</Button>
-                                    },
-                                )
-                            } else {
-                                EitherOf3::B(
-                                    view! {
-                                        {saved_view}
-                                        <Gemini
-                                            task_id=task.id
-                                            lang_code=lang.as_ref().unwrap().code.clone()
-                                            text
-                                        />
-                                    },
-                                )
-                            }
-                        } else {
-                            EitherOf3::C(())
-                        }}
-                    </Flex>
+                <Header go_back="/".to_owned() title kb_mode=(kb_mode, set_kb_mode)>
+                    <Show when=move || readonly.get() && can_edit.get()>
+                        <Button on_click=move |_| on_ask_edit()>"Edit"</Button>
+                    </Show>
+                    <Show when=move || !readonly.get()>
+                        <div>{move || if saved.get() { "Saved" } else { "Unsaved changes." }}</div>
+                        <Gemini
+                            task_id=Signal::derive(move || {
+                                task.get().flatten().map(|x| x.id).unwrap_or_default()
+                            })
+                            lang_code=Signal::derive(move || {
+                                lang
+                                    .get()
+                                    .flatten()
+                                    .flatten()
+                                    .map(|x| x.code.clone())
+                                    .unwrap_or_default()
+                            })
+                            text=contents
+                        />
+
+                    </Show>
                 </Header>
             </LayoutHeader>
             <Flex>
                 <Editor
-                    contents=text
+                    contents
                     name="statement-editor"
                     readonly
                     ctrl_enter
