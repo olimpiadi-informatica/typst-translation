@@ -251,6 +251,7 @@ dependencies = [
  "jsonwebtoken",
  "reqwest",
  "serde",
+ "serde-jsonlines",
  "serde_json",
  "sqlx",
  "tempfile",
@@ -2142,6 +2143,16 @@ checksum = "0dca6411025b24b60bfa7ec1fe1f8e710ac09782dca409ee8237ba74b51295fd"
 dependencies = [
  "serde_core",
  "serde_derive",
+]
+
+[[package]]
+name = "serde-jsonlines"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "013e069239d98648ea43a9c01845b381445e88de08b5a895ef9302e3bffde03d"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
