@@ -2,27 +2,31 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::path::PathBuf;
 
+use common::language::Language;
 use common::statement_version::StatementVersion;
 use common::task::Task;
 use common::translation::Translation;
+use common::user_contest_status::SetTranslationSessionTokenRequest;
 use futures::StreamExt;
 use gloo_timers::future::TimeoutFuture;
 use leptos::either::Either;
 use leptos::prelude::*;
 use leptos::server::codee::string::JsonSerdeCodec;
-use leptos::task::spawn_local;
+use leptos::task::{spawn_local, spawn_local_scoped};
 use leptos_router::hooks::use_params_map;
 use leptos_use::storage::use_local_storage;
 use leptos_use::{UseColorModeOptions, use_color_mode_with_options};
-use thaw::{Flex, Layout, LayoutHeader, Spinner};
+use thaw::{Button, Flex, Layout, LayoutHeader, Spinner};
 
-use crate::api_wrapper::{api_get, file_get};
+use crate::api_wrapper::{api_get, api_post, file_get};
+use crate::app::wrap_with_current_owner;
 use crate::compilation_manager::CompilationManager;
 use crate::compilation_results::CompilationResults;
 use crate::editor::{Editor, KeyboardMode};
 use crate::header::Header;
 use crate::session_token::get_session_token;
-use crate::show_error;
+use crate::user::UserContext;
+use crate::{show_error, show_success};
 
 #[component]
 pub fn EditPage() -> impl IntoView {
@@ -50,6 +54,20 @@ pub fn EditPage() -> impl IntoView {
             Ok(task) => Some(task),
             Err(e) => {
                 show_error!("Failed to fetch task: {e}");
+                None
+            }
+        }
+    });
+
+    let lang = LocalResource::<Option<Option<Language>>>::new(move || async move {
+        let Some(lang_id) = lang_id.get() else {
+            return Some(None);
+        };
+        let url = format!("/api/languages/{}", lang_id);
+        match api_get(&url).await {
+            Ok(lang) => Some(lang),
+            Err(e) => {
+                show_error!("Failed to fetch language: {e}");
                 None
             }
         }
@@ -150,20 +168,25 @@ pub fn EditPage() -> impl IntoView {
 
     move || match (
         task.get().flatten(),
+        lang.get().flatten(),
         files.get().flatten(),
         orig_text.get().flatten(),
     ) {
-        (Some(task), Some(files), Some(orig_text)) => Either::Left(
-            view! { <Inner task lang_id=lang_id.get() files readonly=readonly.get() orig_text /> },
-        ),
+        (Some(task_val), Some(lang), Some(files), Some(orig_text)) => {
+            let readonly = readonly.get();
+            Either::Left(
+                view! { <Inner task_resource=task task=task_val lang files readonly orig_text /> },
+            )
+        }
         _ => Either::Right(view! { <Spinner label="Loading statement..." /> }),
     }
 }
 
 #[component]
 fn Inner(
+    task_resource: LocalResource<Option<Task>>,
     task: Task,
-    lang_id: Option<i64>,
+    lang: Option<Language>,
     files: HashMap<String, Vec<u8>>,
     readonly: bool,
     orig_text: String,
@@ -182,7 +205,7 @@ fn Inner(
 
     const INTERVAL: u32 = 20000;
     if readonly {
-        if let Some(lang_id) = lang_id {
+        if let Some(Language { id: lang_id, .. }) = lang {
             let task = task.clone();
             spawn_local(async move {
                 loop {
@@ -205,7 +228,10 @@ fn Inner(
                     match file_get(&hash, "statement.typ").await {
                         Ok(content) => {
                             let new_text = String::from_utf8_lossy(&content).to_string();
-                            text.set(new_text);
+                            let res = text.try_set(new_text);
+                            if res.is_some() {
+                                break;
+                            }
                         }
                         Err(e) => {
                             show_error!("Failed to fetch original statement: {e}");
@@ -242,14 +268,51 @@ fn Inner(
     // Compile initial state.
     compilation_manager.do_compile(true);
 
+    let user_context = expect_context::<UserContext>();
+    let user = user_context.get_user_untracked();
+    let user_id = user.as_user().unwrap().id;
+
+    let lang2 = lang.clone();
+    let do_set_token = wrap_with_current_owner(move || {
+        let lang2 = lang2.clone();
+        spawn_local_scoped(async move {
+            let payload = SetTranslationSessionTokenRequest {
+                task_id: task.id,
+                language_id: lang2.unwrap().id,
+                session_token: get_session_token(),
+            };
+            match api_post("/api/user/set_translation_session_token", &payload).await {
+                Ok(()) => {
+                    show_success!("You can now edit this translation.");
+                    task_resource.refetch();
+                }
+                Err(e) => {
+                    show_error!("Failed to set session token: {e}");
+                }
+            }
+        });
+    });
+
+    let lang_code = lang
+        .as_ref()
+        .map(|l| l.code.clone())
+        .unwrap_or("en_ISC".to_owned());
     view! {
         <Layout attr:style="height: 100vh">
             <LayoutHeader>
                 <Header
                     go_back="/".to_owned()
-                    title=format!("Task: {}", task.name)
+                    title=format!("Task: {} - Lang: {}", task.name, lang_code)
                     kb_mode=(kb_mode, set_kb_mode)
-                />
+                >
+                    {if readonly && lang.map(|l| l.user_id) == Some(user_id) {
+                        Either::Left(
+                            view! { <Button on_click=move |_| do_set_token()>"Edit"</Button> },
+                        )
+                    } else {
+                        Either::Right(())
+                    }}
+                </Header>
             </LayoutHeader>
             <Flex>
                 <Editor

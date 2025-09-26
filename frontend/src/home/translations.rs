@@ -80,7 +80,7 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
                 <TableCell>
                     <TableCellLayout>
                         <A href=format!("/task/{}/lang/{}", task_id, lang.id)>
-                            <Button>{move || if finalized.get() { "View" } else { "Edit"}}</Button>
+                            <Button>{move || if finalized.get() { "View" } else { "Edit" }}</Button>
                         </A>
                     </TableCellLayout>
                 </TableCell>

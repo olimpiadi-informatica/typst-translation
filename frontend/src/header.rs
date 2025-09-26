@@ -36,6 +36,7 @@ pub fn Header(
     #[prop(optional)] go_back: Option<String>,
     #[prop(optional)] title: Option<String>,
     #[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>,
+    #[prop(optional)] children: Option<Children>,
 ) -> impl IntoView {
     //let color_mode = use_color_mode_with_options(
     //    UseColorModeOptions::default()
@@ -123,6 +124,7 @@ pub fn Header(
                 // </Button>
                 {kb_mode_view}
             </Flex>
+            {children.map(|c| c())}
             <Flex>
                 <p>"User: "</p>
                 <pre>
