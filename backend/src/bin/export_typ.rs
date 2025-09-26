@@ -35,5 +35,36 @@ async fn main() -> Result<()> {
         std::fs::copy(&in_path, &out_path)?;
     }
 
+    let languages = query!(
+        r#"
+        SELECT id, code
+        FROM languages
+        "#
+    )
+    .fetch_all(&mut *tx)
+    .await?;
+
+    for lang in languages {
+        let contestants = query!(
+            r#"
+            SELECT code
+            FROM contestants
+            WHERE language_id = ?
+            "#,
+            lang.id
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+
+        if contestants.is_empty() {
+            continue;
+        }
+
+        println!("Language: {}    Count: {}", lang.code, contestants.len());
+        for contestant in contestants {
+            println!("  {}", contestant.code);
+        }
+    }
+
     Ok(())
 }
