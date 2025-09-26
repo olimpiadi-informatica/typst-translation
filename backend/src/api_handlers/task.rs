@@ -30,8 +30,12 @@ pub async fn update_translation(
 ) -> Result<Json<()>, Error> {
     let content_hash = save_file(&req.content).await?;
 
-    let mut tx = app_state.db().begin().await?;
-
+    let mut tx = loop {
+        let tx = app_state.db().try_begin_with("BEGIN IMMEDIATE").await?;
+        if let Some(tx) = tx {
+            break tx;
+        }
+    };
     let translation = sqlx::query_as!(
         Translation,
         "SELECT * FROM translations WHERE task_id = ? AND language_id = ?",
