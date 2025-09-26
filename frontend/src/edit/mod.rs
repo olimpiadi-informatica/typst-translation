@@ -9,7 +9,7 @@ use common::translation::{Translation, UpdateTranslationRequest};
 use common::user_contest_status::SetTranslationSessionTokenRequest;
 use futures::StreamExt;
 use gloo_timers::future::TimeoutFuture;
-use leptos::either::Either;
+use leptos::either::{Either, EitherOf3};
 use leptos::prelude::*;
 use leptos::server::codee::string::JsonSerdeCodec;
 use leptos::task::{spawn_local, spawn_local_scoped};
@@ -203,6 +203,8 @@ fn Inner(
     let text_path = format!("{}/statement/statement.typ", task.name);
     let text = RwSignal::new(orig_text);
 
+    let mut saved_view = None;
+
     const INTERVAL: u32 = 20000;
     if readonly {
         if let Some(Language { id: lang_id, .. }) = lang {
@@ -242,6 +244,7 @@ fn Inner(
         }
     } else {
         let throttled: Signal<String> = signal_throttled(text, INTERVAL as f64);
+        let stored = RwSignal::new("".to_owned());
 
         let lang_id = lang.as_ref().unwrap().id;
         Effect::new(move |_| {
@@ -250,12 +253,12 @@ fn Inner(
                 let payload = UpdateTranslationRequest {
                     task_id: task.id,
                     language_id: lang_id,
-                    content: text.into(),
+                    content: text.clone().into(),
                     session_token: get_session_token(),
                 };
                 match api_post("/api/update_translation", &payload).await {
                     Ok(()) => {
-                        show_success!("Translation auto-saved");
+                        stored.set(text);
                     }
                     Err(e) => {
                         show_error!("Failed to auto-save translation: {e}");
@@ -263,6 +266,11 @@ fn Inner(
                 }
             });
         });
+
+        let saved = Memo::new(move |_| stored.get() == text.get());
+        saved_view = Some(
+            view! { <div>{move || if saved.get() { "Saved" } else { "Unsaved changes." }}</div> },
+        );
     }
 
     let mut files = files
@@ -326,12 +334,16 @@ fn Inner(
                     title=format!("Task: {} - Lang: {}", task.name, lang_code)
                     kb_mode=(kb_mode, set_kb_mode)
                 >
-                    {if readonly && lang.map(|l| l.user_id) == Some(user_id) {
-                        Either::Left(
-                            view! { <Button on_click=move |_| do_set_token()>"Edit"</Button> },
-                        )
+                    {if lang.map(|l| l.user_id) == Some(user_id) {
+                        if readonly {
+                            EitherOf3::A(
+                                view! { <Button on_click=move |_| do_set_token()>"Edit"</Button> },
+                            )
+                        } else {
+                            EitherOf3::B(saved_view)
+                        }
                     } else {
-                        Either::Right(())
+                        EitherOf3::C(())
                     }}
                 </Header>
             </LayoutHeader>
