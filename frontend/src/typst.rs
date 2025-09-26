@@ -9,6 +9,7 @@ use futures_util::{SinkExt, StreamExt};
 use gloo_worker::reactor::{ReactorScope, reactor};
 use serde::{Deserialize, Serialize};
 use tar::Archive;
+use tracing::info;
 use typst::diag::{
     FileError, FileResult, PackageError, PackageResult, Severity, SourceDiagnostic, SourceResult,
     Warned,
@@ -121,7 +122,7 @@ impl PackagesCache {
                 files.insert(path, content);
             }
 
-            tracing::info!("Loaded package {package:?} with {} files", files.len());
+            info!("Loaded package {package:?} with {} files", files.len());
 
             self.packages.insert(package.clone(), files);
         }

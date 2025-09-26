@@ -71,8 +71,8 @@ pub fn EditPage() -> impl IntoView {
             });
         }
 
-        let results: Vec<Result<(String, String), Error>> = futures.collect().await;
-        let results: Result<HashMap<String, String>, Error> = results.into_iter().collect();
+        let results: Vec<Result<(String, _), Error>> = futures.collect().await;
+        let results: Result<HashMap<String, _>, Error> = results.into_iter().collect();
 
         match results {
             Ok(map) => Some(map),
@@ -90,7 +90,7 @@ pub fn EditPage() -> impl IntoView {
 }
 
 #[component]
-fn Inner(task: Task, files: HashMap<String, String>) -> impl IntoView {
+fn Inner(task: Task, files: HashMap<String, Vec<u8>>) -> impl IntoView {
     let color_mode = use_color_mode_with_options(
         UseColorModeOptions::default()
             .cookie_enabled(true)
@@ -101,13 +101,21 @@ fn Inner(task: Task, files: HashMap<String, String>) -> impl IntoView {
         use_local_storage::<KeyboardMode, JsonSerdeCodec>("typst-translation-kb-mode");
 
     let text_path = format!("{}/statement/statement.typ", task.name);
-    let text = RwSignal::new(files.get(&text_path).cloned().unwrap_or_default());
+    let text = RwSignal::new(
+        files
+            .get(&text_path)
+            .map(|x| String::from_utf8_lossy(x).to_string())
+            .unwrap_or_default(),
+    );
 
     let mut files = files
         .into_iter()
         .map(|(k, v)| (k.into(), v.into()))
-        .collect::<HashMap<PathBuf, Signal<String>>>();
-    files.insert(PathBuf::from(text_path), text.into());
+        .collect::<HashMap<PathBuf, Signal<Vec<u8>>>>();
+    files.insert(
+        PathBuf::from(text_path),
+        Signal::derive(move || text.get().as_bytes().to_vec()),
+    );
     let compilation_manager = CompilationManager::new(files);
 
     let on_change = {

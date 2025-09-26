@@ -31,11 +31,11 @@ pub async fn api_post<Req: Serialize, Resp: DeserializeOwned + Any>(
     request(Request::post(url).json(req)?).await
 }
 
-pub async fn file_get(hash: &str, name: &str) -> Result<String, Error> {
+pub async fn file_get(hash: &str, name: &str) -> Result<Vec<u8>, Error> {
     let url = format!("/files/{hash}/{name}");
     let response = Request::get(&url).send().await?;
     if response.status() >= 200 && response.status() < 300 {
-        Ok(response.text().await?)
+        Ok(response.binary().await?)
     } else {
         Err(response.json().await?)
     }

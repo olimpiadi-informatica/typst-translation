@@ -31,11 +31,11 @@ pub struct CompilationManager {
     status: RwSignal<CompilationStatus>,
     epoch: RwSignal<usize>,
     wait_until: RwSignal<Instant>,
-    inputs: HashMap<PathBuf, Signal<String>>,
+    inputs: HashMap<PathBuf, Signal<Vec<u8>>>,
 }
 
 impl CompilationManager {
-    pub fn new(inputs: HashMap<PathBuf, Signal<String>>) -> CompilationManager {
+    pub fn new(inputs: HashMap<PathBuf, Signal<Vec<u8>>>) -> CompilationManager {
         let (sender, recv) = bounded(1);
         let ret = CompilationManager {
             result: RwSignal::new(TypstCompilationResult::default()),
@@ -94,7 +94,7 @@ impl CompilationManager {
             let files = self
                 .inputs
                 .iter()
-                .map(|(k, v)| (k.clone(), v.get_untracked().as_bytes().to_vec()))
+                .map(|(k, v)| (k.clone(), v.get_untracked().to_vec()))
                 .collect::<HashMap<_, _>>();
             typst_worker.send_input(files);
             let response = typst_worker.next().await.unwrap();
