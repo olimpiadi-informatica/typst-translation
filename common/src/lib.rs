@@ -4,6 +4,7 @@ pub mod user;
 pub mod contest;
 pub mod contestant;
 pub mod draft_print_queue_item;
+pub mod fonts;
 pub mod gemini;
 pub mod language;
 pub mod printed_document;

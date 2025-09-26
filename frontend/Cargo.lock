@@ -1032,6 +1032,7 @@ dependencies = [
  "tracing-subscriber",
  "tracing-web",
  "typst",
+ "typst-assets",
  "typst-kit",
  "typst-pdf",
  "typst-svg",

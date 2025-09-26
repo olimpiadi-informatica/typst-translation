@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use color_eyre::eyre::Result;
+use common::fonts::embedded_font_files;
 use common::typst_packages::TypstPackagePayload;
 use futures_util::{SinkExt, StreamExt};
 use gloo_worker::reactor::{ReactorScope, reactor};
@@ -22,7 +23,6 @@ use typst::syntax::{FileId, Source, VirtualPath};
 use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
 use typst::{Library, World, WorldExt};
-use typst_kit::fonts::{FontSearcher, FontSlot};
 use typst_pdf::PdfOptions;
 use web_sys::XmlHttpRequest;
 
@@ -135,7 +135,7 @@ impl PackagesCache {
 pub struct TypstCompiler {
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
-    fonts: Arc<Vec<FontSlot>>,
+    fonts: Vec<Font>,
     main: FileId,
     files: HashMap<PathBuf, Vec<u8>>,
     packages: Mutex<PackagesCache>,
@@ -143,11 +143,15 @@ pub struct TypstCompiler {
 
 impl TypstCompiler {
     fn new() -> TypstCompiler {
-        // TODO(veluca): handle fonts better.
-        let fonts = FontSearcher::new()
-            .include_system_fonts(false)
-            .include_embedded_fonts(true)
-            .search();
+        let fonts: Vec<_> = embedded_font_files()
+            .chain(typst_assets::fonts())
+            .flat_map(|x| Font::iter(Bytes::new(x)))
+            .collect();
+        for font in fonts.iter() {
+            info!(info = ?font.info());
+        }
+        let book = FontBook::from_fonts(&fonts);
+        info!(?book);
 
         let mut inputs = Dict::new();
         inputs.insert(Str::from("gen_gen"), Value::Str(Str::from("GEN")));
@@ -164,8 +168,8 @@ impl TypstCompiler {
 
         TypstCompiler {
             library: LazyHash::new(library),
-            book: LazyHash::new(fonts.book),
-            fonts: Arc::new(fonts.fonts),
+            book: LazyHash::new(book),
+            fonts,
             main: FileId::new(None, VirtualPath::new("booklet.typ")),
             files: HashMap::new(),
             packages: Mutex::new(PackagesCache::default()),
@@ -250,7 +254,7 @@ impl World for TypstCompiler {
     }
 
     fn font(&self, index: usize) -> Option<Font> {
-        self.fonts[index].get()
+        Some(self.fonts[index].clone())
     }
 
     fn main(&self) -> FileId {
