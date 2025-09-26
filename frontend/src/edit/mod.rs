@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use common::language::Language;
 use common::statement_version::StatementVersion;
 use common::task::Task;
-use common::translation::Translation;
+use common::translation::{Translation, UpdateTranslationRequest};
 use common::user_contest_status::SetTranslationSessionTokenRequest;
 use futures::StreamExt;
 use gloo_timers::future::TimeoutFuture;
@@ -15,7 +15,7 @@ use leptos::server::codee::string::JsonSerdeCodec;
 use leptos::task::{spawn_local, spawn_local_scoped};
 use leptos_router::hooks::use_params_map;
 use leptos_use::storage::use_local_storage;
-use leptos_use::{UseColorModeOptions, use_color_mode_with_options};
+use leptos_use::{UseColorModeOptions, signal_throttled, use_color_mode_with_options};
 use thaw::{Button, Flex, Layout, LayoutHeader, Spinner};
 
 use crate::api_wrapper::{api_get, api_post, file_get};
@@ -241,7 +241,28 @@ fn Inner(
             });
         }
     } else {
-        // TODO: auto-save
+        let throttled: Signal<String> = signal_throttled(text, INTERVAL as f64);
+
+        let lang_id = lang.as_ref().unwrap().id;
+        Effect::new(move |_| {
+            let text = throttled.get();
+            spawn_local_scoped(async move {
+                let payload = UpdateTranslationRequest {
+                    task_id: task.id,
+                    language_id: lang_id,
+                    content: text.into(),
+                    session_token: get_session_token(),
+                };
+                match api_post("/api/update_translation", &payload).await {
+                    Ok(()) => {
+                        show_success!("Translation auto-saved");
+                    }
+                    Err(e) => {
+                        show_error!("Failed to auto-save translation: {e}");
+                    }
+                }
+            });
+        });
     }
 
     let mut files = files

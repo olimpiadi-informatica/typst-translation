@@ -55,5 +55,7 @@ pub async fn update_translation(
     .execute(&mut *tx)
     .await?;
 
+    tx.commit().await?;
+
     Ok(Json(()))
 }
