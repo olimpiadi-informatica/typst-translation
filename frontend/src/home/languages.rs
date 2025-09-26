@@ -30,7 +30,7 @@ pub fn LanguagesTable(transl_langs: Vec<Language>) -> impl IntoView {
 
     view! {
         <div>
-            <h1>"Languages"</h1>
+            <h2>"Languages"</h2>
             <Table>
                 <TableHeader>
                     <TableRow>

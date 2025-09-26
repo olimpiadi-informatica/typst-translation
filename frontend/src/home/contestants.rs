@@ -45,7 +45,7 @@ pub fn ContestantsTable(contestants: Vec<Contestant>, avail_langs: Vec<Language>
 
     view! {
         <div>
-            <h1>"Contestants"</h1>
+            <h2>"Contestants"</h2>
             <Table>
                 <TableHeader>
                     <TableRow>

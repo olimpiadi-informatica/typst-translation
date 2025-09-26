@@ -1,9 +1,12 @@
 use common::user::ExtUser;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
+use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
 use strum::VariantArray;
-use thaw::{Button, Flex, FlexAlign, FlexJustify, Select};
+use thaw::{
+    Button, ButtonAppearance, ButtonShape, ButtonSize, Flex, FlexAlign, FlexJustify, Select,
+};
 
 use crate::api_wrapper::api_post;
 use crate::editor::KeyboardMode;
@@ -29,7 +32,11 @@ fn kb_mode_from_str(s: &str) -> KeyboardMode {
 }
 
 #[component]
-pub fn Header(#[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>) -> impl IntoView {
+pub fn Header(
+    #[prop(optional)] go_back: Option<String>,
+    #[prop(optional)] title: Option<String>,
+    #[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>,
+) -> impl IntoView {
     //let color_mode = use_color_mode_with_options(
     //    UseColorModeOptions::default()
     //        .cookie_enabled(true)
@@ -90,8 +97,21 @@ pub fn Header(#[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>) -> im
 
     view! {
         <Flex justify=FlexJustify::SpaceBetween align=FlexAlign::Center style="height: 64px">
-            <Flex>
-                // TODO: Fix theme handling
+            <Flex align=FlexAlign::Center>
+                {go_back
+                    .map(|url| {
+                        view! {
+                            <A href=url>
+                                <Button
+                                    icon=icondata::BiArrowBackRegular
+                                    appearance=ButtonAppearance::Subtle
+                                    shape=ButtonShape::Circular
+                                    size=ButtonSize::Large
+                                />
+                            </A>
+                        }
+                    })} // TODO: Fix theme handling
+                {title.map(|title| view! { <h1>{title}</h1> })}
                 // <Button on_click=change_theme appearance=ButtonAppearance::Subtle>
                 // {move || {
                 // let (name, icon) = name_and_icon.get();

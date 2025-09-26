@@ -4,10 +4,13 @@ use std::path::PathBuf;
 
 use common::statement_version::StatementVersion;
 use common::task::Task;
+use common::translation::Translation;
 use futures::StreamExt;
+use gloo_timers::future::TimeoutFuture;
 use leptos::either::Either;
 use leptos::prelude::*;
 use leptos::server::codee::string::JsonSerdeCodec;
+use leptos::task::spawn_local;
 use leptos_router::hooks::use_params_map;
 use leptos_use::storage::use_local_storage;
 use leptos_use::{UseColorModeOptions, use_color_mode_with_options};
@@ -18,18 +21,27 @@ use crate::compilation_manager::CompilationManager;
 use crate::compilation_results::CompilationResults;
 use crate::editor::{Editor, KeyboardMode};
 use crate::header::Header;
+use crate::session_token::get_session_token;
 use crate::show_error;
 
 #[component]
 pub fn EditPage() -> impl IntoView {
-    let task_id = Memo::new(|_| {
-        let params = use_params_map();
+    let params = use_params_map();
+
+    let task_id = Memo::new(move |_| {
         params
             .read()
             .get("task")
             .expect("task param")
             .parse::<i32>()
             .expect("task param should be an integer")
+    });
+
+    let lang_id = Memo::new(move |_| {
+        params
+            .read()
+            .get("lang")
+            .map(|s| s.parse::<i64>().expect("lang param should be an integer"))
     });
 
     let task = LocalResource::<Option<Task>>::new(move || async move {
@@ -41,6 +53,28 @@ pub fn EditPage() -> impl IntoView {
                 None
             }
         }
+    });
+
+    let translation = Memo::new(move |_| {
+        let task = task.read();
+        let Some(Some(task)) = task.deref() else {
+            return None;
+        };
+        let lang_id = lang_id.get();
+        Some(
+            task.translations
+                .iter()
+                .find(|t| Some(t.language_id) == lang_id)
+                .cloned(),
+        )
+    });
+
+    let readonly = Memo::new(move |_| {
+        let translation = translation.read();
+        let Some(Some(translation)) = translation.deref() else {
+            return true;
+        };
+        translation.session_token != Some(get_session_token())
     });
 
     let statement_version = LocalResource::<Option<StatementVersion>>::new(move || async move {
@@ -83,14 +117,57 @@ pub fn EditPage() -> impl IntoView {
         }
     });
 
-    move || match (task.get().flatten(), files.get().flatten()) {
-        (Some(task), Some(files)) => Either::Left(view! { <Inner task files /> }),
+    let orig_text = LocalResource::<Option<String>>::new(move || async move {
+        let translation = translation.read();
+        let Some(translation) = translation.deref() else {
+            return None;
+        };
+        let Some(Translation {
+            content_hash: Some(hash),
+            ..
+        }) = translation
+        else {
+            let task = task.read();
+            let Some(Some(task)) = task.deref() else {
+                return None;
+            };
+            let files = files.read();
+            let Some(Some(files)) = files.deref() else {
+                return None;
+            };
+            return files
+                .get(&format!("{}/statement/statement.typ", task.name))
+                .map(|x| String::from_utf8_lossy(x).to_string());
+        };
+        match file_get(hash, "statement.typ").await {
+            Ok(content) => Some(String::from_utf8_lossy(&content).to_string()),
+            Err(e) => {
+                show_error!("Failed to fetch original statement: {e}");
+                None
+            }
+        }
+    });
+
+    move || match (
+        task.get().flatten(),
+        files.get().flatten(),
+        orig_text.get().flatten(),
+    ) {
+        (Some(task), Some(files), Some(orig_text)) => Either::Left(
+            view! { <Inner task lang_id=lang_id.get() files readonly=readonly.get() orig_text /> },
+        ),
         _ => Either::Right(view! { <Spinner label="Loading statement..." /> }),
     }
 }
 
 #[component]
-fn Inner(task: Task, files: HashMap<String, Vec<u8>>) -> impl IntoView {
+fn Inner(
+    task: Task,
+    lang_id: Option<i64>,
+    files: HashMap<String, Vec<u8>>,
+    readonly: bool,
+    orig_text: String,
+) -> impl IntoView {
     let color_mode = use_color_mode_with_options(
         UseColorModeOptions::default()
             .cookie_enabled(true)
@@ -101,12 +178,45 @@ fn Inner(task: Task, files: HashMap<String, Vec<u8>>) -> impl IntoView {
         use_local_storage::<KeyboardMode, JsonSerdeCodec>("typst-translation-kb-mode");
 
     let text_path = format!("{}/statement/statement.typ", task.name);
-    let text = RwSignal::new(
-        files
-            .get(&text_path)
-            .map(|x| String::from_utf8_lossy(x).to_string())
-            .unwrap_or_default(),
-    );
+    let text = RwSignal::new(orig_text);
+
+    const INTERVAL: u32 = 20000;
+    if readonly {
+        if let Some(lang_id) = lang_id {
+            let task = task.clone();
+            spawn_local(async move {
+                loop {
+                    TimeoutFuture::new(INTERVAL).await;
+                    let task: Task = match api_get(&format!("/api/tasks/{}", task.id)).await {
+                        Ok(task) => task,
+                        Err(e) => {
+                            show_error!("Failed to fetch task: {e}");
+                            continue;
+                        }
+                    };
+                    let translation = task
+                        .translations
+                        .into_iter()
+                        .find(|t| t.language_id == lang_id)
+                        .expect("translation should exist");
+                    let Some(hash) = translation.content_hash else {
+                        continue;
+                    };
+                    match file_get(&hash, "statement.typ").await {
+                        Ok(content) => {
+                            let new_text = String::from_utf8_lossy(&content).to_string();
+                            text.set(new_text);
+                        }
+                        Err(e) => {
+                            show_error!("Failed to fetch original statement: {e}");
+                        }
+                    }
+                }
+            });
+        }
+    } else {
+        // TODO: auto-save
+    }
 
     let mut files = files
         .into_iter()
@@ -135,13 +245,17 @@ fn Inner(task: Task, files: HashMap<String, Vec<u8>>) -> impl IntoView {
     view! {
         <Layout attr:style="height: 100vh">
             <LayoutHeader>
-                <Header kb_mode=(kb_mode, set_kb_mode) />
+                <Header
+                    go_back="/".to_owned()
+                    title=format!("Task: {}", task.name)
+                    kb_mode=(kb_mode, set_kb_mode)
+                />
             </LayoutHeader>
             <Flex>
                 <Editor
                     contents=text
                     name="statement-editor"
-                    readonly=false
+                    readonly
                     ctrl_enter
                     on_change
                     kb_mode

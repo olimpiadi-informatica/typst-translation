@@ -79,8 +79,8 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
             view! {
                 <TableCell>
                     <TableCellLayout>
-                        <A href=format!("/edit/task/{}/lang/{}", task_id, lang.code)>
-                            <Button>"Edit"</Button>
+                        <A href=format!("/task/{}/lang/{}", task_id, lang.id)>
+                            <Button>{move || if finalized.get() { "View" } else { "Edit"}}</Button>
                         </A>
                     </TableCellLayout>
                 </TableCell>
@@ -96,7 +96,7 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
                 <For each=move || transl_langs2.clone() key=|lang| lang.id children=draw_edit />
                 <TableCell>
                     <TableCellLayout>
-                        <A href=format!("/edit/task/{}/lang/en_ISC", task_id)>
+                        <A href=format!("/task/{}", task_id)>
                             <Button>"View"</Button>
                         </A>
                     </TableCellLayout>
@@ -108,7 +108,7 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
     view! {
         <Flex vertical=true>
             <Flex justify=FlexJustify::SpaceBetween>
-                <h1>"Contest: " {contest_name}</h1>
+                <h2>"Contest: " {contest_name}</h2>
                 {finalize_view}
             </Flex>
             <Table>

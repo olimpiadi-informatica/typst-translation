@@ -45,7 +45,8 @@ pub fn App() -> impl IntoView {
                     <Router>
                         <Routes fallback=|| view! { <h1>"404 Not found."</h1> }>
                             <Route path=path!("/") view=HomePage />
-                            <Route path=path!("/edit/task/:task/lang/:lang") view=EditPage />
+                            <Route path=path!("/task/:task") view=EditPage />
+                            <Route path=path!("/task/:task/lang/:lang") view=EditPage />
                         </Routes>
                     </Router>
                 </UserProvider>
