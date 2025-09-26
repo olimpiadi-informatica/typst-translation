@@ -5,6 +5,7 @@ use thaw::{
     Button, ButtonAppearance, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface,
     DialogTitle, Flex, Select, Textarea, TextareaSize,
 };
+use wasm_bindgen::JsCast;
 
 use crate::api_wrapper::api_post;
 use crate::app::wrap_with_current_owner;
@@ -31,9 +32,19 @@ pub fn Gemini(
                 "flash" => GeminiModel::Gemini25Flash,
                 _ => unreachable!(),
             };
+            let textarea = web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .get_element_by_id("gemini-textarea")
+                .unwrap();
+            let prompt = textarea
+                .dyn_ref::<web_sys::HtmlTextAreaElement>()
+                .unwrap()
+                .value();
             let payload = GeminiRequest {
                 task_id: task_id.get_untracked(),
-                prompt: value.get_untracked(),
+                prompt,
                 model,
             };
             match api_post("/api/get_ai_translation", &payload).await {
@@ -66,6 +77,7 @@ pub fn Gemini(
                                 "WARNING: The translation will replace the current text in the editor!"
                             </p>
                             <Textarea
+                                id="gemini-textarea"
                                 attr:style="height: 200px"
                                 size=TextareaSize::Large
                                 value=value.get_untracked()

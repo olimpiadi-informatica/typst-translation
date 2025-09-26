@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "INSERT INTO users(username, password, login_epoch) VALUES (?, 'satisfy-mollusk-encrypt', 0) RETURNING id;",
+  "query": "INSERT INTO users(username, password, login_epoch) VALUES (?, ?, 0) RETURNING id;",
   "describe": {
     "columns": [
       {
@@ -10,11 +10,11 @@
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 2
     },
     "nullable": [
       false
     ]
   },
-  "hash": "d69deab55af0b2efc3262db5fa324bbea8576197f3f395af9cf9c33b2a1759c5"
+  "hash": "3284842eb39eaaf0c6e3bb9ee32528da4780a668fe9e7812cb377534e409cbe3"
 }

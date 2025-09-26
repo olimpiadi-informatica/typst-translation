@@ -41,13 +41,15 @@ async fn main() -> Result<()> {
     let mut tx = db.begin().await?;
 
     for user in users {
+        let password = uuid::Uuid::new_v4().to_string();
         let user_id = query!(
-            "INSERT INTO users(username, password, login_epoch) VALUES (?, 'satisfy-mollusk-encrypt', 0) RETURNING id;",
-            user.username
-       )
-            .fetch_one(&mut *tx)
-            .await?
-            .id;
+            "INSERT INTO users(username, password, login_epoch) VALUES (?, ?, 0) RETURNING id;",
+            user.username,
+            password
+        )
+        .fetch_one(&mut *tx)
+        .await?
+        .id;
 
         for lang in user.languages {
             let _lang_id = query!(
