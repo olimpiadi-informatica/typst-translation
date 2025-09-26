@@ -13,24 +13,24 @@ use crate::db_ops::statement_version_db;
 use crate::db_ops::task_db::get_task_by_id;
 use crate::file_storage::path_of_file;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct IOTextPart {
     text: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct IOParts {
     parts: Vec<IOTextPart>,
     role: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 struct ThinkingConfig {
     #[serde(rename = "thinkingBudget")]
     thinking_budget: i64,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 struct GenerationConfig {
     #[serde(rename = "maxOutputTokens")]
     max_output_tokens: i64,
@@ -38,7 +38,7 @@ struct GenerationConfig {
     thinking_config: ThinkingConfig,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 struct Query {
     system_instruction: IOParts,
     contents: IOParts,
@@ -56,7 +56,7 @@ struct UsageMetadata {
     other_fields: HashMap<String, serde_json::Value>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct Candidate {
     content: IOParts,
     #[allow(unused)]
@@ -64,7 +64,7 @@ struct Candidate {
     other_fields: HashMap<String, serde_json::Value>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct Response {
     candidates: Vec<Candidate>,
     #[serde(rename = "usageMetadata")]
@@ -77,7 +77,7 @@ pub async fn get_ai_translation(
     State(app_state): State<AppState>,
     current_user: AuthUser,
     Json(params): Json<GeminiRequest>,
-) -> Result<String, Error> {
+) -> Result<Json<String>, Error> {
     let task = get_task_by_id(app_state.db(), params.task_id).await?;
 
     let user = current_user.as_user().ok_or(Error::Unauthorized)?;
@@ -131,7 +131,9 @@ pub async fn get_ai_translation(
 
     info!("sending translation request");
 
-    let response: Response = request.send().await?.json().await?;
+    let response = request.send().await?;
+    response.error_for_status_ref()?;
+    let response: Response = response.json().await?;
 
     let text = response.candidates[0].content.parts[0].text.clone();
 
@@ -162,5 +164,5 @@ pub async fn get_ai_translation(
     .execute(app_state.db())
     .await?;
 
-    Ok(text)
+    Ok(Json(text))
 }

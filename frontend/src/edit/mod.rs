@@ -16,17 +16,20 @@ use leptos::task::{spawn_local, spawn_local_scoped};
 use leptos_router::hooks::use_params_map;
 use leptos_use::storage::use_local_storage;
 use leptos_use::{UseColorModeOptions, signal_throttled, use_color_mode_with_options};
-use thaw::{Button, Flex, Layout, LayoutHeader, Spinner};
+use thaw::{Button, Flex, FlexAlign, Layout, LayoutHeader, Spinner};
 
 use crate::api_wrapper::{api_get, api_post, file_get};
 use crate::app::wrap_with_current_owner;
 use crate::compilation_manager::CompilationManager;
 use crate::compilation_results::CompilationResults;
+use crate::edit::gemini::Gemini;
 use crate::editor::{Editor, KeyboardMode};
 use crate::header::Header;
 use crate::session_token::get_session_token;
 use crate::user::UserContext;
 use crate::{show_error, show_success};
+
+mod gemini;
 
 #[component]
 pub fn EditPage() -> impl IntoView {
@@ -334,17 +337,30 @@ fn Inner(
                     title=format!("Task: {} - Lang: {}", task.name, lang_code)
                     kb_mode=(kb_mode, set_kb_mode)
                 >
-                    {if lang.map(|l| l.user_id) == Some(user_id) {
-                        if readonly {
-                            EitherOf3::A(
-                                view! { <Button on_click=move |_| do_set_token()>"Edit"</Button> },
-                            )
+                    <Flex align=FlexAlign::Center>
+                        {if lang.as_ref().map(|l| l.user_id) == Some(user_id) {
+                            if readonly {
+                                EitherOf3::A(
+                                    view! {
+                                        <Button on_click=move |_| do_set_token()>"Edit"</Button>
+                                    },
+                                )
+                            } else {
+                                EitherOf3::B(
+                                    view! {
+                                        {saved_view}
+                                        <Gemini
+                                            task_id=task.id
+                                            lang_code=lang.as_ref().unwrap().code.clone()
+                                            text
+                                        />
+                                    },
+                                )
+                            }
                         } else {
-                            EitherOf3::B(saved_view)
-                        }
-                    } else {
-                        EitherOf3::C(())
-                    }}
+                            EitherOf3::C(())
+                        }}
+                    </Flex>
                 </Header>
             </LayoutHeader>
             <Flex>
