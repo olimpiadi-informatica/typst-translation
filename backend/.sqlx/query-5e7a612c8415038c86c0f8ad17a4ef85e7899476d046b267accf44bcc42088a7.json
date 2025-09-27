@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT code\n            FROM contestants\n            WHERE language_id = ?\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "code",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5e7a612c8415038c86c0f8ad17a4ef85e7899476d046b267accf44bcc42088a7"
+}
