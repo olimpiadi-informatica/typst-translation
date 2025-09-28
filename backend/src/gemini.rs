@@ -11,6 +11,7 @@ use crate::AppState;
 use crate::auth::AuthUser;
 use crate::db_ops::statement_version_db;
 use crate::db_ops::task_db::get_task_by_id;
+use crate::db_ops::user_db::get_by_id;
 use crate::file_storage::path_of_file;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -154,15 +155,23 @@ pub async fn get_ai_translation(
 
     info!(budget_cost, dollar_cost);
 
+    let mut tx = app_state.db().begin().await?;
+
+    let user = get_by_id(&mut *tx, user.id).await?.unwrap();
+
     let new_budget = (user.automatic_translation_budget - budget_cost).max(0);
+    let new_usage = user.tokens_used + budget_cost;
 
     sqlx::query!(
-        "UPDATE users SET automatic_translation_budget = ? WHERE id = ?",
+        "UPDATE users SET automatic_translation_budget = ?, tokens_used = ? WHERE id = ?",
         new_budget,
+        new_usage,
         user.id
     )
     .execute(app_state.db())
     .await?;
+
+    tx.commit().await?;
 
     Ok(Json(text))
 }
