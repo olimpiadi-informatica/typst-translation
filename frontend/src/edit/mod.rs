@@ -361,7 +361,7 @@ pub fn EditPage() -> impl IntoView {
         <Spinner label="Loading statement..." class:hidden=move || loaded.get() />
         <Layout attr:style="height: 100vh" class:hidden=move || !loaded.get()>
             <LayoutHeader>
-                <Header go_back="/".to_owned() title kb_mode=(kb_mode, set_kb_mode)>
+                <Header go_back="/" title kb_mode=(kb_mode, set_kb_mode)>
                     <Show when=move || readonly.get() && can_edit.get()>
                         <Button on_click=move |_| on_ask_edit()>"Edit"</Button>
                     </Show>

@@ -2,10 +2,10 @@ use axum::Json;
 use axum::extract::{Path, State};
 use common::error::Error;
 use common::task::Task;
-use common::translation::{Translation, UpdateTranslationRequest};
+use common::translation::{ImportTaskPayload, Translation, UpdateTranslationRequest};
 
 use crate::AppState;
-use crate::auth::AuthUser;
+use crate::auth::{AuthAdmin, AuthUser};
 use crate::db_ops::{task_db, translation_db};
 use crate::file_storage::save_file;
 
@@ -61,5 +61,15 @@ pub async fn update_translation(
 
     tx.commit().await?;
 
+    Ok(Json(()))
+}
+
+pub async fn import_task(
+    State(app_state): State<AppState>,
+    _admin: AuthAdmin,
+    Json(req): Json<ImportTaskPayload>,
+) -> Result<Json<()>, Error> {
+    let pool = app_state.db();
+    task_db::import_task(pool, req.contest_id, req.update, req.zip_file).await?;
     Ok(Json(()))
 }

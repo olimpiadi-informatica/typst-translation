@@ -81,6 +81,14 @@ impl From<std::io::Error> for Error {
     }
 }
 
+#[cfg(feature = "server-side")]
+impl From<zip::result::ZipError> for Error {
+    fn from(err: zip::result::ZipError) -> Self {
+        tracing::warn!(error = ?err, "I/O error");
+        Error::InvalidInput(format!("{err}"))
+    }
+}
+
 #[cfg(feature = "client-side")]
 impl From<gloo_net::Error> for Error {
     fn from(err: gloo_net::Error) -> Self {

@@ -121,6 +121,7 @@ impl AppState {
                 "/api/tasks/{task_id}",
                 get(api_handlers::task::get_task_by_id),
             )
+            .route("/api/tasks/import", post(api_handlers::task::import_task))
             .route(
                 "/api/languages/{language_id}",
                 get(api_handlers::languages::get_language_by_id),
@@ -128,6 +129,10 @@ impl AppState {
             .route(
                 "/api/typst_packages",
                 post(api_handlers::typst_packages::get_typst_package),
+            )
+            .route(
+                "/api/contests/get_all",
+                get(api_handlers::contest::get_all_contests),
             )
             .route("/files/{hash}/{filename}", get(file_storage::get_file))
             .fallback_service(

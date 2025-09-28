@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use leptos_router::components::A;
-use thaw::{Button, ButtonAppearance};
+use thaw::Button;
 
 use crate::header::Header;
 
@@ -11,7 +11,7 @@ pub fn AdminHomePage() -> impl IntoView {
     view! {
         <Header title="Admin Panel" />
         <A href="/admin/import_task">
-            <Button appearance=ButtonAppearance::Subtle>"Import Task"</Button>
+            <Button>"Import Task"</Button>
         </A>
     }
 }

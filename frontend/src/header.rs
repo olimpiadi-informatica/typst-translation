@@ -33,7 +33,7 @@ fn kb_mode_from_str(s: &str) -> KeyboardMode {
 
 #[component]
 pub fn Header(
-    #[prop(optional)] go_back: Option<String>,
+    #[prop(optional, into)] go_back: Option<String>,
     #[prop(optional, into)] title: Option<Signal<String>>,
     #[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>,
     #[prop(optional)] children: Option<Children>,

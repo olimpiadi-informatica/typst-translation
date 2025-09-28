@@ -41,6 +41,7 @@ js-sys = "0.3.81"
 typst-assets = { version = "0.13.1", features = ["fonts"] }
 gloo-storage = "0.3.0"
 uuid = { version = "1.18.1", features = ["v4"] }
+wasm-bindgen-futures = "0.4.54"
 
 [profile.release]
 opt-level = 'z'

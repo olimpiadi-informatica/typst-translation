@@ -1039,6 +1039,7 @@ dependencies = [
  "typst-svg",
  "uuid",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
  "web-time",
 ]

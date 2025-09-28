@@ -18,3 +18,10 @@ pub struct UpdateTranslationRequest {
     pub content: Vec<u8>,
     pub session_token: String,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ImportTaskPayload {
+    pub contest_id: i64,
+    pub update: bool,
+    pub zip_file: Vec<u8>,
+}

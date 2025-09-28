@@ -2,7 +2,7 @@ use common::contest::{Contest, ContestWithTasksAndStatus};
 use common::error::Error;
 use common::task::{Task, TaskDb};
 use common::user_contest_status::UserContestStatus;
-use sqlx::{SqlitePool, query_as};
+use sqlx::{Executor, Sqlite, SqlitePool, query_as};
 
 use crate::db_ops::translation_db;
 
@@ -54,4 +54,21 @@ pub async fn get_user_contest_statuses_and_tasks(
     }
 
     Ok(result)
+}
+
+pub async fn get_all<'e, E>(executor: E) -> Result<Vec<Contest>, Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let contests = sqlx::query_as!(
+        Contest,
+        r###"
+        SELECT *
+        FROM contests
+        ORDER BY id DESC
+        "###
+    )
+    .fetch_all(executor)
+    .await?;
+    Ok(contests)
 }

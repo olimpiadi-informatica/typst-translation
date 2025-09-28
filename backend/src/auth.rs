@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use axum::Json;
 use axum::extract::{FromRequestParts, OptionalFromRequestParts, State};
 use axum::http::request::Parts;
@@ -225,4 +227,26 @@ pub async fn whoami(current_user: Option<AuthUser>) -> Json<WhoAmIResponse> {
 #[instrument(skip_all)]
 pub async fn logout(cookies: CookieJar) -> Result<CookieJar, Error> {
     Ok(remove_cookie(cookies))
+}
+
+#[derive(Debug)]
+pub struct AuthAdmin;
+
+impl FromRequestParts<AppState> for AuthAdmin {
+    type Rejection = (CookieJar, Error);
+
+    #[instrument(skip_all)]
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        let user = <AuthUser as FromRequestParts<_>>::from_request_parts(parts, state).await?;
+        match user.deref() {
+            ExtUser::Admin => Ok(AuthAdmin),
+            _ => {
+                let cookies = CookieJar::from_request_parts(parts, state).await.unwrap();
+                Err((cookies, Error::Forbidden))
+            }
+        }
+    }
 }

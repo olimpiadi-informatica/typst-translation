@@ -71,7 +71,7 @@ pub fn HomePage() -> impl IntoView {
                 .collect::<Vec<_>>();
             Either::Left(view! {
                 <Flex vertical=true gap=FlexGap::Large style="max-width: 1200px; margin: auto">
-                    <Header title="Translation System".to_owned() />
+                    <Header title="Translation System" />
                     <Flex gap=FlexGap::Large>
                         <ContestantsTable contestants avail_langs />
                         <LanguagesTable transl_langs />
