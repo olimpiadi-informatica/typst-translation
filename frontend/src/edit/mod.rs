@@ -28,7 +28,7 @@ use crate::{show_error, show_success};
 
 mod gemini;
 
-const INTERVAL: u32 = 20000;
+const INTERVAL: u32 = 5000;
 
 #[component]
 pub fn EditPage() -> impl IntoView {
@@ -372,8 +372,7 @@ pub fn EditPage() -> impl IntoView {
                                 task.get().flatten().map(|x| x.id).unwrap_or_default()
                             })
                             lang_code=Signal::derive(move || {
-                                lang
-                                    .get()
+                                lang.get()
                                     .flatten()
                                     .flatten()
                                     .map(|x| x.code.clone())
