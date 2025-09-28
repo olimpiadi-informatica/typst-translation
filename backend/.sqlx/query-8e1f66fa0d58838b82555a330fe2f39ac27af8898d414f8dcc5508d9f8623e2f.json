@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n            id,\n            task_id,\n            content_manifest as \"content_manifest: Json<HashMap<String, String>>\",\n            is_live,\n            created_at\n        FROM statement_versions\n        WHERE task_id = ?\n        ORDER BY created_at DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "task_id",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "content_manifest: Json<HashMap<String, String>>",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "is_live",
+        "ordinal": 3,
+        "type_info": "Bool"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 4,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8e1f66fa0d58838b82555a330fe2f39ac27af8898d414f8dcc5508d9f8623e2f"
+}

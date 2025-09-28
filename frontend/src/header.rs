@@ -1,6 +1,5 @@
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
-use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
 use strum::VariantArray;
 use thaw::{
@@ -32,7 +31,7 @@ fn kb_mode_from_str(s: &str) -> KeyboardMode {
 
 #[component]
 pub fn Header(
-    #[prop(optional, into)] go_back: Option<String>,
+    #[prop(optional)] noback: Option<bool>,
     #[prop(optional, into)] title: Option<Signal<String>>,
     #[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>,
     #[prop(optional)] children: Option<Children>,
@@ -97,22 +96,27 @@ pub fn Header(
 
     let user_context = expect_context::<ExtUserContext>();
 
+    let go_back = move |_| {
+        if let Some(window) = web_sys::window()
+            && let Ok(history) = window.history()
+        {
+            let _ = history.back();
+        }
+    };
+
     view! {
         <Flex justify=FlexJustify::SpaceBetween align=FlexAlign::Center style="height: 64px">
             <Flex align=FlexAlign::Center>
-                {go_back
-                    .map(|url| {
-                        view! {
-                            <A href=url>
-                                <Button
-                                    icon=icondata::BiArrowBackRegular
-                                    appearance=ButtonAppearance::Subtle
-                                    shape=ButtonShape::Circular
-                                    size=ButtonSize::Large
-                                />
-                            </A>
-                        }
-                    })} // TODO: Fix theme handling
+                <Show when=move || !noback.unwrap_or_default()>
+                    <Button
+                        on_click=go_back
+                        icon=icondata::BiArrowBackRegular
+                        appearance=ButtonAppearance::Subtle
+                        shape=ButtonShape::Circular
+                        size=ButtonSize::Large
+                    />
+                </Show>
+                // TODO: Fix theme handling
                 {move || title.get().map(|title| view! { <h1>{title}</h1> })}
                 // <Button on_click=change_theme appearance=ButtonAppearance::Subtle>
                 // {move || {

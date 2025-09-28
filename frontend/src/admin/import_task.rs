@@ -74,7 +74,7 @@ pub fn ImportTaskPage() -> impl IntoView {
     });
 
     view! {
-        <Header go_back="/admin" title="Import Task" />
+        <Header title="Import Task" />
         {move || match contests.get().flatten() {
             Some(contests) => {
                 Either::Left(

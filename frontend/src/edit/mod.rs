@@ -12,11 +12,12 @@ use gloo_timers::future::TimeoutFuture;
 use leptos::prelude::*;
 use leptos::server::codee::string::JsonSerdeCodec;
 use leptos::task::{spawn_local, spawn_local_scoped};
-use leptos_router::hooks::use_params_map;
+use leptos_router::hooks::{use_navigate, use_params_map};
 use leptos_use::storage::use_local_storage;
 use leptos_use::{UseColorModeOptions, signal_throttled, use_color_mode_with_options};
 use thaw::{
-    Button, ButtonAppearance, ButtonGroup, Flex, FlexAlign, Icon, Layout, LayoutHeader, Spinner,
+    Button, ButtonAppearance, ButtonGroup, Flex, FlexAlign, Icon, Layout, LayoutHeader, Select,
+    Spinner,
 };
 
 use crate::api_wrapper::{api_get, api_post, file_get};
@@ -110,6 +111,28 @@ pub fn EditPage() -> impl IntoView {
                 None
             }
         }
+    });
+
+    let statement_versions =
+        LocalResource::<Option<Vec<StatementVersion>>>::new(move || async move {
+            let url = format!("/api/tasks/{}/statement_versions/all", task_id.get());
+            match api_get(&url).await {
+                Ok(files) => Some(files),
+                Err(e) => {
+                    show_error!("Failed to fetch statement files: {e}");
+                    None
+                }
+            }
+        });
+
+    let old_statement_versions = Signal::derive(move || {
+        statement_versions
+            .get()
+            .flatten()
+            .unwrap_or_default()
+            .into_iter()
+            .skip(1)
+            .collect::<Vec<_>>()
     });
 
     let files = LocalResource::new(move || async move {
@@ -365,11 +388,50 @@ pub fn EditPage() -> impl IntoView {
         Box::new(move || compilation_manager.do_compile(true))
     };
 
+    let selected_version = RwSignal::new(String::new());
+
+    let compare_versions = move |_| {
+        let id_cur = statement_versions
+            .read_untracked()
+            .as_ref()
+            .flatten()
+            .and_then(|x| x.first().map(|x| x.id))
+            .unwrap_or_default();
+        let time_old = selected_version.get_untracked();
+        let id_old = statement_versions
+            .read_untracked()
+            .as_ref()
+            .flatten()
+            .and_then(|x| {
+                x.iter()
+                    .filter_map(|x| {
+                        if x.created_at.to_string() == time_old {
+                            Some(x.id)
+                        } else {
+                            None
+                        }
+                    })
+                    .next()
+            })
+            .unwrap_or_default();
+        use_navigate()(
+            &format!(
+                "/compare/{}/{id_old}/{id_cur}",
+                task.read()
+                    .as_ref()
+                    .flatten()
+                    .map(|x| x.name.clone())
+                    .unwrap_or_default()
+            ),
+            Default::default(),
+        );
+    };
+
     view! {
         <Spinner label="Loading statement..." class:hidden=move || loaded.get() />
         <Layout attr:style="height: 100vh" class:hidden=move || !loaded.get()>
             <LayoutHeader>
-                <Header go_back="/" title kb_mode=(kb_mode, set_kb_mode)>
+                <Header title kb_mode=(kb_mode, set_kb_mode)>
                     <Show when=move || readonly.get() && can_edit.get()>
                         <Button
                             on_click=move |_| on_ask_edit()
@@ -415,6 +477,22 @@ pub fn EditPage() -> impl IntoView {
                                 })
                             />
                         </ButtonGroup>
+                    </Show>
+                    <Show when=move || { !old_statement_versions.read().is_empty() }>
+                        <Flex align=FlexAlign::Center>
+                        {"Compare ISC versions: "} <Select value=selected_version>
+                                <For each=move || old_statement_versions.get() key=|x| x.id let:s>
+                                    <option value=move || {
+                                        s.created_at.to_string()
+                                    }>
+                                        {s.created_at.format("%Y-%m-%d %H:%M:%S").to_string()}
+                                    </option>
+                                </For>
+                            </Select>
+                            <Button appearance=ButtonAppearance::Primary on_click=compare_versions>
+                                "Compare"
+                            </Button>
+                        </Flex>
                     </Show>
                 </Header>
             </LayoutHeader>

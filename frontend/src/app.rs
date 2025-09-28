@@ -6,6 +6,7 @@ use thaw::{ConfigProvider, Theme, ToasterProvider};
 
 use crate::admin::AdminHomePage;
 use crate::admin::import_task::ImportTaskPage;
+use crate::compare::Compare;
 use crate::compilation_manager::CompilationManager;
 use crate::edit::EditPage;
 use crate::home::HomePage;
@@ -54,6 +55,10 @@ pub fn App() -> impl IntoView {
                                 <Route path=path!("/") view=HomePage />
                                 <Route path=path!("/task/:task") view=EditPage />
                                 <Route path=path!("/task/:task/lang/:lang") view=EditPage />
+                                <Route
+                                    path=path!("/compare/:task_name/:id_old/:id_new")
+                                    view=Compare
+                                />
                             </ParentRoute>
                         </Routes>
                     </Router>

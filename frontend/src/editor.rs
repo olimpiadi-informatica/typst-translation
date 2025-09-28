@@ -31,6 +31,9 @@ extern "C" {
 
     #[wasm_bindgen(method, js_name = "setKeymap")]
     fn set_keymap(this: &CM6Editor, kbh: &str);
+
+    #[wasm_bindgen(js_name = "makeMergeView")]
+    fn make_merge_view(id: &str, first: &str, second: &str, dark: bool);
 }
 
 #[derive(
@@ -138,6 +141,36 @@ pub fn Editor(
         });
     });
 
+    view! {
+        <div
+            id=id
+            node_ref=editor_div_ref
+            style="height: 100%; width: 100%; max-height: 75vh; font-size: 1.2em;"
+        ></div>
+    }
+}
+
+#[component]
+pub fn DiffViewer(
+    first: Signal<String>,
+    second: Signal<String>,
+    name: &'static str,
+    color_mode: Signal<ColorMode>,
+) -> impl IntoView {
+    let id = format!("{name}-diff-viewer");
+    let editor_div_ref = NodeRef::new();
+    {
+        let id = id.clone();
+        Effect::new(move |_| {
+            let _ = editor_div_ref.get();
+            make_merge_view(
+                &id,
+                &first.read(),
+                &second.read(),
+                color_mode.get() != ColorMode::Light,
+            );
+        });
+    }
     view! {
         <div
             id=id

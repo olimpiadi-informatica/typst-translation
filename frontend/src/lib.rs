@@ -1,6 +1,7 @@
 mod admin;
 mod api_wrapper;
 mod app;
+mod compare;
 mod compilation_manager;
 mod compilation_results;
 mod edit;
