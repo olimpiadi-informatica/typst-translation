@@ -1,3 +1,4 @@
+mod admin;
 mod api_wrapper;
 mod app;
 mod compilation_manager;

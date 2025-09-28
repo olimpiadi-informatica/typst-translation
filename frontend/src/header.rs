@@ -10,7 +10,7 @@ use thaw::{
 
 use crate::api_wrapper::api_post;
 use crate::editor::KeyboardMode;
-use crate::user::UserContext;
+use crate::user::ExtUserContext;
 use crate::{show_error, show_success};
 
 type SignalPair<T> = (Signal<T>, WriteSignal<T>);
@@ -88,7 +88,7 @@ pub fn Header(
                 }
 
                 show_success!("Logout successful");
-                let user_context = expect_context::<UserContext>();
+                let user_context = expect_context::<ExtUserContext>();
                 user_context.refetch();
                 let navigate = use_navigate();
                 navigate("/", Default::default());
@@ -129,9 +129,10 @@ pub fn Header(
                 <p>"User: "</p>
                 <pre>
                     {
-                        let user_context = expect_context::<UserContext>();
-                        match user_context.get_user_untracked() {
+                        let user_context = expect_context::<ExtUserContext>();
+                        match user_context.get_ext_user_untracked() {
                             ExtUser::User(user) => user.username,
+                            ExtUser::Admin => "admin".to_string(),
                             _ => todo!(),
                         }
                     }

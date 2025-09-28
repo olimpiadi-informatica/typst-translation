@@ -11,7 +11,7 @@ use crate::home::contestants::ContestantsTable;
 use crate::home::languages::LanguagesTable;
 use crate::home::translations::Translations;
 use crate::show_error;
-use crate::user::UserContext;
+use crate::user::ExtUserContext;
 
 mod contestants;
 mod languages;
@@ -49,9 +49,9 @@ pub fn HomePage() -> impl IntoView {
         }
     });
 
-    let user_context = expect_context::<UserContext>();
+    let user_context = expect_context::<ExtUserContext>();
     let user = user_context.get_user_untracked();
-    let user_id = user.as_user().unwrap().id;
+    let user_id = user.id;
 
     move || match (
         contestants.get().flatten(),

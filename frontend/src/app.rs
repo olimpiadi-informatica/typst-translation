@@ -1,13 +1,15 @@
 use leptos::prelude::*;
-use leptos_router::components::{Route, Router, Routes};
+use leptos_router::components::{ParentRoute, Route, Router, Routes};
 use leptos_router::path;
 use leptos_use::{ColorMode, UseColorModeOptions, use_color_mode_with_options};
 use thaw::{ConfigProvider, Theme, ToasterProvider};
 
+use crate::admin::AdminHomePage;
+use crate::admin::import_task::ImportTaskPage;
 use crate::compilation_manager::CompilationManager;
 use crate::edit::EditPage;
 use crate::home::HomePage;
-use crate::user::UserProvider;
+use crate::user::{AdminProvider, ExtUserProvider, UserProvider};
 
 pub fn wrap_with_current_owner(cl: impl Fn() + Clone) -> impl Fn() + Clone {
     let owner = Owner::current().unwrap();
@@ -41,15 +43,21 @@ pub fn App() -> impl IntoView {
     view! {
         <ConfigProvider theme>
             <ToasterProvider>
-                <UserProvider>
+                <ExtUserProvider>
                     <Router>
                         <Routes fallback=|| view! { <h1>"404 Not found."</h1> }>
-                            <Route path=path!("/") view=HomePage />
-                            <Route path=path!("/task/:task") view=EditPage />
-                            <Route path=path!("/task/:task/lang/:lang") view=EditPage />
+                            <ParentRoute path=path!("/admin") view=AdminProvider>
+                                <Route path=path!("") view=AdminHomePage />
+                                <Route path=path!("import_task") view=ImportTaskPage />
+                            </ParentRoute>
+                            <ParentRoute path=path!("") view=UserProvider>
+                                <Route path=path!("/") view=HomePage />
+                                <Route path=path!("/task/:task") view=EditPage />
+                                <Route path=path!("/task/:task/lang/:lang") view=EditPage />
+                            </ParentRoute>
                         </Routes>
                     </Router>
-                </UserProvider>
+                </ExtUserProvider>
             </ToasterProvider>
         </ConfigProvider>
     }
