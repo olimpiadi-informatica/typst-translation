@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@babel/runtime": "^7.24.5",
+    "@babel/runtime": "^7.26.10",
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
