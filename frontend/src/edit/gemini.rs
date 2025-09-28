@@ -62,7 +62,13 @@ pub fn Gemini(
     });
 
     view! {
-        <Button on_click=move |_| open.set(true)>"Gemini"</Button>
+        <Button
+            appearance=ButtonAppearance::Primary
+            on_click=move |_| open.set(true)
+            icon=icondata::BsStars
+        >
+            "Gemini"
+        </Button>
         <Dialog open>
             <DialogSurface>
                 <DialogBody>

@@ -15,18 +15,22 @@ use leptos::task::{spawn_local, spawn_local_scoped};
 use leptos_router::hooks::use_params_map;
 use leptos_use::storage::use_local_storage;
 use leptos_use::{UseColorModeOptions, signal_throttled, use_color_mode_with_options};
-use thaw::{Button, Flex, Layout, LayoutHeader, Spinner};
+use thaw::{
+    Button, ButtonAppearance, ButtonGroup, Flex, FlexAlign, Icon, Layout, LayoutHeader, Spinner,
+};
 
 use crate::api_wrapper::{api_get, api_post, file_get};
 use crate::compilation_manager::CompilationManager;
 use crate::compilation_results::CompilationResults;
 use crate::edit::gemini::Gemini;
+use crate::edit::reset_isc::ResetIsc;
 use crate::editor::{Editor, KeyboardMode};
 use crate::header::Header;
 use crate::session_token::get_session_token;
 use crate::{show_error, show_success};
 
 mod gemini;
+mod reset_isc;
 
 const INTERVAL: u32 = 5000;
 
@@ -67,7 +71,7 @@ pub fn EditPage() -> impl IntoView {
         };
         let url = format!("/api/languages/{}", lang_id);
         match api_get(&url).await {
-            Ok(lang) => Some(lang),
+            Ok(lang) => Some(Some(lang)),
             Err(e) => {
                 show_error!("Failed to fetch language: {e}");
                 None
@@ -147,6 +151,16 @@ pub fn EditPage() -> impl IntoView {
         )
     });
 
+    let isc_version = Memo::new(move |_| {
+        let files = files.read();
+        let Some(Some(files)) = files.deref() else {
+            return None;
+        };
+        files
+            .get(statement_path.read().deref())
+            .map(|x| String::from_utf8_lossy(x).to_string())
+    });
+
     let orig_text = LocalResource::<Option<String>>::new(move || async move {
         let translation = translation.read();
         let Some(translation) = translation.deref() else {
@@ -157,13 +171,7 @@ pub fn EditPage() -> impl IntoView {
             ..
         }) = translation
         else {
-            let files = files.read();
-            let Some(Some(files)) = files.deref() else {
-                return None;
-            };
-            return files
-                .get(&statement_path.get())
-                .map(|x| String::from_utf8_lossy(x).to_string());
+            return isc_version.get();
         };
         match file_get(hash, "statement.typ").await {
             Ok(content) => Some(String::from_utf8_lossy(&content).to_string()),
@@ -363,24 +371,50 @@ pub fn EditPage() -> impl IntoView {
             <LayoutHeader>
                 <Header go_back="/" title kb_mode=(kb_mode, set_kb_mode)>
                     <Show when=move || readonly.get() && can_edit.get()>
-                        <Button on_click=move |_| on_ask_edit()>"Edit"</Button>
+                        <Button
+                            on_click=move |_| on_ask_edit()
+                            appearance=ButtonAppearance::Primary
+                        >
+                            "Edit"
+                        </Button>
                     </Show>
-                    <Show when=move || !readonly.get()>
-                        <div>{move || if saved.get() { "Saved" } else { "Unsaved changes." }}</div>
-                        <Gemini
-                            task_id=Signal::derive(move || {
-                                task.get().flatten().map(|x| x.id).unwrap_or_default()
-                            })
-                            lang_code=Signal::derive(move || {
-                                lang.get()
-                                    .flatten()
-                                    .flatten()
-                                    .map(|x| x.code.clone())
-                                    .unwrap_or_default()
-                            })
-                            text=contents
-                        />
-
+                    <Show when=move || { !readonly.get() }>
+                        <Flex align=FlexAlign::Center>
+                            {move || {
+                                if saved.get() {
+                                    view! {
+                                        <Icon icon=icondata::MdiContentSaveCheckOutline />
+                                        "Saved"
+                                    }
+                                } else {
+                                    view! {
+                                        <Icon icon=icondata::FiLoader />
+                                        "Unsaved changes."
+                                    }
+                                }
+                            }}
+                        </Flex>
+                        <ButtonGroup>
+                            <Gemini
+                                task_id=Signal::derive(move || {
+                                    task.get().flatten().map(|x| x.id).unwrap_or_default()
+                                })
+                                lang_code=Signal::derive(move || {
+                                    lang.get()
+                                        .flatten()
+                                        .flatten()
+                                        .map(|x| x.code.clone())
+                                        .unwrap_or_default()
+                                })
+                                text=contents
+                            />
+                            <ResetIsc
+                                text=contents
+                                isc_version=Signal::derive(move || {
+                                    isc_version.get().unwrap_or_default()
+                                })
+                            />
+                        </ButtonGroup>
                     </Show>
                 </Header>
             </LayoutHeader>

@@ -159,7 +159,11 @@ where
 {
     let contestants = sqlx::query_as!(
         Contestant,
-        "SELECT * FROM contestants WHERE user_id = ?",
+        "SELECT *
+        FROM contestants
+        WHERE user_id = ?
+        ORDER BY code ASC
+        ",
         user_id
     )
     .fetch_all(executor)

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT * FROM contestants WHERE user_id = ?",
+  "query": "SELECT *\n        FROM contestants\n        WHERE user_id = ?\n        ORDER BY code ASC\n        ",
   "describe": {
     "columns": [
       {
@@ -46,5 +46,5 @@
       true
     ]
   },
-  "hash": "14a270c6f80fe44c99a5836d95e31be89b216fc10c1fb7ea8473ddd3b96547d8"
+  "hash": "64537e1bdfa024addfef9d77171b7ed63ad6fc09c1a68ae80f56fb410fecea7d"
 }
