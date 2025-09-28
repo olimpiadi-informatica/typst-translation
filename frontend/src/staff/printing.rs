@@ -12,9 +12,11 @@ use futures::StreamExt;
 use gloo_worker::Spawnable;
 use leptos::either::Either;
 use leptos::prelude::*;
+use leptos::server::codee::string::JsonSerdeCodec;
 use leptos::task::spawn_local_scoped;
+use leptos_use::storage::use_local_storage;
 use thaw::{
-    Button, Flex, FlexAlign, Icon, Spinner, Table, TableBody, TableCell, TableCellLayout,
+    Button, Checkbox, Flex, FlexAlign, Icon, Spinner, Table, TableBody, TableCell, TableCellLayout,
     TableHeader, TableHeaderCell, TableRow,
 };
 
@@ -271,18 +273,31 @@ pub fn Contest(
                 />
             </Flex>
             <Table>
-                <For each=move || contestants.clone() key=|c| c.id let:c>
-                    <TableRow>
-                        <TableCell>
-                            <TableCellLayout>{c.code.clone()}</TableCellLayout>
-                        </TableCell>
-                    // <TableCell>
-                    // <TableCellLayout>
-                    // <Button>"Done"</Button>
-                    // </TableCellLayout>
-                    // </TableCell>
-                    </TableRow>
-                </For>
+                <For
+                    each=move || contestants.clone()
+                    key=|c| c.id
+                    children=move |c| {
+                        let local_storage = format!("printed-{}-{}", c.code, contest.id);
+                        view! {
+                            <TableRow>
+                                <TableCell>
+                                    <TableCellLayout>{c.code.clone()}</TableCellLayout>
+                                </TableCell>
+                                <TableCell>
+                                    <TableCellLayout>
+                                        <Checkbox checked={
+                                            let (a, b, _) = use_local_storage::<
+                                                bool,
+                                                JsonSerdeCodec,
+                                            >(local_storage);
+                                            (a, b)
+                                        } />
+                                    </TableCellLayout>
+                                </TableCell>
+                            </TableRow>
+                        }
+                    }
+                />
             </Table>
         </For>
     }
