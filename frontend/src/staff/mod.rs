@@ -4,17 +4,13 @@ use thaw::{Button, ButtonGroup};
 
 use crate::header::Header;
 
-pub mod import_task;
+pub mod printing;
 
 #[component]
-pub fn AdminHomePage() -> impl IntoView {
+pub fn StaffHomePage() -> impl IntoView {
     view! {
-        <Header title="Admin Panel" />
+        <Header title="Staff Panel" />
         <ButtonGroup>
-            <Button on_click=move |_| {
-                let navigate = use_navigate();
-                navigate("/admin/import_task", Default::default())
-            }>"Import task"</Button>
             <Button on_click=move |_| {
                 let navigate = use_navigate();
                 navigate("/staff/printing", Default::default())

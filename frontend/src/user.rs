@@ -5,7 +5,7 @@ use leptos_router::components::Outlet;
 use thaw::Spinner;
 
 use crate::api_wrapper::api_post;
-use crate::login::{AdminLoginPage, UserLoginPage};
+use crate::login::{AdminLoginPage, StaffLoginPage, UserLoginPage};
 use crate::show_error;
 
 #[derive(Clone, Copy)]
@@ -71,5 +71,17 @@ pub fn UserProvider() -> impl IntoView {
     move || match user_provider.resource.get() {
         Some(Some(ExtUser { user: Some(_), .. })) => Either::Left(view! { <Outlet /> }),
         _ => Either::Right(view! { <UserLoginPage /> }),
+    }
+}
+
+#[component]
+pub fn StaffProvider() -> impl IntoView {
+    let user_provider = use_context::<ExtUserContext>().unwrap();
+
+    move || match user_provider.resource.get() {
+        Some(Some(ExtUser { is_admin: true, .. })) | Some(Some(ExtUser { is_staff: true, .. })) => {
+            Either::Left(view! { <Outlet /> })
+        }
+        _ => Either::Right(view! { <StaffLoginPage /> }),
     }
 }

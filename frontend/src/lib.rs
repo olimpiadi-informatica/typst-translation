@@ -11,6 +11,7 @@ mod home;
 mod logging;
 mod login;
 mod session_token;
+mod staff;
 mod toast;
 mod typst;
 mod user;

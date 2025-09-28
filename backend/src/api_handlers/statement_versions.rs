@@ -4,12 +4,12 @@ use common::error::Error;
 use common::statement_version::StatementVersion;
 
 use crate::AppState;
-use crate::auth::AuthUser;
+use crate::auth::{AuthAny, AuthUser};
 use crate::db_ops::statement_version_db;
 
 pub async fn get_latest_statement_version(
     Path(task_id): Path<i64>,
-    _user: AuthUser,
+    _user: AuthAny,
     State(app_state): State<AppState>,
 ) -> Result<Json<StatementVersion>, Error> {
     Ok(Json(

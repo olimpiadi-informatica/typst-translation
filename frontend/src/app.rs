@@ -10,7 +10,9 @@ use crate::compare::Compare;
 use crate::compilation_manager::CompilationManager;
 use crate::edit::EditPage;
 use crate::home::HomePage;
-use crate::user::{AdminProvider, ExtUserProvider, UserProvider};
+use crate::staff::StaffHomePage;
+use crate::staff::printing::PrintingPage;
+use crate::user::{AdminProvider, ExtUserProvider, StaffProvider, UserProvider};
 
 pub fn wrap_with_current_owner(cl: impl Fn() + Clone) -> impl Fn() + Clone {
     let owner = Owner::current().unwrap();
@@ -50,6 +52,10 @@ pub fn App() -> impl IntoView {
                             <ParentRoute path=path!("/admin") view=AdminProvider>
                                 <Route path=path!("") view=AdminHomePage />
                                 <Route path=path!("import_task") view=ImportTaskPage />
+                            </ParentRoute>
+                            <ParentRoute path=path!("/staff") view=StaffProvider>
+                                <Route path=path!("") view=StaffHomePage />
+                                <Route path=path!("printing") view=PrintingPage />
                             </ParentRoute>
                             <ParentRoute path=path!("") view=UserProvider>
                                 <Route path=path!("/") view=HomePage />

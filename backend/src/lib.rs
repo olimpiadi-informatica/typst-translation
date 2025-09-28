@@ -143,6 +143,7 @@ impl AppState {
                 "/api/contests/get_all",
                 get(api_handlers::contest::get_all_contests),
             )
+            .route("/api/all", get(api_handlers::contest::all))
             .route("/files/{hash}/{filename}", get(file_storage::get_file))
             .fallback_service(
                 ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),

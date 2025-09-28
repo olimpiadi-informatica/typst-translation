@@ -115,3 +115,50 @@ pub fn AdminLoginPage() -> impl IntoView {
         </Flex>
     }
 }
+
+#[component]
+pub fn StaffLoginPage() -> impl IntoView {
+    let password = RwSignal::new("".to_string());
+
+    let do_login = wrap_with_current_owner(move || {
+        spawn_local_scoped(async move {
+            let params = password.get_untracked();
+
+            match api_post("/api/staff/login", &params).await {
+                Ok(()) => {}
+                Err(e) => {
+                    show_error!("Login failed: {e}");
+                    return;
+                }
+            }
+
+            show_success!("Login successful");
+            let user_context = expect_context::<ExtUserContext>();
+            user_context.refetch();
+        })
+    });
+
+    view! {
+        <Flex justify=FlexJustify::Center align=FlexAlign::Center style="height: 100vh">
+            <form on:submit=move |ev| {
+                ev.prevent_default();
+                do_login()
+            }>
+                <Flex vertical=true>
+                    <h1>"Staff Login"</h1>
+                    <Field label="Password" orientation=FieldOrientation::Horizontal>
+                        <Input
+                            autocomplete="current-password"
+                            input_type=InputType::Password
+                            rules=vec![InputRule::required(true.into())]
+                            value=password
+                        />
+                    </Field>
+                    <Button button_type=ButtonType::Submit appearance=ButtonAppearance::Primary>
+                        "Login"
+                    </Button>
+                </Flex>
+            </form>
+        </Flex>
+    }
+}
