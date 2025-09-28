@@ -22,7 +22,7 @@ where
         .ok_or(Error::NotFound)
 }
 
-pub(crate) async fn import_task(
+pub async fn import_task(
     db: &sqlx::Pool<Sqlite>,
     contest_id: i64,
     update: bool,
