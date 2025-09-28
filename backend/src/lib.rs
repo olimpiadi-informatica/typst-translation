@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::Router;
+use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, post};
 use color_eyre::eyre::Result;
 use common::typst_packages::TypstPackagePayload;
@@ -147,6 +148,7 @@ impl AppState {
                 ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
             )
             .layer(axum::middleware::from_fn(trace_requests))
+            .layer(DefaultBodyLimit::max(1024 * 1024 * 1024))
             .with_state(self)
     }
 }
