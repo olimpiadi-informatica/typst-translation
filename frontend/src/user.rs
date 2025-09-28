@@ -8,7 +8,7 @@ use crate::api_wrapper::api_post;
 use crate::login::{AdminLoginPage, UserLoginPage};
 use crate::show_error;
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct ExtUserContext {
     resource: LocalResource<Option<ExtUser>>,
 }
@@ -22,7 +22,7 @@ impl ExtUserContext {
     }
 
     pub fn get_user_untracked(&self) -> User {
-        self.get_ext_user_untracked().into_user().unwrap()
+        self.get_ext_user_untracked().user.unwrap_or_default()
     }
 
     pub fn refetch(&self) {
@@ -59,7 +59,7 @@ pub fn AdminProvider() -> impl IntoView {
     let user_provider = use_context::<ExtUserContext>().unwrap();
 
     move || match user_provider.resource.get() {
-        Some(Some(ExtUser::Admin)) => Either::Left(view! { <Outlet /> }),
+        Some(Some(ExtUser { is_admin: true, .. })) => Either::Left(view! { <Outlet /> }),
         _ => Either::Right(view! { <AdminLoginPage /> }),
     }
 }
@@ -69,7 +69,7 @@ pub fn UserProvider() -> impl IntoView {
     let user_provider = use_context::<ExtUserContext>().unwrap();
 
     move || match user_provider.resource.get() {
-        Some(Some(ExtUser::User(_))) => Either::Left(view! { <Outlet /> }),
+        Some(Some(ExtUser { user: Some(_), .. })) => Either::Left(view! { <Outlet /> }),
         _ => Either::Right(view! { <UserLoginPage /> }),
     }
 }

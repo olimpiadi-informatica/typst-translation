@@ -5,14 +5,13 @@ use common::error::Error;
 use common::language::{AssignLanguagePayload, Language, ToggleLanguagePublicStatusPayload};
 
 use crate::AppState;
-use crate::auth::AuthUser;
+use crate::auth::{AuthAny, AuthUser};
 use crate::db_ops::{contestant_db, language_db};
 
 pub async fn get_user_contestants(
     State(app_state): State<AppState>,
-    current_user: AuthUser,
+    user: AuthUser,
 ) -> Result<Json<Vec<Contestant>>, Error> {
-    let user = current_user.as_user().ok_or(Error::Forbidden)?;
     let pool = app_state.db();
     Ok(Json(
         contestant_db::get_contestants_by_user_id(pool, user.id).await?,
@@ -21,31 +20,25 @@ pub async fn get_user_contestants(
 
 pub async fn get_user_translation_languages(
     State(app_state): State<AppState>,
-    current_user: AuthUser,
+    user: AuthUser,
 ) -> Result<Json<Vec<Language>>, Error> {
-    let user = current_user.as_user().ok_or(Error::Forbidden)?;
     let pool = app_state.db();
-
     let languages = language_db::get_user_owned_languages(pool, user.id).await?;
-
     Ok(Json(languages))
 }
 
 pub async fn get_available_languages(
     State(app_state): State<AppState>,
-    current_user: AuthUser,
+    user: AuthUser,
 ) -> Result<Json<Vec<Language>>, Error> {
-    let user = current_user.as_user().ok_or(Error::Forbidden)?;
     let pool = app_state.db();
-
     let languages = language_db::get_available_languages(pool, user.id).await?;
-
     Ok(Json(languages))
 }
 
 pub async fn get_all_languages(
     State(app_state): State<AppState>,
-    _current_user: AuthUser,
+    _user: AuthAny,
 ) -> Result<Json<Vec<Language>>, Error> {
     let pool = app_state.db();
     let languages = language_db::get_all(pool).await?;
@@ -54,10 +47,9 @@ pub async fn get_all_languages(
 
 pub async fn assign_language_to_contestant(
     State(app_state): State<AppState>,
-    current_user: AuthUser,
+    user: AuthUser,
     Json(payload): Json<AssignLanguagePayload>,
 ) -> Result<(), Error> {
-    let user = current_user.as_user().ok_or(Error::Forbidden)?;
     let pool = app_state.db();
 
     contestant_db::assign_language_to_contestant(
@@ -73,10 +65,9 @@ pub async fn assign_language_to_contestant(
 
 pub async fn toggle_language_public_status(
     State(app_state): State<AppState>,
-    current_user: AuthUser,
+    user: AuthUser,
     Json(payload): Json<ToggleLanguagePublicStatusPayload>,
 ) -> Result<(), Error> {
-    let user = current_user.as_user().ok_or(Error::Forbidden)?;
     let pool = app_state.db();
 
     // First, check if the user owns the language
@@ -92,7 +83,7 @@ pub async fn toggle_language_public_status(
 
 pub async fn get_language_by_id(
     Path(language_id): Path<i64>,
-    _user: AuthUser,
+    _user: AuthAny,
     State(app_state): State<AppState>,
 ) -> Result<Json<Language>, Error> {
     Ok(Json(

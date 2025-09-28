@@ -1,4 +1,3 @@
-use common::user::ExtUser;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 use leptos_router::components::A;
@@ -96,6 +95,8 @@ pub fn Header(
         })
     };
 
+    let user_context = expect_context::<ExtUserContext>();
+
     view! {
         <Flex justify=FlexJustify::SpaceBetween align=FlexAlign::Center style="height: 64px">
             <Flex align=FlexAlign::Center>
@@ -126,17 +127,10 @@ pub fn Header(
             </Flex>
             {children.map(|c| c())}
             <Flex>
-                <p>"User: "</p>
-                <pre>
-                    {
-                        let user_context = expect_context::<ExtUserContext>();
-                        match user_context.get_ext_user_untracked() {
-                            ExtUser::User(user) => user.username,
-                            ExtUser::Admin => "admin".to_string(),
-                            _ => todo!(),
-                        }
-                    }
-                </pre>
+                <Show when=move || user_context.get_ext_user_untracked().user.is_some()>
+                    <p>"User: "</p>
+                    <pre>{move || user_context.get_user_untracked().username}</pre>
+                </Show>
                 <Button on_click=do_logout>"Logout"</Button>
             </Flex>
         </Flex>

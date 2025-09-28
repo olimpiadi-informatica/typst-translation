@@ -5,7 +5,7 @@ use axum_extra::response::Attachment;
 use common::error::Error;
 use tracing::{info, warn};
 
-use crate::auth::AuthUser;
+use crate::auth::AuthAny;
 
 pub const FILES_DIR: &str = "files";
 
@@ -37,7 +37,7 @@ pub async fn save_file(data: &[u8]) -> Result<String, tokio::io::Error> {
 
 pub async fn get_file(
     Path((hash, filename)): Path<(String, String)>,
-    user: AuthUser,
+    user: AuthAny,
 ) -> Result<Attachment<Vec<u8>>, Error> {
     info!(?user, ?filename, ?hash, "File access attempt");
     let path = path_of_file(&hash).map_err(|x| {

@@ -1,7 +1,6 @@
-use enum_as_inner::EnumAsInner;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct User {
     pub id: i64,
     pub username: String,
@@ -12,11 +11,11 @@ pub struct User {
     pub name: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, EnumAsInner)]
-pub enum ExtUser {
-    User(User),
-    Admin,
-    Staff,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtUser {
+    pub user: Option<User>,
+    pub is_admin: bool,
+    pub is_staff: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

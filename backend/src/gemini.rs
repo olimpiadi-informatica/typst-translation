@@ -76,12 +76,10 @@ struct Response {
 
 pub async fn get_ai_translation(
     State(app_state): State<AppState>,
-    current_user: AuthUser,
+    user: AuthUser,
     Json(params): Json<GeminiRequest>,
 ) -> Result<Json<String>, Error> {
     let task = get_task_by_id(app_state.db(), params.task_id).await?;
-
-    let user = current_user.as_user().ok_or(Error::Unauthorized)?;
 
     if user.automatic_translation_budget == 0 {
         return Err(Error::TranslationBudgetExhausted);
@@ -155,7 +153,12 @@ pub async fn get_ai_translation(
 
     info!(budget_cost, dollar_cost);
 
-    let mut tx = app_state.db().begin().await?;
+    let mut tx = loop {
+        let tx = app_state.db().try_begin_with("BEGIN IMMEDIATE").await?;
+        if let Some(tx) = tx {
+            break tx;
+        }
+    };
 
     let user = get_by_id(&mut *tx, user.id).await?.unwrap();
 
@@ -168,7 +171,7 @@ pub async fn get_ai_translation(
         new_usage,
         user.id
     )
-    .execute(app_state.db())
+    .execute(&mut *tx)
     .await?;
 
     tx.commit().await?;
