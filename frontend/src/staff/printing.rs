@@ -15,13 +15,10 @@ use leptos::prelude::*;
 use leptos::server::codee::string::JsonSerdeCodec;
 use leptos::task::spawn_local_scoped;
 use leptos_use::storage::use_local_storage;
-use thaw::{
-    Button, Checkbox, Flex, FlexAlign, Icon, Spinner, Table, TableBody, TableCell, TableCellLayout,
-    TableHeader, TableHeaderCell, TableRow,
-};
 
 use crate::api_wrapper::{api_get, file_get};
 use crate::header::Header;
+use crate::util::Icon;
 use crate::{TypstWorker, show_error};
 
 #[component]
@@ -37,30 +34,41 @@ pub fn PrintingPage() -> impl IntoView {
     });
 
     view! {
-        <Header title="Printing Panel" />
-        {move || match all.get().flatten() {
-            Some(all) => {
-                Either::Left(
-                    view! {
-                        <Flex vertical=true style="max-width: 800px; margin: auto">
-                            <For
-                                each=move || all.contests.clone()
-                                key=|contest| contest.contest.id
-                                let:contest
-                            >
-                                <Contest
-                                    contest
-                                    contestants=all.contestants.clone()
-                                    languages=all.languages.clone()
-                                    users=all.users.clone()
-                                />
-                            </For>
-                        </Flex>
-                    },
-                )
-            }
-            None => Either::Right(view! { <Spinner label="Loading..." /> }),
-        }}
+        <Header title=Signal::derive(|| "Printing Panel".to_string()) />
+        <div class="container mx-auto max-w-4xl p-4">
+            {move || match all.get().flatten() {
+                Some(all) => {
+                    Either::Left(
+                        view! {
+                            <div class="flex flex-col gap-12">
+                                <For
+                                    each=move || all.contests.clone()
+                                    key=|contest| contest.contest.id
+                                    let:contest
+                                >
+                                    <Contest
+                                        contest
+                                        contestants=all.contestants.clone()
+                                        languages=all.languages.clone()
+                                        users=all.users.clone()
+                                    />
+                                </For>
+                            </div>
+                        },
+                    )
+                }
+                None => {
+                    Either::Right(
+                        view! {
+                            <div class="flex flex-col items-center py-12">
+                                <span class="loading loading-spinner loading-lg text-primary"></span>
+                                <p class="mt-4 text-base-content/60">"Loading..."</p>
+                            </div>
+                        },
+                    )
+                }
+            }}
+        </div>
     }
 }
 
@@ -218,87 +226,124 @@ pub fn Contest(
     let do_print = Signal::stored(do_print);
 
     view! {
-        <h2>{contest.name}</h2>
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHeaderCell>"User"</TableHeaderCell>
-                    <TableHeaderCell>"Finalized"</TableHeaderCell>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                <For each=move || user_contest_status.clone() key=|ucs| ucs.id let:ucs>
-                    <TableRow>
-                        <TableCell>
-                            <TableCellLayout>
-                                {users.read().get(&ucs.user_id).unwrap().username.clone()}
-                            </TableCellLayout>
-                        </TableCell>
-                        <TableCell>
-                            <TableCellLayout>
-                                {if ucs.finalized_translations {
-                                    Either::Left(view! { <Icon icon=icondata::BsCheckSquare /> })
-                                } else {
-                                    Either::Right(())
-                                }}
-                            </TableCellLayout>
-                        </TableCell>
-                    </TableRow>
-                </For>
-            </TableBody>
-        </Table>
-        <For
-            each=move || finalized_languages.get()
-            key=|(lang, _contestants)| lang.as_ref().map(|l| l.id)
-            let((lang, contestants))
-        >
-            <Flex align=FlexAlign::Center>
-                <h3>{lang.as_ref().map_or_else(|| "No extra lang".into(), |l| l.code.clone())}</h3>
-                <For
-                    each=move || tasks.get()
-                    key=move |t| t.id
-                    children=move |task| {
-                        let task_name = task.name.clone();
-                        let lang = lang.clone();
-                        view! {
-                            <Button
-                                icon=icondata::BsFileEarmarkPdfFill
-                                on_click=move |_| do_print
-                                    .read()(task.clone(), lang.as_ref().map(|l| l.id))
-                            >
-                                {task_name}
-                            </Button>
-                        }
-                    }
-                />
-            </Flex>
-            <Table>
-                <For
-                    each=move || contestants.clone()
-                    key=|c| c.id
-                    children=move |c| {
-                        let local_storage = format!("printed-{}-{}", c.code, contest.id);
-                        view! {
-                            <TableRow>
-                                <TableCell>
-                                    <TableCellLayout>{c.code.clone()}</TableCellLayout>
-                                </TableCell>
-                                <TableCell>
-                                    <TableCellLayout>
-                                        <Checkbox checked={
-                                            let (a, b, _) = use_local_storage::<
+        <div class="flex flex-col gap-6">
+            <h2 class="text-3xl font-bold border-b-2 border-primary pb-2">{contest.name}</h2>
+
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body p-0 overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>"User"</th>
+                                <th>"Finalized"</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <For each=move || user_contest_status.clone() key=|ucs| ucs.id let:ucs>
+                                <tr>
+                                    <td>
+                                        {users.read().get(&ucs.user_id).unwrap().username.clone()}
+                                    </td>
+                                    <td>
+                                        {if ucs.finalized_translations {
+                                            Either::Left(
+                                                view! {
+                                                    <span class="text-success">
+                                                        <Icon icon=icondata::BsCheckSquare />
+                                                    </span>
+                                                },
+                                            )
+                                        } else {
+                                            Either::Right(())
+                                        }}
+                                    </td>
+                                </tr>
+                            </For>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <For
+                each=move || finalized_languages.get()
+                key=|(lang, _contestants)| lang.as_ref().map(|l| l.id)
+                let((lang, contestants))
+            >
+                <div class="card bg-base-100 shadow-md">
+                    <div class="card-body">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="card-title text-xl">
+                                {lang
+                                    .as_ref()
+                                    .map_or_else(|| "No extra lang".into(), |l| l.code.clone())}
+                            </h3>
+                            <div class="flex flex-wrap gap-2">
+                                <For
+                                    each=move || tasks.get()
+                                    key=move |t| t.id
+                                    children=move |task| {
+                                        let task_name = task.name.clone();
+                                        let lang = lang.clone();
+                                        view! {
+                                            <button
+                                                class="btn btn-outline btn-primary btn-sm gap-2"
+                                                on:click=move |_| do_print
+                                                    .read()(task.clone(), lang.as_ref().map(|l| l.id))
+                                            >
+                                                <Icon icon=icondata::BsFileEarmarkPdfFill />
+                                                {task_name}
+                                            </button>
+                                        }
+                                    }
+                                />
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="table table-sm w-full">
+                                <thead>
+                                    <tr>
+                                        <th>"Code"</th>
+                                        <th>"Printed"</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <For
+                                        each=move || contestants.clone()
+                                        key=|c| c.id
+                                        children=move |c| {
+                                            let local_storage = format!(
+                                                "printed-{}-{}",
+                                                c.code,
+                                                contest.id,
+                                            );
+                                            let (checked, set_checked, _) = use_local_storage::<
                                                 bool,
                                                 JsonSerdeCodec,
                                             >(local_storage);
-                                            (a, b)
-                                        } />
-                                    </TableCellLayout>
-                                </TableCell>
-                            </TableRow>
-                        }
-                    }
-                />
-            </Table>
-        </For>
+                                            view! {
+                                                <tr>
+                                                    <td>{c.code.clone()}</td>
+                                                    <td>
+                                                        <input
+                                                            type="checkbox"
+                                                            class="checkbox checkbox-primary"
+                                                            checked=checked
+                                                            on:change=move |ev| {
+                                                                set_checked.set(event_target_checked(&ev));
+                                                            }
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    />
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </For>
+        </div>
     }
 }

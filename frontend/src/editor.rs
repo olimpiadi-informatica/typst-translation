@@ -145,7 +145,7 @@ pub fn Editor(
         <div
             id=id
             node_ref=editor_div_ref
-            style="height: 100%; width: 100%; max-height: 75vh; font-size: 1.2em;"
+            style="height: 100%; width: 100%; font-size: 1.2em;"
         ></div>
     }
 }
@@ -175,7 +175,7 @@ pub fn DiffViewer(
         <div
             id=id
             node_ref=editor_div_ref
-            style="height: 100%; width: 100%; max-height: 75vh; font-size: 1.2em;"
+            style="height: 100%; width: 100%; font-size: 1.2em;"
         ></div>
     }
 }

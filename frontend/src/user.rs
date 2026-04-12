@@ -2,7 +2,6 @@ use common::user::{ExtUser, User, WhoAmIResponse};
 use leptos::either::Either;
 use leptos::prelude::*;
 use leptos_router::components::Outlet;
-use thaw::Spinner;
 
 use crate::api_wrapper::api_post;
 use crate::login::{AdminLoginPage, StaffLoginPage, UserLoginPage};
@@ -50,7 +49,12 @@ where
     let children = children.into_inner();
     move || match user.get() {
         Some(_) => Either::Left(children()),
-        None => Either::Right(view! { <Spinner label="Authenticating..." /> }),
+        None => Either::Right(view! {
+            <div class="flex flex-col items-center justify-center h-screen">
+                <span class="loading loading-spinner loading-lg text-primary"></span>
+                <p class="mt-4 text-base-content/60">"Authenticating..."</p>
+            </div>
+        }),
     }
 }
 

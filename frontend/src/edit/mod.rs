@@ -15,10 +15,6 @@ use leptos::task::{spawn_local, spawn_local_scoped};
 use leptos_router::hooks::{use_navigate, use_params_map};
 use leptos_use::storage::use_local_storage;
 use leptos_use::{UseColorModeOptions, signal_throttled, use_color_mode_with_options};
-use thaw::{
-    Button, ButtonAppearance, ButtonGroup, Flex, FlexAlign, Icon, Layout, LayoutHeader, Select,
-    Spinner,
-};
 
 use crate::api_wrapper::{api_get, api_post, file_get};
 use crate::compilation_manager::CompilationManager;
@@ -28,6 +24,7 @@ use crate::edit::reset_isc::ResetIsc;
 use crate::editor::{Editor, KeyboardMode};
 use crate::header::Header;
 use crate::session_token::get_session_token;
+use crate::util::Icon;
 use crate::{show_error, show_success};
 
 mod gemini;
@@ -428,75 +425,82 @@ pub fn EditPage() -> impl IntoView {
     };
 
     view! {
-        <Spinner label="Loading statement..." class:hidden=move || loaded.get() />
-        <Layout attr:style="height: 100vh" class:hidden=move || !loaded.get()>
-            <LayoutHeader>
-                <Header title kb_mode=(kb_mode, set_kb_mode)>
-                    <Show when=move || readonly.get() && can_edit.get()>
-                        <Button
-                            on_click=move |_| on_ask_edit()
-                            appearance=ButtonAppearance::Primary
-                        >
-                            "Edit"
-                        </Button>
-                    </Show>
-                    <Show when=move || { !readonly.get() }>
-                        <Flex align=FlexAlign::Center>
-                            {move || {
-                                if saved.get() {
-                                    view! {
+        <div class="flex justify-center items-center h-screen" class:hidden=move || loaded.get()>
+            <span class="loading loading-spinner loading-lg"></span>
+            <span class="ml-2">"Loading statement..."</span>
+        </div>
+        <div class="h-screen flex flex-col" class:hidden=move || !loaded.get()>
+            <Header title kb_mode=(kb_mode, set_kb_mode)>
+                <Show when=move || readonly.get() && can_edit.get()>
+                    <button class="btn btn-primary btn-sm" on:click=move |_| on_ask_edit()>
+                        "Edit"
+                    </button>
+                </Show>
+                <Show when=move || !readonly.get()>
+                    <div class="flex items-center gap-2">
+                        {move || {
+                            if saved.get() {
+                                view! {
+                                    <div class="flex items-center gap-1 text-success">
                                         <Icon icon=icondata::MdiContentSaveCheckOutline />
-                                        "Saved"
-                                    }
-                                } else {
-                                    view! {
-                                        <Icon icon=icondata::FiLoader />
-                                        "Unsaved changes."
-                                    }
+                                        <span class="text-sm font-medium">"Saved"</span>
+                                    </div>
                                 }
-                            }}
-                        </Flex>
-                        <ButtonGroup>
-                            <Gemini
-                                task_id=Signal::derive(move || {
-                                    task.get().flatten().map(|x| x.id).unwrap_or_default()
-                                })
-                                lang_code=Signal::derive(move || {
-                                    lang.get()
-                                        .flatten()
-                                        .flatten()
-                                        .map(|x| x.code.clone())
-                                        .unwrap_or_default()
-                                })
-                                text=contents
-                            />
-                            <ResetIsc
-                                text=contents
-                                isc_version=Signal::derive(move || {
-                                    isc_version.get().unwrap_or_default()
-                                })
-                            />
-                        </ButtonGroup>
-                    </Show>
-                    <Show when=move || { !old_statement_versions.read().is_empty() }>
-                        <Flex align=FlexAlign::Center>
-                        {"Compare ISC versions: "} <Select value=selected_version>
-                                <For each=move || old_statement_versions.get() key=|x| x.id let:s>
-                                    <option value=move || {
-                                        s.created_at.to_string()
-                                    }>
-                                        {s.created_at.format("%Y-%m-%d %H:%M:%S").to_string()}
-                                    </option>
-                                </For>
-                            </Select>
-                            <Button appearance=ButtonAppearance::Primary on_click=compare_versions>
-                                "Compare"
-                            </Button>
-                        </Flex>
-                    </Show>
-                </Header>
-            </LayoutHeader>
-            <Flex>
+                            } else {
+                                view! {
+                                    <div class="flex items-center gap-1 text-warning">
+                                        <Icon icon=icondata::FiLoader />
+                                        <span class="text-sm font-medium">"Unsaved changes."</span>
+                                    </div>
+                                }
+                            }
+                        }}
+                    </div>
+                    <div class="join">
+                        <Gemini
+                            task_id=Signal::derive(move || {
+                                task.get().flatten().map(|x| x.id).unwrap_or_default()
+                            })
+                            lang_code=Signal::derive(move || {
+                                lang.get()
+                                    .flatten()
+                                    .flatten()
+                                    .map(|x| x.code.clone())
+                                    .unwrap_or_default()
+                            })
+                            text=contents
+                        />
+                        <ResetIsc
+                            text=contents
+                            isc_version=Signal::derive(move || {
+                                isc_version.get().unwrap_or_default()
+                            })
+                        />
+                    </div>
+                </Show>
+                <Show when=move || !old_statement_versions.read().is_empty()>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm">"Compare ISC versions: "</span>
+                        <select
+                            class="select select-bordered select-xs"
+                            on:change=move |ev| {
+                                selected_version.set(event_target_value(&ev));
+                            }
+                        >
+                            <option value=""></option>
+                            <For each=move || old_statement_versions.get() key=|x| x.id let:s>
+                                <option value=move || {
+                                    s.created_at.to_string()
+                                }>{s.created_at.format("%Y-%m-%d %H:%M:%S").to_string()}</option>
+                            </For>
+                        </select>
+                        <button class="btn btn-primary btn-xs" on:click=compare_versions>
+                            "Compare"
+                        </button>
+                    </div>
+                </Show>
+            </Header>
+            <div class="flex-1 flex overflow-hidden">
                 <Editor
                     contents
                     name="statement-editor"
@@ -505,13 +509,10 @@ pub fn EditPage() -> impl IntoView {
                     on_change
                     kb_mode
                     color_mode=color_mode.mode
-                    attr:style="width: 50%; height: calc(100vh - 65px);"
+                    attr:class="w-1/2 h-full"
                 />
-                <CompilationResults
-                    results=compilation_manager.get_result()
-                    attr:style="width: 50%; height: calc(100vh - 65px);"
-                />
-            </Flex>
-        </Layout>
+                <CompilationResults results=compilation_manager.get_result() class="w-1/2 h-full" />
+            </div>
+        </div>
     }
 }

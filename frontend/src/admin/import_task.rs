@@ -5,7 +5,6 @@ use leptos::either::Either;
 use leptos::html;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
-use thaw::{Button, ButtonAppearance, ButtonType, Checkbox, Flex, Select, Spinner};
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 
@@ -39,7 +38,7 @@ pub fn ImportTaskPage() -> impl IntoView {
                 .get_untracked()
                 .parse::<i64>()
                 .expect("Invalid contest ID");
-            let update = update.get_untracked();
+            let update_val = update.get_untracked();
             let files = input_ref
                 .get_untracked()
                 .and_then(|input| input.files())
@@ -56,7 +55,7 @@ pub fn ImportTaskPage() -> impl IntoView {
 
                 let payload = ImportTaskPayload {
                     contest_id,
-                    update,
+                    update: update_val,
                     zip_file,
                 };
                 match api_post("/api/tasks/import", &payload).await {
@@ -74,48 +73,113 @@ pub fn ImportTaskPage() -> impl IntoView {
     });
 
     view! {
-        <Header title="Import Task" />
-        {move || match contests.get().flatten() {
-            Some(contests) => {
-                Either::Left(
-                    view! {
-                        <form on:submit={
-                            let do_import = do_import.clone();
-                            move |ev| {
-                                ev.prevent_default();
-                                do_import()
-                            }
-                        }>
-                            <Flex vertical=true style="max-width: 400px; margin: auto">
-                                <Select value=contest>
-                                    <For
-                                        each=move || contests.clone()
-                                        key=|contest| contest.id
-                                        let:contest
+        <Header title=Signal::derive(|| "Import Task".to_string()) />
+        <div class="container mx-auto max-w-lg p-8">
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title mb-6">"Import Task"</h2>
+                    {move || match contests.get().flatten() {
+                        Some(contests) => {
+                            Either::Left(
+                                view! {
+                                    <form
+                                        class="flex flex-col gap-6"
+                                        on:submit={
+                                            let do_import = do_import.clone();
+                                            move |ev| {
+                                                ev.prevent_default();
+                                                do_import()
+                                            }
+                                        }
                                     >
-                                        <option value=contest.id>{contest.name}</option>
-                                    </For>
-                                </Select>
-                                <Checkbox checked=update label="Update" />
-                                <input
-                                    type="file"
-                                    accept="application/zip"
-                                    multiple=true
-                                    node_ref=input_ref
-                                />
-                                <Button
-                                    button_type=ButtonType::Submit
-                                    appearance=ButtonAppearance::Primary
-                                    loading
-                                >
-                                    "Import"
-                                </Button>
-                            </Flex>
-                        </form>
-                    },
-                )
-            }
-            None => Either::Right(view! { <Spinner label="Loading..." /> }),
-        }}
+                                        <div class="form-control w-full">
+                                            <label class="label">
+                                                <span class="label-text">"Select Contest"</span>
+                                            </label>
+                                            <select
+                                                class="select select-bordered w-full"
+                                                on:change=move |ev| {
+                                                    contest.set(event_target_value(&ev));
+                                                }
+                                            >
+                                                <option disabled selected=move || contest.get().is_empty()>
+                                                    "Choose a contest"
+                                                </option>
+                                                <For
+                                                    each=move || contests.clone()
+                                                    key=|contest| contest.id
+                                                    let:contest
+                                                >
+                                                    <option value=contest.id>{contest.name}</option>
+                                                </For>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-control">
+                                            <label class="label cursor-pointer justify-start gap-4">
+                                                <input
+                                                    type="checkbox"
+                                                    class="checkbox checkbox-primary"
+                                                    checked=update
+                                                    on:change=move |ev| {
+                                                        update.set(event_target_checked(&ev));
+                                                    }
+                                                />
+                                                <span class="label-text">"Update existing tasks"</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="form-control w-full">
+                                            <label class="label">
+                                                <span class="label-text">"Task ZIP files"</span>
+                                            </label>
+                                            <input
+                                                type="file"
+                                                class="file-input file-input-bordered w-full"
+                                                accept="application/zip"
+                                                multiple=true
+                                                node_ref=input_ref
+                                            />
+                                        </div>
+
+                                        <div class="card-actions justify-end mt-4">
+                                            <button
+                                                type="submit"
+                                                class="btn btn-primary w-full"
+                                                disabled=loading
+                                            >
+                                                {move || {
+                                                    if loading.get() {
+                                                        view! {
+                                                            <span class="loading loading-spinner loading-xs"></span>
+                                                            "Importing..."
+                                                        }
+                                                            .into_any()
+                                                    } else {
+                                                        view! { "Import" }.into_any()
+                                                    }
+                                                }}
+                                            </button>
+                                        </div>
+                                    </form>
+                                },
+                            )
+                        }
+                        None => {
+                            Either::Right(
+                                view! {
+                                    <div class="flex flex-col items-center py-8">
+                                        <span class="loading loading-spinner loading-lg text-primary"></span>
+                                        <p class="mt-4 text-base-content/60">
+                                            "Loading contests..."
+                                        </p>
+                                    </div>
+                                },
+                            )
+                        }
+                    }}
+                </div>
+            </div>
+        </div>
     }
 }

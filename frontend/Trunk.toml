@@ -20,10 +20,10 @@ command_arguments = ["-c", """
 watch = [
   "src/",
   "../common/src/",
+  "style/",
   "index.html",
   "Cargo.toml",
   "../common/Cargo.toml",
-  "scss",
   "codemirror/codemirror_interface.ts",
 ]
 
@@ -32,3 +32,6 @@ backend = "http://localhost:9000/api/"
 
 [[proxy]]
 backend = "http://localhost:9000/files/"
+
+[tools]
+tailwindcss = "4.2.2"

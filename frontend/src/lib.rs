@@ -15,6 +15,7 @@ mod staff;
 mod toast;
 mod typst;
 mod user;
+mod util;
 
 pub use app::App;
 pub use logging::init_logging;

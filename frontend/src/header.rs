@@ -2,13 +2,11 @@ use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 use leptos_router::hooks::use_navigate;
 use strum::VariantArray;
-use thaw::{
-    Button, ButtonAppearance, ButtonShape, ButtonSize, Flex, FlexAlign, FlexJustify, Select,
-};
 
 use crate::api_wrapper::api_post;
 use crate::editor::KeyboardMode;
 use crate::user::ExtUserContext;
+use crate::util::Icon;
 use crate::{show_error, show_success};
 
 type SignalPair<T> = (Signal<T>, WriteSignal<T>);
@@ -36,40 +34,24 @@ pub fn Header(
     #[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>,
     #[prop(optional)] children: Option<Children>,
 ) -> impl IntoView {
-    //let color_mode = use_color_mode_with_options(
-    //    UseColorModeOptions::default()
-    //        .cookie_enabled(true)
-    //        .cookie_name("typst-translation-color-mode"),
-    //);
-    //let (color_mode, set_color_mode) = (color_mode.mode, color_mode.set_mode);
-
-    //let name_and_icon = Signal::derive(move || {
-    //    if color_mode.get() == ColorMode::Light {
-    //        ("Dark", icondata::BiMoonSolid)
-    //    } else {
-    //        ("Light", icondata::BiSunSolid)
-    //    }
-    //});
-    //let change_theme = move |_| {
-    //    if color_mode.get_untracked() == ColorMode::Dark {
-    //        set_color_mode.set(ColorMode::Light)
-    //    } else {
-    //        set_color_mode.set(ColorMode::Dark)
-    //    }
-    //};
-
     let kb_mode_view = kb_mode.map(|(kb_mode, set_kb_mode)| {
-        let kb_mode_str = Signal::derive(move || select_kb_mode_str(kb_mode.get()).to_string());
-        let set_kb_mode_str = SignalSetter::map(move |s: String| {
-            set_kb_mode.set(kb_mode_from_str(&s));
-        });
-
         view! {
-            <Select value=(kb_mode_str, set_kb_mode_str)>
-                <For each=move || KeyboardMode::VARIANTS key=|x| *x let(v)>
-                    <option>{move || select_kb_mode_str(*v)}</option>
+            <select
+                class="select select-bordered select-sm"
+                on:change=move |ev| {
+                    set_kb_mode.set(kb_mode_from_str(&event_target_value(&ev)));
+                }
+            >
+                <For
+                    each=move || KeyboardMode::VARIANTS
+                    key=|x| *x
+                    let(v)
+                >
+                    <option selected=move || kb_mode.get() == *v>
+                        {move || select_kb_mode_str(*v)}
+                    </option>
                 </For>
-            </Select>
+            </select>
         }
     });
 
@@ -105,38 +87,36 @@ pub fn Header(
     };
 
     view! {
-        <Flex justify=FlexJustify::SpaceBetween align=FlexAlign::Center style="height: 64px">
-            <Flex align=FlexAlign::Center>
+        <div class="navbar bg-base-100 shadow-sm px-4 h-16 flex justify-between items-center">
+            <div class="flex items-center gap-2">
                 <Show when=move || !noback.unwrap_or_default()>
-                    <Button
-                        on_click=go_back
-                        icon=icondata::BiArrowBackRegular
-                        appearance=ButtonAppearance::Subtle
-                        shape=ButtonShape::Circular
-                        size=ButtonSize::Large
-                    />
+                    <button class="btn btn-ghost btn-circle" on:click=go_back>
+                        <Icon icon=icondata::BiArrowBackRegular />
+                    </button>
                 </Show>
-                // TODO: Fix theme handling
-                {move || title.get().map(|title| view! { <h1>{title}</h1> })}
-                // <Button on_click=change_theme appearance=ButtonAppearance::Subtle>
-                // {move || {
-                // let (name, icon) = name_and_icon.get();
-                // view! {
-                // <Icon icon style="padding: 0 5px 0 0;" width="1.5em" height="1.5em" />
-                // <Text>{name}</Text>
-                // }
-                // }}
-                // </Button>
+                {move || {
+                    title
+                        .get()
+                        .map(|title| {
+                            view! { <h1 class="text-xl font-bold">{title}</h1> }
+                        })
+                }}
                 {kb_mode_view}
-            </Flex>
-            {children.map(|c| c())}
-            <Flex>
-                <Show when=move || user_context.get_ext_user_untracked().user.is_some()>
-                    <p>"User: "</p>
-                    <pre>{move || user_context.get_user_untracked().username}</pre>
-                </Show>
-                <Button on_click=do_logout>"Logout"</Button>
-            </Flex>
-        </Flex>
+            </div>
+            <div class="flex items-center gap-4">
+                {children.map(|c| c())}
+                <div class="flex items-center gap-2">
+                    <Show when=move || user_context.get_ext_user_untracked().user.is_some()>
+                        <p class="text-sm">"User: "</p>
+                        <code class="bg-base-200 px-2 py-1 rounded">
+                            {move || user_context.get_user_untracked().username}
+                        </code>
+                    </Show>
+                    <button class="btn btn-primary btn-sm" on:click=do_logout>
+                        "Logout"
+                    </button>
+                </div>
+            </div>
+        </div>
     }
 }

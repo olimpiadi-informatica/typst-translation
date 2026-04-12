@@ -3,7 +3,6 @@ use common::contestant::Contestant;
 use common::language::Language;
 use leptos::either::Either;
 use leptos::prelude::*;
-use thaw::{Flex, FlexGap, Spinner};
 
 use crate::api_wrapper::{api_get, api_post};
 use crate::header::Header;
@@ -70,16 +69,25 @@ pub fn HomePage() -> impl IntoView {
                 .cloned()
                 .collect::<Vec<_>>();
             Either::Left(view! {
-                <Flex vertical=true gap=FlexGap::Large style="max-width: 1200px; margin: auto">
-                    <Header noback=true title="Translation System" />
-                    <Flex gap=FlexGap::Large>
-                        <ContestantsTable contestants avail_langs />
-                        <LanguagesTable transl_langs />
-                    </Flex>
+                <div class="container mx-auto max-w-7xl p-4 flex flex-col gap-8">
+                    <Header noback=true title=Signal::derive(|| "Translation System".to_string()) />
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <div class="flex-1">
+                            <ContestantsTable contestants avail_langs />
+                        </div>
+                        <div class="flex-1">
+                            <LanguagesTable transl_langs />
+                        </div>
+                    </div>
                     <Translations contests all_langs />
-                </Flex>
+                </div>
             })
         }
-        _ => Either::Right(view! { <Spinner label="Loading..." /> }),
+        _ => Either::Right(view! {
+            <div class="flex justify-center items-center h-screen">
+                <span class="loading loading-spinner loading-lg"></span>
+                <span class="ml-2">"Loading..."</span>
+            </div>
+        }),
     }
 }

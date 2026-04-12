@@ -5,11 +5,6 @@ use leptos::either::Either;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 use leptos_router::components::A;
-use thaw::{
-    Button, ButtonAppearance, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface,
-    DialogTitle, Flex, FlexJustify, Table, TableBody, TableCell, TableCellLayout, TableHeader,
-    TableHeaderCell, TableRow,
-};
 
 use crate::api_wrapper::api_post;
 use crate::app::wrap_with_current_owner;
@@ -41,14 +36,17 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
         .collect::<Vec<_>>();
 
     let finalized = RwSignal::new(user_contest_status.finalized_translations);
-    let open_finalize_dialog = RwSignal::new(false);
+    let dialog_ref = NodeRef::<leptos::html::Dialog>::new();
+
     let do_finalize = wrap_with_current_owner(move || {
         spawn_local_scoped(async move {
             match api_post("/api/user/finalize_translation", &contest.id).await {
                 Ok(()) => {
                     show_success!("Contest finalized!");
                     finalized.set(true);
-                    open_finalize_dialog.set(false);
+                    if let Some(dialog) = dialog_ref.get() {
+                        dialog.close();
+                    }
                 }
                 Err(e) => {
                     show_error!("Failed to finalize contest: {e}");
@@ -56,94 +54,109 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
             }
         })
     });
+
+    let open_dialog = move |_| {
+        if let Some(dialog) = dialog_ref.get() {
+            let _ = dialog.show_modal();
+        }
+    };
+
+    let close_dialog = move |_| {
+        if let Some(dialog) = dialog_ref.get() {
+            dialog.close();
+        }
+    };
+
     let finalize_view = move || {
         if finalized.get() {
             Either::Left(view! {
-                <Button appearance=ButtonAppearance::Primary disabled=true>
+                <button class="btn btn-primary btn-sm" disabled=true>
                     "Finalized"
-                </Button>
+                </button>
             })
         } else {
-            Either::Right(
-                view! { <Button on_click=move |_| open_finalize_dialog.set(true)>"Finalize"</Button> },
-            )
+            Either::Right(view! {
+                <button class="btn btn-primary btn-sm" on:click=open_dialog>
+                    "Finalize"
+                </button>
+            })
         }
     };
 
     let contest_name = contest.name.clone();
-
     let transl_langs2 = transl_langs.clone();
     let draw_task = move |task: Task| {
         let task_id = task.id;
         let draw_edit = move |lang: Language| {
             view! {
-                <TableCell>
-                    <TableCellLayout>
-                        <A href=format!("/task/{}/lang/{}", task_id, lang.id)>
-                            <Button>{move || if finalized.get() { "View" } else { "Edit" }}</Button>
-                        </A>
-                    </TableCellLayout>
-                </TableCell>
+                <td>
+                    <A href=format!("/task/{}/lang/{}", task_id, lang.id)>
+                        <button class="btn btn-primary btn-sm">
+                            {move || if finalized.get() { "View" } else { "Edit" }}
+                        </button>
+                    </A>
+                </td>
             }
         };
 
         let transl_langs2 = transl_langs2.clone();
         view! {
-            <TableRow>
-                <TableCell>
-                    <TableCellLayout>{task.name}</TableCellLayout>
-                </TableCell>
+            <tr>
+                <td>{task.name}</td>
                 <For each=move || transl_langs2.clone() key=|lang| lang.id children=draw_edit />
-                <TableCell>
-                    <TableCellLayout>
-                        <A href=format!("/task/{}", task_id)>
-                            <Button>"View"</Button>
-                        </A>
-                    </TableCellLayout>
-                </TableCell>
-            </TableRow>
+                <td>
+                    <A href=format!("/task/{}", task_id)>
+                        <button class="btn btn-secondary btn-sm">"View"</button>
+                    </A>
+                </td>
+            </tr>
         }
     };
 
     view! {
-        <Flex vertical=true>
-            <Flex justify=FlexJustify::SpaceBetween>
-                <h2>"Contest: " {contest_name}</h2>
-                {finalize_view}
-            </Flex>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHeaderCell>"Task"</TableHeaderCell>
-                        <For each=move || transl_langs.clone() key=|lang| lang.id let(lang)>
-                            <TableHeaderCell>"Lang " {lang.code}</TableHeaderCell>
-                        </For>
-                        <TableHeaderCell>"ISC"</TableHeaderCell>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    <For each=move || tasks.clone() key=|task| task.id children=draw_task />
-                </TableBody>
-            </Table>
-        </Flex>
+        <div class="card bg-base-100 shadow-none border border-base-300 mt-8">
+            <div class="card-body">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="card-title text-2xl font-bold">"Contest: " {contest_name}</h2>
+                    {finalize_view}
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>"Task"</th>
+                                <For each=move || transl_langs.clone() key=|lang| lang.id let(lang)>
+                                    <th>"Lang " {lang.code}</th>
+                                </For>
+                                <th>"ISC"</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <For each=move || tasks.clone() key=|task| task.id children=draw_task />
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-        <Dialog open=open_finalize_dialog>
-            <DialogSurface>
-                <DialogBody>
-                    <DialogTitle>"Finalize contest " {contest.name} "?"</DialogTitle>
-                    <DialogContent>
+            <dialog node_ref=dialog_ref class="modal">
+                <div class="modal-box">
+                    <h3 class="font-bold text-lg">"Finalize contest " {contest.name} "?"</h3>
+                    <p class="py-4">
                         "Once the contest is finalized you will not be able to edit the statements anymore."
-                    </DialogContent>
-                    <DialogActions>
-                        <Button
-                            appearance=ButtonAppearance::Primary
-                            on_click=move |_| do_finalize()
-                        >
+                    </p>
+                    <div class="modal-action">
+                        <button class="btn btn-primary" on:click=move |_| do_finalize()>
                             "Confirm"
-                        </Button>
-                    </DialogActions>
-                </DialogBody>
-            </DialogSurface>
-        </Dialog>
+                        </button>
+                        <button class="btn" on:click=close_dialog>
+                            "Cancel"
+                        </button>
+                    </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button>"close"</button>
+                </form>
+            </dialog>
+        </div>
     }
 }

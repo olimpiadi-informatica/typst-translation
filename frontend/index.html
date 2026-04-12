@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Translation system</title>
-    <link data-trunk data-inline rel="scss" href="scss/main.scss" />
-    <meta charset="utf-8">
 
-    <link data-trunk rel="rust" data-type="worker" data-wasm-opt="z" data-bin="typst_translation_worker" data-weak-refs data-loader-shim />
-    <link data-trunk rel="rust" data-wasm-opt="z" data-bin="typst_translation_main" />
-  </head>
-  <body>
-  </body>
+<head>
+  <title>Translation system</title>
+  <link data-trunk rel="tailwind-css" href="style/main.css" />
+  <meta charset="utf-8">
+
+  <link data-trunk rel="rust" data-type="worker" data-wasm-opt="z" data-bin="typst_translation_worker" data-weak-refs
+    data-loader-shim />
+  <link data-trunk rel="rust" data-wasm-opt="z" data-bin="typst_translation_main" />
+</head>
+
+<body>
+</body>
+
 </html>
-

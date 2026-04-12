@@ -2,7 +2,6 @@ use common::statement_version::StatementVersion;
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 use leptos_use::{UseColorModeOptions, use_color_mode_with_options};
-use thaw::{Layout, LayoutHeader, Spinner};
 
 use crate::api_wrapper::{api_get, file_get};
 use crate::editor::DiffViewer;
@@ -131,20 +130,26 @@ pub fn Compare() -> impl IntoView {
     .mode;
 
     view! {
-        <Spinner label="Loading..." class:hidden=move || loaded.get() />
-        <Layout attr:style="height: 100vh" class:hidden=move || !loaded.get()>
-            <LayoutHeader>
-                <Header title=Signal::derive(move || {
-                    format!("Comparing ISC versions for task {}", task_name.get())
-                })></Header>
-            </LayoutHeader>
-            <DiffViewer
-                color_mode
-                first
-                second
-                name="isc"
-                attr:style="width: 100%; height: calc(100vh - 65px);"
-            ></DiffViewer>
-        </Layout>
+        <div
+            class="flex justify-center items-center h-screen"
+            class:hidden=move || loaded.get()
+        >
+            <span class="loading loading-spinner loading-lg"></span>
+            <span class="ml-2">"Loading..."</span>
+        </div>
+        <div class="h-screen flex flex-col" class:hidden=move || !loaded.get()>
+            <Header title=Signal::derive(move || {
+                format!("Comparing ISC versions for task {}", task_name.get())
+            })></Header>
+            <div class="flex-1 overflow-hidden">
+                <DiffViewer
+                    color_mode
+                    first
+                    second
+                    name="isc"
+                    attr:class="w-full h-full"
+                ></DiffViewer>
+            </div>
+        </div>
     }
 }

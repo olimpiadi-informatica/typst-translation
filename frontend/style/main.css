@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@plugin "./daisyui.mjs";
+@plugin "./daisyui-theme.mjs";
+@source "../src/**/*.rs";
+@source "../index.html";
+@source not "./daisyui{,*}.mjs";
+
+html,
+body {
+  height: 100%;
+}
+
+.cm-editor,
+.cm-mergeView {
+  width: 100%;
+  height: 100%;
+}
+
+.page-svg-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}

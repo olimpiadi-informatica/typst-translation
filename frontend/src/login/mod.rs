@@ -1,10 +1,6 @@
 use common::user::LoginParams;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
-use thaw::{
-    Button, ButtonAppearance, ButtonType, Field, FieldOrientation, Flex, FlexAlign, FlexJustify,
-    Input, InputRule, InputType,
-};
 
 use crate::api_wrapper::api_post;
 use crate::app::wrap_with_current_owner;
@@ -38,34 +34,51 @@ pub fn UserLoginPage() -> impl IntoView {
     });
 
     view! {
-        <Flex justify=FlexJustify::Center align=FlexAlign::Center style="height: 100vh">
-            <form on:submit=move |ev| {
-                ev.prevent_default();
-                do_login()
-            }>
-                <Flex vertical=true>
-                    <h1>"Login to Translation System"</h1>
-                    <Field label="Username" orientation=FieldOrientation::Horizontal>
-                        <Input
-                            autocomplete="username"
-                            rules=vec![InputRule::required(true.into())]
-                            value=username
-                        />
-                    </Field>
-                    <Field label="Password" orientation=FieldOrientation::Horizontal>
-                        <Input
-                            autocomplete="current-password"
-                            input_type=InputType::Password
-                            rules=vec![InputRule::required(true.into())]
-                            value=password
-                        />
-                    </Field>
-                    <Button button_type=ButtonType::Submit appearance=ButtonAppearance::Primary>
-                        "Login"
-                    </Button>
-                </Flex>
-            </form>
-        </Flex>
+        <div class="flex items-center justify-center h-screen bg-base-200">
+            <div class="card w-96 bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h1 class="card-title text-2xl font-bold justify-center mb-4">"Login"</h1>
+                    <form on:submit=move |ev| {
+                        ev.prevent_default();
+                        do_login()
+                    }>
+                        <div class="form-control w-full">
+                            <label class="label">
+                                <span class="label-text">"Username"</span>
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Username"
+                                class="input input-bordered w-full"
+                                autocomplete="username"
+                                on:input=move |ev| username.set(event_target_value(&ev))
+                                prop:value=username
+                                required
+                            />
+                        </div>
+                        <div class="form-control w-full mt-4">
+                            <label class="label">
+                                <span class="label-text">"Password"</span>
+                            </label>
+                            <input
+                                type="password"
+                                placeholder="Password"
+                                class="input input-bordered w-full"
+                                autocomplete="current-password"
+                                on:input=move |ev| password.set(event_target_value(&ev))
+                                prop:value=password
+                                required
+                            />
+                        </div>
+                        <div class="card-actions justify-end mt-6">
+                            <button type="submit" class="btn btn-primary w-full">
+                                "Login"
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     }
 }
 
@@ -92,27 +105,39 @@ pub fn AdminLoginPage() -> impl IntoView {
     });
 
     view! {
-        <Flex justify=FlexJustify::Center align=FlexAlign::Center style="height: 100vh">
-            <form on:submit=move |ev| {
-                ev.prevent_default();
-                do_login()
-            }>
-                <Flex vertical=true>
-                    <h1>"Admin Login"</h1>
-                    <Field label="Password" orientation=FieldOrientation::Horizontal>
-                        <Input
-                            autocomplete="current-password"
-                            input_type=InputType::Password
-                            rules=vec![InputRule::required(true.into())]
-                            value=password
-                        />
-                    </Field>
-                    <Button button_type=ButtonType::Submit appearance=ButtonAppearance::Primary>
-                        "Login"
-                    </Button>
-                </Flex>
-            </form>
-        </Flex>
+        <div class="flex items-center justify-center h-screen bg-base-200">
+            <div class="card w-96 bg-base-100 shadow-xl border-t-4 border-error">
+                <div class="card-body">
+                    <h1 class="card-title text-2xl font-bold justify-center mb-4 text-error">
+                        "Admin Login"
+                    </h1>
+                    <form on:submit=move |ev| {
+                        ev.prevent_default();
+                        do_login()
+                    }>
+                        <div class="form-control w-full">
+                            <label class="label">
+                                <span class="label-text">"Password"</span>
+                            </label>
+                            <input
+                                type="password"
+                                placeholder="Admin Password"
+                                class="input input-bordered w-full"
+                                autocomplete="current-password"
+                                on:input=move |ev| password.set(event_target_value(&ev))
+                                prop:value=password
+                                required
+                            />
+                        </div>
+                        <div class="card-actions justify-end mt-6">
+                            <button type="submit" class="btn btn-error w-full">
+                                "Login"
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     }
 }
 
@@ -139,26 +164,38 @@ pub fn StaffLoginPage() -> impl IntoView {
     });
 
     view! {
-        <Flex justify=FlexJustify::Center align=FlexAlign::Center style="height: 100vh">
-            <form on:submit=move |ev| {
-                ev.prevent_default();
-                do_login()
-            }>
-                <Flex vertical=true>
-                    <h1>"Staff Login"</h1>
-                    <Field label="Password" orientation=FieldOrientation::Horizontal>
-                        <Input
-                            autocomplete="current-password"
-                            input_type=InputType::Password
-                            rules=vec![InputRule::required(true.into())]
-                            value=password
-                        />
-                    </Field>
-                    <Button button_type=ButtonType::Submit appearance=ButtonAppearance::Primary>
-                        "Login"
-                    </Button>
-                </Flex>
-            </form>
-        </Flex>
+        <div class="flex items-center justify-center h-screen bg-base-200">
+            <div class="card w-96 bg-base-100 shadow-xl border-t-4 border-secondary">
+                <div class="card-body">
+                    <h1 class="card-title text-2xl font-bold justify-center mb-4 text-secondary">
+                        "Staff Login"
+                    </h1>
+                    <form on:submit=move |ev| {
+                        ev.prevent_default();
+                        do_login()
+                    }>
+                        <div class="form-control w-full">
+                            <label class="label">
+                                <span class="label-text">"Password"</span>
+                            </label>
+                            <input
+                                type="password"
+                                placeholder="Staff Password"
+                                class="input input-bordered w-full"
+                                autocomplete="current-password"
+                                on:input=move |ev| password.set(event_target_value(&ev))
+                                prop:value=password
+                                required
+                            />
+                        </div>
+                        <div class="card-actions justify-end mt-6">
+                            <button type="submit" class="btn btn-secondary w-full">
+                                "Login"
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     }
 }
