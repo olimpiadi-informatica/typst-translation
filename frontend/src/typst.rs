@@ -148,18 +148,7 @@ impl TypstCompiler {
             .flat_map(|x| Font::iter(Bytes::new(x)))
             .collect();
         let book = FontBook::from_fonts(&fonts);
-        let mut inputs = Dict::new();
-        inputs.insert(Str::from("gen_gen"), Value::Str(Str::from("GEN")));
-        inputs.insert(
-            Str::from("constraints_yaml"),
-            Value::Str(Str::from("constraints.yaml")),
-        );
-        inputs.insert(
-            Str::from("contest_yaml"),
-            Value::Str(Str::from("../../contest.yaml")),
-        );
-
-        let library = Library::builder().with_inputs(inputs).build();
+        let library = Library::builder().build();
 
         TypstCompiler {
             library: LazyHash::new(library),
@@ -177,6 +166,27 @@ impl TypstCompiler {
 
     /// Compile the Typst file.
     fn compile(&mut self) -> Result<TypstCompilationResult> {
+        let mut inputs = Dict::new();
+        let has_gen_toml = self
+            .files
+            .keys()
+            .any(|x| x.file_name().map(|x| x.to_string_lossy()).as_deref() == Some("gen.toml"));
+        if has_gen_toml {
+            inputs.insert(Str::from("gen_toml"), Value::Str(Str::from("gen.toml")));
+        } else {
+            inputs.insert(Str::from("gen_gen"), Value::Str(Str::from("GEN")));
+            inputs.insert(
+                Str::from("constraints_yaml"),
+                Value::Str(Str::from("constraints.yaml")),
+            );
+        }
+        inputs.insert(
+            Str::from("contest_yaml"),
+            Value::Str(Str::from("../../contest.yaml")),
+        );
+
+        self.library = LazyHash::new(Library::builder().with_inputs(inputs).build());
+
         let mut messages = EcoVec::new();
         let mut add_errors = |msgs: &[SourceDiagnostic]| {
             for msg in msgs {
