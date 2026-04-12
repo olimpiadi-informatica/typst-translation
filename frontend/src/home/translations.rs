@@ -7,7 +7,6 @@ use leptos::task::spawn_local_scoped;
 use leptos_router::components::A;
 
 use crate::api_wrapper::api_post;
-use crate::app::wrap_with_current_owner;
 use crate::{show_error, show_success};
 
 #[component]
@@ -38,7 +37,7 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
     let finalized = RwSignal::new(user_contest_status.finalized_translations);
     let dialog_ref = NodeRef::<leptos::html::Dialog>::new();
 
-    let do_finalize = wrap_with_current_owner(move || {
+    let do_finalize = move || {
         spawn_local_scoped(async move {
             match api_post("/api/user/finalize_translation", &contest.id).await {
                 Ok(()) => {
@@ -52,8 +51,8 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
                     show_error!("Failed to finalize contest: {e}");
                 }
             }
-        })
-    });
+        });
+    };
 
     let open_dialog = move |_| {
         if let Some(dialog) = dialog_ref.get() {

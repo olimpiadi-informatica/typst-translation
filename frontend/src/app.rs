@@ -14,11 +14,6 @@ use crate::staff::printing::PrintingPage;
 use crate::toast::ToastProvider;
 use crate::user::{AdminProvider, ExtUserProvider, StaffProvider, UserProvider};
 
-pub fn wrap_with_current_owner(cl: impl Fn() + Clone) -> impl Fn() + Clone {
-    let owner = Owner::current().unwrap();
-    move || owner.with(cl.clone())
-}
-
 #[component]
 pub fn App() -> impl IntoView {
     let color_mode = use_color_mode_with_options(

@@ -5,7 +5,6 @@ use leptos::task::spawn_local_scoped;
 use wasm_bindgen::JsCast;
 
 use crate::api_wrapper::api_post;
-use crate::app::wrap_with_current_owner;
 use crate::show_error;
 use crate::util::Icon;
 
@@ -21,8 +20,7 @@ pub fn Gemini(
     let value = Signal::derive(move || PROMPT_TEMPLATE.replace("$LANGUAGE", &lang_code.get()));
     let (model, set_model) = signal("flash".to_string());
     let (loading, set_loading) = signal(false);
-
-    let do_gemini = StoredValue::new(wrap_with_current_owner(move || {
+    let do_gemini = StoredValue::new(move || {
         spawn_local_scoped(async move {
             set_loading.set(true);
             let model_val = match model.get_untracked().as_str() {
@@ -61,7 +59,7 @@ pub fn Gemini(
             }
             set_loading.set(false);
         });
-    }));
+    });
 
     let open_dialog = move |_| {
         if let Some(dialog) = dialog_ref.get() {

@@ -3,7 +3,6 @@ use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 
 use crate::api_wrapper::api_post;
-use crate::app::wrap_with_current_owner;
 use crate::user::ExtUserContext;
 use crate::{show_error, show_success};
 
@@ -12,7 +11,7 @@ pub fn UserLoginPage() -> impl IntoView {
     let username = RwSignal::new("".to_string());
     let password = RwSignal::new("".to_string());
 
-    let do_login = wrap_with_current_owner(move || {
+    let do_login = move || {
         spawn_local_scoped(async move {
             let params = LoginParams {
                 username: username.get_untracked(),
@@ -30,8 +29,8 @@ pub fn UserLoginPage() -> impl IntoView {
             show_success!("Login successful");
             let user_context = expect_context::<ExtUserContext>();
             user_context.refetch();
-        })
-    });
+        });
+    };
 
     view! {
         <div class="flex items-center justify-center h-screen bg-base-200">
@@ -86,7 +85,7 @@ pub fn UserLoginPage() -> impl IntoView {
 pub fn AdminLoginPage() -> impl IntoView {
     let password = RwSignal::new("".to_string());
 
-    let do_login = wrap_with_current_owner(move || {
+    let do_login = move || {
         spawn_local_scoped(async move {
             let params = password.get_untracked();
 
@@ -101,8 +100,8 @@ pub fn AdminLoginPage() -> impl IntoView {
             show_success!("Login successful");
             let user_context = expect_context::<ExtUserContext>();
             user_context.refetch();
-        })
-    });
+        });
+    };
 
     view! {
         <div class="flex items-center justify-center h-screen bg-base-200">
@@ -145,7 +144,7 @@ pub fn AdminLoginPage() -> impl IntoView {
 pub fn StaffLoginPage() -> impl IntoView {
     let password = RwSignal::new("".to_string());
 
-    let do_login = wrap_with_current_owner(move || {
+    let do_login = move || {
         spawn_local_scoped(async move {
             let params = password.get_untracked();
 
@@ -160,8 +159,8 @@ pub fn StaffLoginPage() -> impl IntoView {
             show_success!("Login successful");
             let user_context = expect_context::<ExtUserContext>();
             user_context.refetch();
-        })
-    });
+        });
+    };
 
     view! {
         <div class="flex items-center justify-center h-screen bg-base-200">

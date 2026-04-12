@@ -9,7 +9,6 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 
 use crate::api_wrapper::{api_get, api_post};
-use crate::app::wrap_with_current_owner;
 use crate::header::Header;
 use crate::{show_error, show_success};
 
@@ -30,7 +29,7 @@ pub fn ImportTaskPage() -> impl IntoView {
     let update = RwSignal::new(false);
     let loading = RwSignal::new(false);
 
-    let do_import = wrap_with_current_owner(move || {
+    let do_import = move || {
         spawn_local_scoped(async move {
             loading.set(true);
 
@@ -70,7 +69,7 @@ pub fn ImportTaskPage() -> impl IntoView {
 
             loading.set(false);
         });
-    });
+    };
 
     view! {
         <Header title=Signal::derive(|| "Import Task".to_string()) />
