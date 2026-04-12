@@ -1,3 +1,4 @@
+use leptos::portal::Portal;
 use leptos::prelude::*;
 
 use crate::util::Icon;
@@ -33,29 +34,31 @@ pub fn ResetIsc(
             "Reset to ISC"
         </button>
 
-        <dialog node_ref=dialog_ref class="modal">
-            <div class="modal-box">
-                <h3 class="font-bold text-lg">"Reset statement to the ISC version"</h3>
-                <div class="py-4">
-                    <div class="alert alert-error">
-                        <Icon icon=icondata::IoWarning />
-                        <span>
-                            "WARNING: All your changes will be lost! Are you sure to reset the statement to the ISC version?"
-                        </span>
+        <Portal>
+            <dialog node_ref=dialog_ref class="modal">
+                <div class="modal-box">
+                    <h3 class="font-bold text-lg">"Reset statement to the ISC version"</h3>
+                    <div class="py-4">
+                        <div class="alert alert-error">
+                            <Icon icon=icondata::IoWarning />
+                            <span>
+                                "WARNING: All your changes will be lost! Are you sure to reset the statement to the ISC version?"
+                            </span>
+                        </div>
+                    </div>
+                    <div class="modal-action">
+                        <button class="btn btn-error" on:click=do_reset>
+                            "Reset"
+                        </button>
+                        <button class="btn" on:click=close_dialog>
+                            "Cancel"
+                        </button>
                     </div>
                 </div>
-                <div class="modal-action">
-                    <button class="btn btn-error" on:click=do_reset>
-                        "Reset"
-                    </button>
-                    <button class="btn" on:click=close_dialog>
-                        "Cancel"
-                    </button>
-                </div>
-            </div>
-            <form method="dialog" class="modal-backdrop">
-                <button>"close"</button>
-            </form>
-        </dialog>
+                <form method="dialog" class="modal-backdrop">
+                    <button>"close"</button>
+                </form>
+            </dialog>
+        </Portal>
     }
 }

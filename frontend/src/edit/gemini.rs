@@ -1,4 +1,5 @@
 use common::gemini::{GeminiModel, GeminiRequest};
+use leptos::portal::Portal;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 use wasm_bindgen::JsCast;
@@ -21,7 +22,7 @@ pub fn Gemini(
     let (model, set_model) = signal("flash".to_string());
     let (loading, set_loading) = signal(false);
 
-    let do_gemini = wrap_with_current_owner(move || {
+    let do_gemini = StoredValue::new(wrap_with_current_owner(move || {
         spawn_local_scoped(async move {
             set_loading.set(true);
             let model_val = match model.get_untracked().as_str() {
@@ -60,7 +61,7 @@ pub fn Gemini(
             }
             set_loading.set(false);
         });
-    });
+    }));
 
     let open_dialog = move |_| {
         if let Some(dialog) = dialog_ref.get() {
@@ -80,58 +81,65 @@ pub fn Gemini(
             "Gemini"
         </button>
 
-        <dialog node_ref=dialog_ref class="modal">
-            <div class="modal-box">
-                <h3 class="font-bold text-lg">"Translate with Gemini"</h3>
-                <div class="py-4 flex flex-col gap-4">
-                    <p class="text-sm">
-                        "Generate a translation with Gemini starting from the ISC version of the task statement."
-                        "You can edit the prompt before submitting."
-                    </p>
-                    <div class="alert alert-warning text-xs">
-                        <Icon icon=icondata::IoWarning />
-                        <span>
-                            "WARNING: The translation will replace the current text in the editor!"
-                        </span>
-                    </div>
-                    <textarea
-                        id="gemini-textarea"
-                        class="textarea textarea-bordered h-48 w-full"
-                        prop:value=value.get_untracked()
-                    ></textarea>
-                    <select
-                        class="select select-bordered w-full"
-                        on:change=move |ev| {
-                            set_model.set(event_target_value(&ev));
-                        }
-                    >
-                        <option value="flash" selected=move || model.get() == "flash">
-                            "Gemini 3.1 Flash Lite"
-                        </option>
-                        <option value="pro" selected=move || model.get() == "pro">
-                            "Gemini 3.1 Pro"
-                        </option>
-                    </select>
-                </div>
-                <div class="modal-action">
-                    <button class="btn btn-primary" on:click=move |_| do_gemini() disabled=loading>
-                        {move || {
-                            if loading.get() {
-                                view! { <span class="loading loading-spinner loading-xs"></span> }
-                                    .into_any()
-                            } else {
-                                view! { "Translate" }.into_any()
+        <Portal>
+            <dialog node_ref=dialog_ref class="modal">
+                <div class="modal-box">
+                    <h3 class="font-bold text-lg">"Translate with Gemini"</h3>
+                    <div class="py-4 flex flex-col gap-4">
+                        <p class="text-sm">
+                            "Generate a translation with Gemini starting from the ISC version of the task statement."
+                            "You can edit the prompt before submitting."
+                        </p>
+                        <div class="alert alert-warning text-xs">
+                            <Icon icon=icondata::IoWarning />
+                            <span>
+                                "WARNING: The translation will replace the current text in the editor!"
+                            </span>
+                        </div>
+                        <textarea
+                            id="gemini-textarea"
+                            class="textarea h-48 w-full rounded-none border-none focus:outline-none bg-base-200"
+                            prop:value=value.get_untracked()
+                        ></textarea>
+
+                        <select
+                            class="select select-bordered w-full"
+                            on:change=move |ev| {
+                                set_model.set(event_target_value(&ev));
                             }
-                        }}
-                    </button>
-                    <button class="btn" on:click=close_dialog>
-                        "Cancel"
-                    </button>
+                        >
+                            <option value="flash" selected=move || model.get() == "flash">
+                                "Gemini 3.1 Flash Lite"
+                            </option>
+                            <option value="pro" selected=move || model.get() == "pro">
+                                "Gemini 3.1 Pro"
+                            </option>
+                        </select>
+                    </div>
+                    <div class="modal-action">
+                        <button
+                            class="btn btn-primary"
+                            on:click=move |_| do_gemini.with_value(|f| f())
+                            disabled=loading
+                        >
+                            {move || {
+                                if loading.get() {
+                                    view! { <span class="loading loading-spinner loading-xs"></span> }
+                                        .into_any()
+                                } else {
+                                    view! { "Translate" }.into_any()
+                                }
+                            }}
+                        </button>
+                        <button class="btn" on:click=close_dialog>
+                            "Cancel"
+                        </button>
+                    </div>
                 </div>
-            </div>
-            <form method="dialog" class="modal-backdrop">
-                <button>"close"</button>
-            </form>
-        </dialog>
+                <form method="dialog" class="modal-backdrop">
+                    <button>"close"</button>
+                </form>
+            </dialog>
+        </Portal>
     }
 }

@@ -35,9 +35,9 @@ pub fn App() -> impl IntoView {
             && let Some(root) = document.document_element()
         {
             let theme = match mode {
-                ColorMode::Dark => "dark",
-                ColorMode::Light => "light",
-                _ => "dark",
+                ColorMode::Dark => "forest",
+                ColorMode::Light => "nord",
+                _ => "forest",
             };
             let _ = root.set_attribute("data-theme", theme);
         }

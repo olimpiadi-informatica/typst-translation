@@ -1,7 +1,13 @@
 @import "tailwindcss";
 
-@plugin "./daisyui.mjs";
-@plugin "./daisyui-theme.mjs";
+@plugin "./daisyui.mjs" {
+  themes: nord --default, forest --prefersdark;
+}
+
+@plugin "./daisyui-theme.mjs" {
+  themes: nord --default, forest --prefersdark;
+}
+
 @source "../src/**/*.rs";
 @source "../index.html";
 @source not "./daisyui{,*}.mjs";
