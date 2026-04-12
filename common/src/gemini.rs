@@ -2,31 +2,31 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub enum GeminiModel {
-    Gemini25Pro,
-    Gemini25Flash,
+    Gemini31Pro,
+    Gemini31FlashLite,
 }
 
 impl GeminiModel {
     pub fn api_name(&self) -> &'static str {
         match self {
-            GeminiModel::Gemini25Pro => "gemini-2.5-pro",
-            GeminiModel::Gemini25Flash => "gemini-2.5-flash",
+            GeminiModel::Gemini31Pro => "gemini-3.1-pro-preview",
+            GeminiModel::Gemini31FlashLite => "gemini-3.1-flash-lite-preview",
         }
     }
 
     // cost in 1/10^9 dollars per token.
     pub fn token_input_cost(&self) -> i64 {
         match self {
-            GeminiModel::Gemini25Pro => 1250,
-            GeminiModel::Gemini25Flash => 300,
+            GeminiModel::Gemini31Pro => 2000,
+            GeminiModel::Gemini31FlashLite => 250,
         }
     }
 
     // cost in 1/10^9 dollars per token.
     pub fn token_output_cost(&self) -> i64 {
         match self {
-            GeminiModel::Gemini25Pro => 10000,
-            GeminiModel::Gemini25Flash => 2500,
+            GeminiModel::Gemini31Pro => 12000,
+            GeminiModel::Gemini31FlashLite => 1500,
         }
     }
 }

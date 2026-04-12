@@ -28,8 +28,8 @@ pub fn Gemini(
         spawn_local_scoped(async move {
             loading.set(true);
             let model = match model.get_untracked().as_str() {
-                "pro" => GeminiModel::Gemini25Pro,
-                "flash" => GeminiModel::Gemini25Flash,
+                "pro" => GeminiModel::Gemini31Pro,
+                "flash" => GeminiModel::Gemini31FlashLite,
                 _ => unreachable!(),
             };
             let textarea = web_sys::window()
@@ -90,9 +90,9 @@ pub fn Gemini(
                             />
                             <Select value=model>
                                 <option value="flash" selected>
-                                    "Gemini 2.5 Flash"
+                                    "Gemini 3.1 Flash Lite"
                                 </option>
-                                <option value="pro">"Gemini 2.5 Pro"</option>
+                                <option value="pro">"Gemini 3.1 Pro"</option>
                             </Select>
                         </Flex>
                     </DialogContent>
