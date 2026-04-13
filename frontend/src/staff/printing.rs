@@ -17,7 +17,6 @@ use leptos::task::spawn_local_scoped;
 use leptos_use::storage::use_local_storage;
 
 use crate::api_wrapper::{api_get, file_get};
-use crate::header::Header;
 use crate::util::Icon;
 use crate::{TypstWorker, show_error};
 
@@ -34,7 +33,6 @@ pub fn PrintingPage() -> impl IntoView {
     });
 
     view! {
-        <Header title=Signal::derive(|| "Printing Panel".to_string()) />
         <div class="container mx-auto max-w-4xl p-4">
             {move || match all.get().flatten() {
                 Some(all) => {

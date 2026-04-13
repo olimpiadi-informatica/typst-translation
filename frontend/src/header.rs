@@ -6,7 +6,6 @@ use strum::VariantArray;
 use crate::api_wrapper::api_post;
 use crate::editor::KeyboardMode;
 use crate::user::ExtUserContext;
-use crate::util::Icon;
 use crate::{show_error, show_success};
 
 type SignalPair<T> = (Signal<T>, WriteSignal<T>);
@@ -29,8 +28,9 @@ fn kb_mode_from_str(s: &str) -> KeyboardMode {
 
 #[component]
 pub fn Header(
-    #[prop(optional)] noback: Option<bool>,
+    #[prop(optional, into)] left_action: Option<AnyView>,
     #[prop(optional, into)] title: Option<Signal<String>>,
+    #[prop(optional, into)] tabs: Option<AnyView>,
     #[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>,
     #[prop(optional)] children: Option<Children>,
 ) -> impl IntoView {
@@ -78,22 +78,10 @@ pub fn Header(
 
     let user_context = expect_context::<ExtUserContext>();
 
-    let go_back = move |_| {
-        if let Some(window) = web_sys::window()
-            && let Ok(history) = window.history()
-        {
-            let _ = history.back();
-        }
-    };
-
     view! {
         <div class="navbar bg-base-100 shadow-sm px-4 h-16 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <Show when=move || !noback.unwrap_or_default()>
-                    <button class="btn btn-ghost btn-circle" on:click=go_back>
-                        <Icon icon=icondata::BiArrowBackRegular />
-                    </button>
-                </Show>
+            <div class="navbar-start flex items-center gap-2">
+                {left_action}
                 {move || {
                     title
                         .get()
@@ -103,7 +91,10 @@ pub fn Header(
                 }}
                 {kb_mode_view}
             </div>
-            <div class="flex items-center gap-4">
+            <div class="navbar-center hidden lg:flex">
+                {tabs}
+            </div>
+            <div class="navbar-end flex items-center gap-4">
                 {children.map(|c| c())}
                 <div class="flex items-center gap-2">
                     <Show when=move || user_context.get_ext_user_untracked().user.is_some()>

@@ -129,6 +129,14 @@ pub fn Compare() -> impl IntoView {
     )
     .mode;
 
+    let go_back = move |_| {
+        if let Some(window) = web_sys::window()
+            && let Ok(history) = window.history()
+        {
+            let _ = history.back();
+        }
+    };
+
     view! {
         <div
             class="flex justify-center items-center h-screen"
@@ -140,7 +148,11 @@ pub fn Compare() -> impl IntoView {
         <div class="h-screen flex flex-col" class:hidden=move || !loaded.get()>
             <Header title=Signal::derive(move || {
                 format!("Comparing ISC versions for task {}", task_name.get())
-            })></Header>
+            }) left_action=view! {
+                <button class="btn btn-ghost btn-sm gap-2" on:click=go_back>
+                    "Back to Editing"
+                </button>
+            }.into_any()></Header>
             <div class="flex-1 overflow-hidden">
                 <DiffViewer
                     color_mode

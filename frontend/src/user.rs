@@ -4,6 +4,7 @@ use leptos::prelude::*;
 use leptos_router::components::Outlet;
 
 use crate::api_wrapper::api_post;
+use crate::header::Header;
 use crate::login::{AdminLoginPage, StaffLoginPage, UserLoginPage};
 use crate::show_error;
 
@@ -61,9 +62,25 @@ where
 #[component]
 pub fn AdminProvider() -> impl IntoView {
     let user_provider = use_context::<ExtUserContext>().unwrap();
+    let location = leptos_router::hooks::use_location();
 
     move || match user_provider.resource.get() {
-        Some(Some(ExtUser { is_admin: true, .. })) => Either::Left(view! { <Outlet /> }),
+        Some(Some(ExtUser { is_admin: true, .. })) => Either::Left(view! {
+            <div class="flex flex-col h-screen">
+                <Header
+                    title=Signal::derive(|| "Admin Panel".to_string())
+                    tabs=view! {
+                        <div role="tablist" class="tabs tabs-boxed">
+                            <a href="/admin/import_task" class="tab" class:tab-active=move || location.pathname.get() == "/admin/import_task">"Import Task"</a>
+                            <a href="/admin/printing" class="tab" class:tab-active=move || location.pathname.get() == "/admin/printing">"Printing"</a>
+                        </div>
+                    }.into_any()
+                />
+                <div class="flex-grow overflow-auto p-4">
+                    <Outlet />
+                </div>
+            </div>
+        }),
         _ => Either::Right(view! { <AdminLoginPage /> }),
     }
 }
@@ -81,10 +98,25 @@ pub fn UserProvider() -> impl IntoView {
 #[component]
 pub fn StaffProvider() -> impl IntoView {
     let user_provider = use_context::<ExtUserContext>().unwrap();
+    let location = leptos_router::hooks::use_location();
 
     move || match user_provider.resource.get() {
         Some(Some(ExtUser { is_admin: true, .. })) | Some(Some(ExtUser { is_staff: true, .. })) => {
-            Either::Left(view! { <Outlet /> })
+            Either::Left(view! {
+                <div class="flex flex-col h-screen">
+                    <Header
+                        title=Signal::derive(|| "Staff Panel".to_string())
+                        tabs=view! {
+                            <div role="tablist" class="tabs tabs-boxed">
+                                <a href="/staff/printing" class="tab" class:tab-active=move || location.pathname.get() == "/staff/printing">"Printing"</a>
+                            </div>
+                        }.into_any()
+                    />
+                    <div class="flex-grow overflow-auto p-4">
+                        <Outlet />
+                    </div>
+                </div>
+            })
         }
         _ => Either::Right(view! { <StaffLoginPage /> }),
     }

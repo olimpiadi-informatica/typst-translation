@@ -464,7 +464,16 @@ pub fn EditPage() -> impl IntoView {
             class:hidden=move || !loaded.get()
             class:select-none=move || is_dragging.get()
         >
-            <Header title kb_mode=(kb_mode, set_kb_mode)>
+            <Header
+                title
+                kb_mode=(kb_mode, set_kb_mode)
+                left_action=view! {
+                    <a href="/" class="btn btn-ghost btn-sm">
+                        "Home"
+                    </a>
+                }
+                    .into_any()
+            >
                 <Show when=move || readonly.get() && can_edit.get()>
                     <button class="btn btn-primary btn-sm" on:click=move |_| on_ask_edit()>
                         "Edit"

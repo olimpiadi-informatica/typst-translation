@@ -70,7 +70,7 @@ pub fn HomePage() -> impl IntoView {
                 .collect::<Vec<_>>();
             Either::Left(view! {
                 <div class="container mx-auto max-w-7xl p-4 flex flex-col gap-8">
-                    <Header noback=true title=Signal::derive(|| "Translation System".to_string()) />
+                    <Header title=Signal::derive(|| "Translation System".to_string()) />
                     <div class="flex flex-col md:flex-row gap-8">
                         <div class="flex-1">
                             <ContestantsTable contestants avail_langs />

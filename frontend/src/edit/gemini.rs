@@ -122,7 +122,9 @@ pub fn Gemini(
                         >
                             {move || {
                                 if loading.get() {
-                                    view! { <span class="loading loading-spinner loading-xs"></span> }
+                                    view! {
+                                        <span class="loading loading-spinner loading-xs"></span>
+                                    }
                                         .into_any()
                                 } else {
                                     view! { "Translate" }.into_any()

@@ -1,26 +1,13 @@
 use leptos::prelude::*;
-use leptos_router::hooks::use_navigate;
-
-use crate::header::Header;
 
 pub mod printing;
 
 #[component]
 pub fn StaffHomePage() -> impl IntoView {
     view! {
-        <Header title=Signal::derive(|| "Staff Panel".to_string()) />
         <div class="p-4">
-            <div class="join">
-                <button
-                    class="btn btn-primary join-item"
-                    on:click=move |_| {
-                        let navigate = use_navigate();
-                        navigate("/staff/printing", Default::default())
-                    }
-                >
-                    "Printing"
-                </button>
-            </div>
+            <h1 class="text-2xl font-bold">"Welcome to the Staff Panel"</h1>
+            <p class="mt-2">"Select an option from the tabs above."</p>
         </div>
     }
 }

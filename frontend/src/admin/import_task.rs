@@ -9,7 +9,6 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 
 use crate::api_wrapper::{api_get, api_post};
-use crate::header::Header;
 use crate::{show_error, show_success};
 
 #[component]
@@ -72,7 +71,6 @@ pub fn ImportTaskPage() -> impl IntoView {
     };
 
     view! {
-        <Header title=Signal::derive(|| "Import Task".to_string()) />
         <div class="container mx-auto max-w-lg p-8">
             <div class="card bg-base-100 shadow-xl">
                 <div class="card-body">

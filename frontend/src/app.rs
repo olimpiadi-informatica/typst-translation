@@ -3,13 +3,11 @@ use leptos_router::components::{ParentRoute, Route, Router, Routes};
 use leptos_router::path;
 use leptos_use::{ColorMode, UseColorModeOptions, use_color_mode_with_options};
 
-use crate::admin::AdminHomePage;
 use crate::admin::import_task::ImportTaskPage;
 use crate::compare::Compare;
 use crate::compilation_manager::CompilationManager;
 use crate::edit::EditPage;
 use crate::home::HomePage;
-use crate::staff::StaffHomePage;
 use crate::staff::printing::PrintingPage;
 use crate::toast::ToastProvider;
 use crate::user::{AdminProvider, ExtUserProvider, StaffProvider, UserProvider};
@@ -44,11 +42,12 @@ pub fn App() -> impl IntoView {
                 <Router>
                     <Routes fallback=|| view! { <h1>"404 Not found."</h1> }>
                         <ParentRoute path=path!("/admin") view=AdminProvider>
-                            <Route path=path!("") view=AdminHomePage />
+                            <Route path=path!("") view=ImportTaskPage />
                             <Route path=path!("import_task") view=ImportTaskPage />
+                            <Route path=path!("printing") view=PrintingPage />
                         </ParentRoute>
                         <ParentRoute path=path!("/staff") view=StaffProvider>
-                            <Route path=path!("") view=StaffHomePage />
+                            <Route path=path!("") view=PrintingPage />
                             <Route path=path!("printing") view=PrintingPage />
                         </ParentRoute>
                         <ParentRoute path=path!("") view=UserProvider>
