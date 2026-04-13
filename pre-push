@@ -14,5 +14,5 @@ RUST_LOG=none cargo test --release
 popd
 
 pushd frontend
-trunk build -d dist-check
+RUSTFLAGS="--cfg=erase_components" trunk build -d dist-check
 popd
