@@ -30,7 +30,7 @@ fn kb_mode_from_str(s: &str) -> KeyboardMode {
 pub fn Header(
     #[prop(optional, into)] left_action: Option<AnyView>,
     #[prop(optional, into)] title: Option<Signal<String>>,
-    #[prop(optional, into)] tabs: Option<AnyView>,
+    #[prop(optional)] tabs: Option<AnyView>,
     #[prop(optional)] kb_mode: Option<SignalPair<KeyboardMode>>,
     #[prop(optional)] children: Option<Children>,
 ) -> impl IntoView {

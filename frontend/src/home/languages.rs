@@ -3,39 +3,37 @@ use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 
 use crate::api_wrapper::api_post;
+use crate::util::Card;
 use crate::{show_error, show_success};
 
 #[component]
 pub fn LanguagesTable(transl_langs: Vec<Language>) -> impl IntoView {
     view! {
-        <div class="card bg-base-100 shadow-none border border-base-300">
-            <div class="card-body">
-                <h2 class="card-title mb-4">"Languages"</h2>
-                <div class="overflow-x-auto">
-                    <table class="table table-zebra w-full">
-                        <thead>
+        <Card title="Languages">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>"Code"</th>
+                            <th>"Public"</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <For each=move || transl_langs.clone() key=|lang| lang.id let(lang)>
                             <tr>
-                                <th>"Code"</th>
-                                <th>"Public"</th>
+                                <td>{lang.code.clone()}</td>
+                                <td>
+                                    <LanguagePublicCheckbox
+                                        language_id=lang.id
+                                        public=lang.public
+                                    />
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <For each=move || transl_langs.clone() key=|lang| lang.id let(lang)>
-                                <tr>
-                                    <td>{lang.code.clone()}</td>
-                                    <td>
-                                        <LanguagePublicCheckbox
-                                            language_id=lang.id
-                                            public=lang.public
-                                        />
-                                    </td>
-                                </tr>
-                            </For>
-                        </tbody>
-                    </table>
-                </div>
+                        </For>
+                    </tbody>
+                </table>
             </div>
-        </div>
+        </Card>
     }
 }
 

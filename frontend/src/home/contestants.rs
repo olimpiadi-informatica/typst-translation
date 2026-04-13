@@ -4,54 +4,52 @@ use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 
 use crate::api_wrapper::api_post;
+use crate::util::Card;
 use crate::{show_error, show_success};
 
 #[component]
 pub fn ContestantsTable(contestants: Vec<Contestant>, avail_langs: Vec<Language>) -> impl IntoView {
     view! {
-        <div class="card bg-base-100 shadow-none border border-base-300">
-            <div class="card-body">
-                <h2 class="card-title mb-4">"Contestants"</h2>
-                <div class="overflow-x-auto">
-                    <table class="table table-zebra w-full">
-                        <thead>
-                            <tr>
-                                <th>"Code"</th>
-                                <th>"Name"</th>
-                                <th>"Online"</th>
-                                <th>"Language"</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <For
-                                each=move || contestants.clone()
-                                key=|contestant| contestant.id
-                                let(contestant)
-                            >
-                                {
-                                    let avail_langs = avail_langs.clone();
-                                    view! {
-                                        <tr>
-                                            <td>{contestant.code.clone()}</td>
-                                            <td>{contestant.name.clone()}</td>
-                                            <td>{if contestant.online_bit { "Yes" } else { "No" }}</td>
-                                            <td>
-                                                <ContestantLangSelect
-                                                    langs=avail_langs
-                                                    selected=contestant.language_id
-                                                    contestant_id=contestant.id
-                                                    user_id=contestant.user_id
-                                                />
-                                            </td>
-                                        </tr>
-                                    }
+        <Card title="Contestants">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>"Code"</th>
+                            <th>"Name"</th>
+                            <th>"Online"</th>
+                            <th>"Language"</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <For
+                            each=move || contestants.clone()
+                            key=|contestant| contestant.id
+                            let(contestant)
+                        >
+                            {
+                                let avail_langs = avail_langs.clone();
+                                view! {
+                                    <tr>
+                                        <td>{contestant.code.clone()}</td>
+                                        <td>{contestant.name.clone()}</td>
+                                        <td>{if contestant.online_bit { "Yes" } else { "No" }}</td>
+                                        <td>
+                                            <ContestantLangSelect
+                                                langs=avail_langs
+                                                selected=contestant.language_id
+                                                contestant_id=contestant.id
+                                                user_id=contestant.user_id
+                                            />
+                                        </td>
+                                    </tr>
                                 }
-                            </For>
-                        </tbody>
-                    </table>
-                </div>
+                            }
+                        </For>
+                    </tbody>
+                </table>
             </div>
-        </div>
+        </Card>
     }
 }
 

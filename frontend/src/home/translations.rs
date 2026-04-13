@@ -7,6 +7,7 @@ use leptos::task::spawn_local_scoped;
 use leptos_router::components::A;
 
 use crate::api_wrapper::api_post;
+use crate::util::Card;
 use crate::{show_error, show_success};
 
 #[component]
@@ -113,28 +114,31 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
     };
 
     view! {
-        <div class="card bg-base-100 shadow-none border border-base-300 mt-8">
-            <div class="card-body">
+        <Card
+            header=view! {
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="card-title text-2xl font-bold">"Contest: " {contest_name}</h2>
                     {finalize_view}
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="table table-zebra w-full">
-                        <thead>
-                            <tr>
-                                <th>"Task"</th>
-                                <For each=move || transl_langs.clone() key=|lang| lang.id let(lang)>
-                                    <th>"Lang " {lang.code}</th>
-                                </For>
-                                <th>"ISC"</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <For each=move || tasks.clone() key=|task| task.id children=draw_task />
-                        </tbody>
-                    </table>
-                </div>
+            }
+                .into_any()
+            class="mt-8"
+        >
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>"Task"</th>
+                            <For each=move || transl_langs.clone() key=|lang| lang.id let(lang)>
+                                <th>"Lang " {lang.code}</th>
+                            </For>
+                            <th>"ISC"</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <For each=move || tasks.clone() key=|task| task.id children=draw_task />
+                    </tbody>
+                </table>
             </div>
 
             <dialog node_ref=dialog_ref class="modal">
@@ -156,6 +160,6 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
                     <button>"close"</button>
                 </form>
             </dialog>
-        </div>
+        </Card>
     }
 }

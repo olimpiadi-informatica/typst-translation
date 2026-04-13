@@ -7,6 +7,7 @@ use crate::api_wrapper::api_post;
 use crate::header::Header;
 use crate::login::{AdminLoginPage, StaffLoginPage, UserLoginPage};
 use crate::show_error;
+use crate::util::NavTabs;
 
 #[derive(Clone, Copy)]
 pub struct ExtUserContext {
@@ -60,64 +61,100 @@ where
 }
 
 #[component]
-pub fn AdminProvider() -> impl IntoView {
-    let user_provider = use_context::<ExtUserContext>().unwrap();
-    let location = leptos_router::hooks::use_location();
+pub fn ProtectedRoute<F, L, C>(
+    condition: F,
+    login_page: L,
+    children: TypedChildrenFn<C>,
+) -> impl IntoView
+where
+    F: Fn(&ExtUser) -> bool + 'static + Send,
+    L: Fn() -> AnyView + 'static + Send,
+    C: IntoView + 'static,
+{
+    let user_provider = use_context::<ExtUserContext>().expect("ExtUserContext should be provided");
+    let children = children.into_inner();
 
-    move || match user_provider.resource.get() {
-        Some(Some(ExtUser { is_admin: true, .. })) => Either::Left(view! {
-            <div class="flex flex-col h-screen">
-                <Header
-                    title=Signal::derive(|| "Admin Panel".to_string())
-                    tabs=view! {
-                        <div role="tablist" class="tabs tabs-boxed">
-                            <a href="/admin/import_task" class="tab" class:tab-active=move || location.pathname.get() == "/admin/import_task">"Import Task"</a>
-                            <a href="/admin/printing" class="tab" class:tab-active=move || location.pathname.get() == "/admin/printing">"Printing"</a>
-                        </div>
-                    }.into_any()
-                />
-                <div class="flex-grow overflow-auto p-4">
-                    <Outlet />
-                </div>
+    move || {
+        let user = user_provider.resource.get();
+        let children = children.clone();
+        match user {
+            Some(Some(ext_user)) if condition(&ext_user) => Either::Left(children().into_any()),
+            Some(_) => Either::Right(login_page()),
+            None => Either::Right(
+                view! {
+                    <div class="flex flex-col items-center justify-center h-screen">
+                        <span class="loading loading-spinner loading-lg text-primary"></span>
+                        <p class="mt-4 text-base-content/60">"Authenticating..."</p>
+                    </div>
+                }
+                .into_any(),
+            ),
+        }
+    }
+}
+
+#[component]
+pub fn PanelLayout(
+    #[prop(into)] title: Signal<String>,
+    #[prop(optional)] tabs: Option<AnyView>,
+) -> impl IntoView {
+    view! {
+        <div class="flex flex-col h-screen">
+            <Header title=title tabs=tabs.unwrap_or_else(|| ().into_any()) />
+            <div class="flex-grow overflow-auto p-4">
+                <Outlet />
             </div>
-        }),
-        _ => Either::Right(view! { <AdminLoginPage /> }),
+        </div>
+    }
+}
+
+#[component]
+pub fn AdminProvider() -> impl IntoView {
+    view! {
+        <ProtectedRoute
+            condition=|u| u.is_admin
+            login_page=|| view! { <AdminLoginPage /> }.into_any()
+        >
+            <PanelLayout
+                title=Signal::derive(|| "Admin Panel".to_string())
+                tabs=view! {
+                    <NavTabs tabs=Signal::derive(|| vec![
+                        ("Import Task".to_string(), "/admin/import_task".to_string()),
+                        ("Printing".to_string(), "/admin/printing".to_string()),
+                    ]) />
+                }.into_any()
+            />
+        </ProtectedRoute>
     }
 }
 
 #[component]
 pub fn UserProvider() -> impl IntoView {
-    let user_provider = use_context::<ExtUserContext>().unwrap();
-
-    move || match user_provider.resource.get() {
-        Some(Some(ExtUser { user: Some(_), .. })) => Either::Left(view! { <Outlet /> }),
-        _ => Either::Right(view! { <UserLoginPage /> }),
+    view! {
+        <ProtectedRoute
+            condition=|u| u.user.is_some()
+            login_page=|| view! { <UserLoginPage /> }.into_any()
+        >
+            <Outlet />
+        </ProtectedRoute>
     }
 }
 
 #[component]
 pub fn StaffProvider() -> impl IntoView {
-    let user_provider = use_context::<ExtUserContext>().unwrap();
-    let location = leptos_router::hooks::use_location();
-
-    move || match user_provider.resource.get() {
-        Some(Some(ExtUser { is_admin: true, .. })) | Some(Some(ExtUser { is_staff: true, .. })) => {
-            Either::Left(view! {
-                <div class="flex flex-col h-screen">
-                    <Header
-                        title=Signal::derive(|| "Staff Panel".to_string())
-                        tabs=view! {
-                            <div role="tablist" class="tabs tabs-boxed">
-                                <a href="/staff/printing" class="tab" class:tab-active=move || location.pathname.get() == "/staff/printing">"Printing"</a>
-                            </div>
-                        }.into_any()
-                    />
-                    <div class="flex-grow overflow-auto p-4">
-                        <Outlet />
-                    </div>
-                </div>
-            })
-        }
-        _ => Either::Right(view! { <StaffLoginPage /> }),
+    view! {
+        <ProtectedRoute
+            condition=|u| u.is_admin || u.is_staff
+            login_page=|| view! { <StaffLoginPage /> }.into_any()
+        >
+            <PanelLayout
+                title=Signal::derive(|| "Staff Panel".to_string())
+                tabs=view! {
+                    <NavTabs tabs=Signal::derive(|| vec![
+                        ("Printing".to_string(), "/staff/printing".to_string()),
+                    ]) />
+                }.into_any()
+            />
+        </ProtectedRoute>
     }
 }
