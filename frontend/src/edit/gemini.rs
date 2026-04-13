@@ -97,7 +97,7 @@ pub fn Gemini(
                         <textarea
                             id="gemini-textarea"
                             class="textarea h-48 w-full rounded-none border-none focus:outline-none bg-base-200"
-                            prop:value=value.get_untracked()
+                            prop:value=value
                         ></textarea>
 
                         <select

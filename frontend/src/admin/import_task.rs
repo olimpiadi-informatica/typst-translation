@@ -81,12 +81,9 @@ pub fn ImportTaskPage() -> impl IntoView {
                                 view! {
                                     <form
                                         class="flex flex-col gap-6"
-                                        on:submit={
-                                            let do_import = do_import.clone();
-                                            move |ev| {
-                                                ev.prevent_default();
-                                                do_import()
-                                            }
+                                        on:submit=move |ev| {
+                                            ev.prevent_default();
+                                            do_import()
                                         }
                                     >
                                         <div class="form-control w-full">
