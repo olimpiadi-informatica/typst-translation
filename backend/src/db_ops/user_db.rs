@@ -182,3 +182,37 @@ pub async fn set_skip_envelope_verification(
     tx.commit().await?;
     Ok(())
 }
+
+pub async fn set_automatic_translation_budget<'e, E>(
+    executor: E,
+    user_id: i64,
+    new_budget: i64,
+) -> Result<(), Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    sqlx::query!(
+        "UPDATE users SET automatic_translation_budget = ? WHERE id = ?",
+        new_budget,
+        user_id
+    )
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
+pub async fn set_all_automatic_translation_budgets<'e, E>(
+    executor: E,
+    new_budget: i64,
+) -> Result<(), Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    sqlx::query!(
+        "UPDATE users SET automatic_translation_budget = ?",
+        new_budget
+    )
+    .execute(executor)
+    .await?;
+    Ok(())
+}

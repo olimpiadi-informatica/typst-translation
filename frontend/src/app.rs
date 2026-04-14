@@ -4,6 +4,7 @@ use leptos_router::path;
 use leptos_use::{ColorMode, UseColorModeOptions, use_color_mode_with_options};
 
 use crate::admin::import_task::ImportTaskPage;
+use crate::admin::users::AdminUsersPage;
 use crate::compare::Compare;
 use crate::compilation_manager::CompilationManager;
 use crate::edit::EditPage;
@@ -42,9 +43,10 @@ pub fn App() -> impl IntoView {
                 <Router>
                     <Routes fallback=|| view! { <h1>"404 Not found."</h1> }>
                         <ParentRoute path=path!("/admin") view=AdminProvider>
-                            <Route path=path!("") view=ImportTaskPage />
+                            <Route path=path!("") view=AdminUsersPage />
                             <Route path=path!("import_task") view=ImportTaskPage />
                             <Route path=path!("printing") view=PrintingPage />
+                            <Route path=path!("users") view=AdminUsersPage />
                         </ParentRoute>
                         <ParentRoute path=path!("/staff") view=StaffProvider>
                             <Route path=path!("") view=PrintingPage />

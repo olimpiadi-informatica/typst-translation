@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE users SET automatic_translation_budget = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "1eec87cdee2910198756b5d2d36e712748de1ef69f2df28ed7526e66bb4bc290"
+}

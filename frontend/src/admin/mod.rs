@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
 pub mod import_task;
+pub mod users;
 
 #[component]
 pub fn AdminHomePage() -> impl IntoView {

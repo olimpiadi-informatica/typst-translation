@@ -143,6 +143,26 @@ impl AppState {
                 "/api/contests/get_all",
                 get(api_handlers::contest::get_all_contests),
             )
+            .route(
+                "/api/admin/users/overview",
+                get(api_handlers::admin::get_users_overview),
+            )
+            .route(
+                "/api/admin/users/set_budget",
+                post(api_handlers::admin::set_user_budget),
+            )
+            .route(
+                "/api/admin/users/set_all_budgets",
+                post(api_handlers::admin::set_all_users_budget),
+            )
+            .route(
+                "/api/admin/users/add_language",
+                post(api_handlers::admin::add_user_language),
+            )
+            .route(
+                "/api/admin/users/update_passwords",
+                post(api_handlers::admin::update_passwords_csv),
+            )
             .route("/api/all", get(api_handlers::contest::all))
             .route("/files/{hash}/{filename}", get(file_storage::get_file))
             .fallback_service(

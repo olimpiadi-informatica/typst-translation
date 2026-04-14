@@ -1,3 +1,4 @@
+pub mod admin;
 pub mod contest;
 pub mod languages;
 pub mod statement_versions;

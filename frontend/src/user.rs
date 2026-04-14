@@ -119,6 +119,7 @@ pub fn AdminProvider() -> impl IntoView {
                 title=Signal::derive(|| "Admin Panel".to_string())
                 tabs=view! {
                     <NavTabs tabs=Signal::derive(|| vec![
+                        ("Users".to_string(), "/admin/users".to_string()),
                         ("Import Task".to_string(), "/admin/import_task".to_string()),
                         ("Printing".to_string(), "/admin/printing".to_string()),
                     ]) />
