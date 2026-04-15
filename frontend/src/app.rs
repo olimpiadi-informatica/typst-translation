@@ -22,6 +22,7 @@ pub fn App() -> impl IntoView {
     );
 
     provide_context(CompilationManager::new());
+    provide_context(color_mode.mode);
 
     Effect::new(move || {
         let mode = color_mode.mode.get();

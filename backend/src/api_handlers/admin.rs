@@ -59,13 +59,25 @@ pub async fn add_user_language(
     _admin: AuthAdmin,
     Json(payload): Json<AddUserLanguageRequest>,
 ) -> Result<Json<()>, Error> {
+    let mut tx = app_state.db().begin().await?;
+
     let mut language = Language {
         id: 0,
         code: payload.language_code,
         user_id: payload.user_id,
         public: false,
     };
-    language_db::insert(&mut language, app_state.db()).await?;
+    language_db::insert(&mut language, &mut *tx).await?;
+
+    sqlx::query!(
+        "INSERT INTO translations (task_id, language_id) SELECT id, ? FROM tasks",
+        language.id
+    )
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
     Ok(Json(()))
 }
 

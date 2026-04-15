@@ -1,7 +1,7 @@
 use common::statement_version::StatementVersion;
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
-use leptos_use::{UseColorModeOptions, use_color_mode_with_options};
+use leptos_use::ColorMode;
 
 use crate::api_wrapper::{api_get, file_get};
 use crate::editor::DiffViewer;
@@ -122,12 +122,7 @@ pub fn Compare() -> impl IntoView {
         .to_string()
     });
 
-    let color_mode = use_color_mode_with_options(
-        UseColorModeOptions::default()
-            .cookie_enabled(true)
-            .cookie_name("typst-translation-color-mode"),
-    )
-    .mode;
+    let color_mode = expect_context::<Signal<ColorMode>>();
 
     let go_back = move |_| {
         if let Some(window) = web_sys::window()

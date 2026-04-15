@@ -15,9 +15,7 @@ use leptos::server::codee::string::JsonSerdeCodec;
 use leptos::task::{spawn_local, spawn_local_scoped};
 use leptos_router::hooks::{use_navigate, use_params_map};
 use leptos_use::storage::use_local_storage;
-use leptos_use::{
-    UseColorModeOptions, signal_throttled, use_color_mode_with_options, use_event_listener,
-};
+use leptos_use::{ColorMode, signal_throttled, use_event_listener};
 
 use crate::api_wrapper::{api_get, api_post, file_get};
 use crate::compilation_manager::CompilationManager;
@@ -399,11 +397,7 @@ pub fn EditPage() -> impl IntoView {
 
     let compilation_manager = expect_context::<CompilationManager>();
 
-    let color_mode = use_color_mode_with_options(
-        UseColorModeOptions::default()
-            .cookie_enabled(true)
-            .cookie_name("typst-translation-color-mode"),
-    );
+    let color_mode = expect_context::<Signal<ColorMode>>();
 
     let on_change = {
         let compilation_manager = compilation_manager.clone();
@@ -552,7 +546,7 @@ pub fn EditPage() -> impl IntoView {
                         ctrl_enter
                         on_change
                         kb_mode
-                        color_mode=color_mode.mode
+                        color_mode=color_mode
                         attr:class="h-full"
                     />
                 </div>

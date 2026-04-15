@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::language::Language;
 use crate::user::User;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AdminUserOverview {
     pub user: User,
     pub languages: Vec<Language>,

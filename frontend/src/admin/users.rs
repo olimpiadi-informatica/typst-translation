@@ -155,7 +155,7 @@ pub fn AdminUsersPage() -> impl IntoView {
                         <tbody>
                             <For
                                 each=move || users_resource.get().flatten().unwrap_or_default()
-                                key=|u| u.user.id
+                                key=|u| u.clone()
                                 let(overview)
                             >
                                 <UserRow
@@ -175,16 +175,14 @@ pub fn AdminUsersPage() -> impl IntoView {
 
 #[component]
 fn UserRow(overview: AdminUserOverview, refetch: impl Fn() + Copy + 'static) -> impl IntoView {
-    let user = overview.user;
-    let languages = overview.languages;
     let (new_lang_code, set_new_lang_code) = signal(String::new());
     let (new_budget_val, set_new_budget_val) = signal(format!(
         "{:.2}",
-        (user.automatic_translation_budget as f64) / 1e9
+        (overview.user.automatic_translation_budget as f64) / 1e9
     ));
 
     let set_budget = move |_| {
-        let user_id = user.id;
+        let user_id = overview.user.id;
         let budget_usd: f64 = new_budget_val.get().parse().unwrap_or(0.0);
         let new_budget = (budget_usd * 1e9) as i64;
         spawn_local_scoped(async move {
@@ -208,7 +206,7 @@ fn UserRow(overview: AdminUserOverview, refetch: impl Fn() + Copy + 'static) -> 
     };
 
     let add_language = move |_| {
-        let user_id = user.id;
+        let user_id = overview.user.id;
         let code = new_lang_code.get();
         if code.is_empty() {
             return;
@@ -234,21 +232,21 @@ fn UserRow(overview: AdminUserOverview, refetch: impl Fn() + Copy + 'static) -> 
         });
     };
 
-    let budget_dollars = (user.automatic_translation_budget as f64) / 1e9;
-    let used_dollars = (user.tokens_used as f64) / 1e9;
+    let budget_dollars = move || (overview.user.automatic_translation_budget as f64) / 1e9;
+    let used_dollars = move || (overview.user.tokens_used as f64) / 1e9;
 
     view! {
         <tr>
-            <td>{user.id}</td>
-            <td class="font-mono text-xs">{user.username}</td>
-            <td class="font-mono text-xs">{user.password}</td>
+            <td>{overview.user.id}</td>
+            <td class="font-mono text-xs">{overview.user.username.clone()}</td>
+            <td class="font-mono text-xs">{overview.user.password.clone()}</td>
             <td>
                 <div class="flex flex-col gap-2">
                     <div class="text-xs">
                         <div class="flex flex-col">
-                            <span>"Rem: $" {format!("{:.2}", budget_dollars)}</span>
+                            <span>"Rem: $" {move || format!("{:.2}", budget_dollars())}</span>
                             <span class="opacity-50 text-[10px]">
-                                "Used: $" {format!("{:.2}", used_dollars)}
+                                "Used: $" {move || format!("{:.2}", used_dollars())}
                             </span>
                         </div>
                     </div>
@@ -268,7 +266,7 @@ fn UserRow(overview: AdminUserOverview, refetch: impl Fn() + Copy + 'static) -> 
             </td>
             <td>
                 <div class="flex flex-wrap gap-1 max-w-xs">
-                    <For each=move || languages.clone() key=|l| l.id let(l)>
+                    <For each=move || overview.languages.clone() key=|l| l.id let(l)>
                         <div class="badge badge-outline badge-sm">{l.code}</div>
                     </For>
                 </div>
