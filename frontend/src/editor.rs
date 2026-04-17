@@ -60,9 +60,6 @@ pub fn Editor(
 
     let onchange = {
         move |_: JsValue| {
-            if let Some(on_change) = on_change.as_ref() {
-                on_change();
-            }
             cm6.with_untracked(|x: &Option<CM6Editor>| {
                 let Some(cm6) = x else {
                     return;
@@ -77,6 +74,9 @@ pub fn Editor(
                     }
                 });
             });
+            if let Some(on_change) = on_change.as_ref() {
+                on_change();
+            }
         }
     };
 

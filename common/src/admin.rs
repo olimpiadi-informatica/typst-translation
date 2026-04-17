@@ -32,3 +32,14 @@ pub struct AddUserLanguageRequest {
 pub struct UpdatePasswordsCsvRequest {
     pub csv_content: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateTaskFilesRequest {
+    pub task_id: i64,
+    pub files: Vec<(String, Vec<u8>)>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateContestRequest {
+    pub name: String,
+}

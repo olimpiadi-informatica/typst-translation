@@ -5,13 +5,13 @@ use common::task::Task;
 use common::translation::{ImportTaskPayload, Translation, UpdateTranslationRequest};
 
 use crate::AppState;
-use crate::auth::{AuthAdmin, AuthUser};
+use crate::auth::{AuthAdmin, AuthAny, AuthUser};
 use crate::db_ops::{task_db, translation_db};
 use crate::file_storage::save_file;
 
 pub async fn get_task_by_id(
     Path(task_id): Path<i64>,
-    _user: AuthUser,
+    _: AuthAny,
     State(app_state): State<AppState>,
 ) -> Result<Json<Task>, Error> {
     let task = task_db::get_task_by_id(app_state.db(), task_id).await?;

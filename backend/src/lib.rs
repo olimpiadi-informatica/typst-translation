@@ -163,6 +163,14 @@ impl AppState {
                 "/api/admin/users/update_passwords",
                 post(api_handlers::admin::update_passwords_csv),
             )
+            .route(
+                "/api/admin/update_task_files",
+                post(api_handlers::admin::update_task_files),
+            )
+            .route(
+                "/api/admin/create_contest",
+                post(api_handlers::admin::create_contest),
+            )
             .route("/api/all", get(api_handlers::contest::all))
             .route("/files/{hash}/{filename}", get(file_storage::get_file))
             .fallback_service(

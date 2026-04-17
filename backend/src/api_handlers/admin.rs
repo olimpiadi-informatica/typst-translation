@@ -1,15 +1,17 @@
 use axum::Json;
 use axum::extract::State;
 use common::admin::{
-    AddUserLanguageRequest, AdminUserOverview, AdminUserOverviewResponse, SetAllBudgetsRequest,
-    SetBudgetRequest, UpdatePasswordsCsvRequest,
+    AddUserLanguageRequest, AdminUserOverview, AdminUserOverviewResponse, CreateContestRequest,
+    SetAllBudgetsRequest, SetBudgetRequest, UpdatePasswordsCsvRequest, UpdateTaskFilesRequest,
 };
 use common::error::Error;
 use common::language::Language;
+use common::statement_version::StatementVersion;
 
 use crate::AppState;
 use crate::auth::AuthAdmin;
-use crate::db_ops::{language_db, user_db};
+use crate::db_ops::{language_db, statement_version_db, user_db};
+use crate::file_storage::save_file;
 
 pub async fn get_users_overview(
     State(app_state): State<AppState>,
@@ -112,5 +114,68 @@ pub async fn update_passwords_csv(
     }
 
     tx.commit().await?;
+    Ok(Json(()))
+}
+
+pub async fn update_task_files(
+    State(app_state): State<AppState>,
+    _admin: AuthAdmin,
+    Json(payload): Json<UpdateTaskFilesRequest>,
+) -> Result<Json<()>, Error> {
+    let pool = app_state.db();
+
+    let mut latest_version =
+        statement_version_db::get_latest_statement_version_by_task_id(pool, payload.task_id)
+            .await?;
+
+    for (file_path, content) in payload.files {
+        let content_hash = save_file(&content).await?;
+        latest_version
+            .content_manifest
+            .insert(file_path, content_hash);
+    }
+
+    let mut new_version = StatementVersion {
+        id: 0,
+        task_id: payload.task_id,
+        content_manifest: latest_version.content_manifest,
+        is_live: true,
+        created_at: chrono::Utc::now().naive_utc(),
+    };
+
+    statement_version_db::insert(pool, &mut new_version).await?;
+
+    Ok(Json(()))
+}
+
+pub async fn create_contest(
+    State(app_state): State<AppState>,
+    _admin: AuthAdmin,
+    Json(payload): Json<CreateContestRequest>,
+) -> Result<Json<()>, Error> {
+    let pool = app_state.db();
+    let mut tx = pool.begin().await?;
+
+    let contest_id = sqlx::query!(
+        "INSERT INTO contests (name) VALUES (?) RETURNING id",
+        payload.name
+    )
+    .fetch_one(&mut *tx)
+    .await?
+    .id;
+
+    let users = user_db::get_all(&mut *tx).await?;
+    for user in users {
+        sqlx::query!(
+            "INSERT INTO user_contest_status (user_id, contest_id) VALUES (?, ?)",
+            user.id,
+            contest_id
+        )
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    tx.commit().await?;
+
     Ok(Json(()))
 }

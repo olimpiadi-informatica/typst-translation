@@ -109,22 +109,29 @@ pub fn PanelLayout(
 }
 
 #[component]
+pub fn AdminPanelLayout() -> impl IntoView {
+    view! {
+        <PanelLayout
+            title=Signal::derive(|| "Admin Panel".to_string())
+            tabs=view! {
+                <NavTabs tabs=Signal::derive(|| vec![
+                    ("Users".to_string(), "/admin/users".to_string()),
+                    ("Tasks".to_string(), "/admin/tasks".to_string()),
+                    ("Printing".to_string(), "/admin/printing".to_string()),
+                ]) />
+            }.into_any()
+        />
+    }
+}
+
+#[component]
 pub fn AdminProvider() -> impl IntoView {
     view! {
         <ProtectedRoute
             condition=|u| u.is_admin
             login_page=|| view! { <AdminLoginPage /> }.into_any()
         >
-            <PanelLayout
-                title=Signal::derive(|| "Admin Panel".to_string())
-                tabs=view! {
-                    <NavTabs tabs=Signal::derive(|| vec![
-                        ("Users".to_string(), "/admin/users".to_string()),
-                        ("Import Task".to_string(), "/admin/import_task".to_string()),
-                        ("Printing".to_string(), "/admin/printing".to_string()),
-                    ]) />
-                }.into_any()
-            />
+            <Outlet />
         </ProtectedRoute>
     }
 }
@@ -142,20 +149,27 @@ pub fn UserProvider() -> impl IntoView {
 }
 
 #[component]
+pub fn StaffPanelLayout() -> impl IntoView {
+    view! {
+        <PanelLayout
+            title=Signal::derive(|| "Staff Panel".to_string())
+            tabs=view! {
+                <NavTabs tabs=Signal::derive(|| vec![
+                    ("Printing".to_string(), "/staff/printing".to_string()),
+                ]) />
+            }.into_any()
+        />
+    }
+}
+
+#[component]
 pub fn StaffProvider() -> impl IntoView {
     view! {
         <ProtectedRoute
             condition=|u| u.is_admin || u.is_staff
             login_page=|| view! { <StaffLoginPage /> }.into_any()
         >
-            <PanelLayout
-                title=Signal::derive(|| "Staff Panel".to_string())
-                tabs=view! {
-                    <NavTabs tabs=Signal::derive(|| vec![
-                        ("Printing".to_string(), "/staff/printing".to_string()),
-                    ]) />
-                }.into_any()
-            />
+            <Outlet />
         </ProtectedRoute>
     }
 }

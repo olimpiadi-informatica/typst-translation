@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO user_contest_status (user_id, contest_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "91fa6553bed1b08b0e436ce6b6580ed69fc968b5e667cc5ef937d34f4f45cc39"
+}

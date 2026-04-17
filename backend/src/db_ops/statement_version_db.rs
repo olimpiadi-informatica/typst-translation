@@ -82,3 +82,20 @@ where
     .await?
     .ok_or(Error::NotFound)
 }
+
+pub async fn insert<'e, E>(executor: E, version: &mut StatementVersion) -> Result<(), Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    let content_manifest = Json(&version.content_manifest);
+    let res = sqlx::query!(
+        "INSERT INTO statement_versions (task_id, content_manifest, is_live) VALUES (?, ?, ?)",
+        version.task_id,
+        content_manifest,
+        version.is_live
+    )
+    .execute(executor)
+    .await?;
+    version.id = res.last_insert_rowid();
+    Ok(())
+}

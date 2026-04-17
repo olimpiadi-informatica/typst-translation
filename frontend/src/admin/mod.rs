@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
-pub mod import_task;
+pub mod edit_task;
+pub mod tasks;
 pub mod users;
 
 #[component]

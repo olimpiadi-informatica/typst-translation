@@ -79,7 +79,7 @@ pub fn Header(
     let user_context = expect_context::<ExtUserContext>();
 
     view! {
-        <div class="navbar bg-base-100 shadow-sm px-4 h-16 flex justify-between items-center">
+        <div class="navbar bg-base-100 shadow-sm px-4 min-h-16 flex justify-between items-center">
             <div class="navbar-start flex items-center gap-2">
                 {left_action}
                 {move || {
@@ -91,7 +91,7 @@ pub fn Header(
                 }}
                 {kb_mode_view}
             </div>
-            <div class="navbar-center hidden lg:flex">
+            <div class="navbar-center flex overflow-x-auto">
                 {tabs}
             </div>
             <div class="navbar-end flex items-center gap-4">

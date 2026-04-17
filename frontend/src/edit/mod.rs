@@ -9,26 +9,26 @@ use common::translation::{Translation, UpdateTranslationRequest};
 use common::user_contest_status::SetTranslationSessionTokenRequest;
 use futures::StreamExt;
 use gloo_timers::future::TimeoutFuture;
-use leptos::ev;
 use leptos::prelude::*;
 use leptos::server::codee::string::JsonSerdeCodec;
 use leptos::task::{spawn_local, spawn_local_scoped};
 use leptos_router::hooks::{use_navigate, use_params_map};
+use leptos_use::signal_throttled;
 use leptos_use::storage::use_local_storage;
-use leptos_use::{ColorMode, signal_throttled, use_event_listener};
 
 use crate::api_wrapper::{api_get, api_post, file_get};
 use crate::compilation_manager::CompilationManager;
-use crate::compilation_results::CompilationResults;
 use crate::edit::gemini::Gemini;
+use crate::edit::layout::SplitEditorLayout;
 use crate::edit::reset_isc::ResetIsc;
-use crate::editor::{Editor, KeyboardMode};
+use crate::editor::KeyboardMode;
 use crate::header::Header;
 use crate::session_token::get_session_token;
 use crate::util::Icon;
 use crate::{show_error, show_success};
 
 mod gemini;
+pub mod layout;
 mod reset_isc;
 
 const INTERVAL: u32 = 5000;
@@ -327,6 +327,7 @@ pub fn EditPage() -> impl IntoView {
             Signal::derive(move || contents.get_untracked().as_bytes().to_vec()),
         );
         compilation_manager.set_inputs(files);
+        compilation_manager.do_compile(false);
     });
 
     let throttled: Signal<String> = signal_throttled(contents, INTERVAL as f64);
@@ -368,41 +369,9 @@ pub fn EditPage() -> impl IntoView {
     let (kb_mode, set_kb_mode, _) =
         use_local_storage::<KeyboardMode, JsonSerdeCodec>("typst-translation-kb-mode");
 
-    let (split_width, set_split_width, _) =
-        use_local_storage::<f64, JsonSerdeCodec>("typst-translation-split-width");
-
-    if split_width.get_untracked() == 0.0 {
-        set_split_width.set(50.0);
-    }
-
-    let is_dragging = RwSignal::new(false);
-    let _ = use_event_listener(window(), ev::mousemove, move |ev: web_sys::MouseEvent| {
-        if is_dragging.get_untracked() {
-            let width = web_sys::window()
-                .unwrap()
-                .inner_width()
-                .unwrap()
-                .as_f64()
-                .unwrap();
-            let x = ev.client_x() as f64;
-            let percent = (x / width) * 100.0;
-            let percent = percent.clamp(33.0, 66.0);
-            set_split_width.set(percent);
-        }
-    });
-
-    let _ = use_event_listener(window(), ev::mouseup, move |_| {
-        is_dragging.set(false);
-    });
-
     let compilation_manager = expect_context::<CompilationManager>();
 
-    let color_mode = expect_context::<Signal<ColorMode>>();
-
-    let on_change = {
-        let compilation_manager = compilation_manager.clone();
-        Box::new(move || compilation_manager.do_compile(false))
-    };
+    let on_change = Box::new(move || {});
 
     let ctrl_enter = {
         let compilation_manager = compilation_manager.clone();
@@ -453,11 +422,7 @@ pub fn EditPage() -> impl IntoView {
             <span class="loading loading-spinner loading-lg"></span>
             <span class="ml-2">"Loading statement..."</span>
         </div>
-        <div
-            class="h-screen flex flex-col"
-            class:hidden=move || !loaded.get()
-            class:select-none=move || is_dragging.get()
-        >
+        <div class="h-screen flex flex-col" class:hidden=move || !loaded.get()>
             <Header
                 title
                 kb_mode=(kb_mode, set_kb_mode)
@@ -537,27 +502,7 @@ pub fn EditPage() -> impl IntoView {
                     </div>
                 </Show>
             </Header>
-            <div class="flex-1 flex overflow-hidden relative">
-                <div style:width=move || format!("{}%", split_width.get()) class="h-full">
-                    <Editor
-                        contents
-                        name="statement-editor"
-                        readonly
-                        ctrl_enter
-                        on_change
-                        kb_mode
-                        color_mode=color_mode
-                        attr:class="h-full"
-                    />
-                </div>
-                <div
-                    class="w-2 cursor-ew-resize hover:bg-primary transition-colors bg-base-300 active:bg-primary h-full z-10"
-                    on:mousedown=move |_| is_dragging.set(true)
-                />
-                <div style:width=move || format!("{}%", 100.0 - split_width.get()) class="h-full">
-                    <CompilationResults results=compilation_manager.get_result() class="h-full" />
-                </div>
-            </div>
+            <SplitEditorLayout contents readonly on_change ctrl_enter kb_mode=kb_mode />
         </div>
     }
 }

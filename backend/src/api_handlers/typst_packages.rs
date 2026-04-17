@@ -7,11 +7,11 @@ use common::typst_packages::TypstPackagePayload;
 use reqwest::header::{CONTENT_ENCODING, CONTENT_TYPE};
 
 use crate::AppState;
-use crate::auth::AuthUser;
+use crate::auth::AuthAny;
 
 pub async fn get_typst_package(
     State(app_state): State<AppState>,
-    _current_user: AuthUser,
+    _: AuthAny,
     Json(payload): Json<TypstPackagePayload>,
 ) -> Result<impl IntoResponse, Error> {
     if !app_state.typst_packages.contains_key(&payload) {
