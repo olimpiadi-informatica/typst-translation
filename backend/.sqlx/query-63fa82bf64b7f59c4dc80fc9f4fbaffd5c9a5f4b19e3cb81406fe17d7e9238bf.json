@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT contestant_id FROM contestant_print_status WHERE contest_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "contestant_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "63fa82bf64b7f59c4dc80fc9f4fbaffd5c9a5f4b19e3cb81406fe17d7e9238bf"
+}

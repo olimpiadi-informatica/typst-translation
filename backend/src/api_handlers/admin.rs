@@ -2,7 +2,8 @@ use axum::Json;
 use axum::extract::State;
 use common::admin::{
     AddUserLanguageRequest, AdminUserOverview, AdminUserOverviewResponse, CreateContestRequest,
-    SetAllBudgetsRequest, SetBudgetRequest, UpdatePasswordsCsvRequest, UpdateTaskFilesRequest,
+    SetAllBudgetsRequest, SetBudgetRequest, UpdateContestantPrintStatusRequest,
+    UpdatePasswordsCsvRequest, UpdateTaskFilesRequest,
 };
 use common::error::Error;
 use common::language::Language;
@@ -177,5 +178,31 @@ pub async fn create_contest(
 
     tx.commit().await?;
 
+    Ok(Json(()))
+}
+
+pub async fn update_contestant_print_status(
+    State(app_state): State<AppState>,
+    _admin: AuthAdmin,
+    Json(payload): Json<UpdateContestantPrintStatusRequest>,
+) -> Result<Json<()>, Error> {
+    let pool = app_state.db();
+    if payload.printed {
+        sqlx::query!(
+            "INSERT OR IGNORE INTO contestant_print_status (contestant_id, contest_id) VALUES (?, ?)",
+            payload.contestant_id,
+            payload.contest_id
+        )
+        .execute(pool)
+        .await?;
+    } else {
+        sqlx::query!(
+            "DELETE FROM contestant_print_status WHERE contestant_id = ? AND contest_id = ?",
+            payload.contestant_id,
+            payload.contest_id
+        )
+        .execute(pool)
+        .await?;
+    }
     Ok(Json(()))
 }

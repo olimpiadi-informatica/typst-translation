@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE user_contest_status\n        SET finalized_translations = TRUE, finalized_at = CURRENT_TIMESTAMP\n        WHERE contest_id = ? AND user_id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "a707fe7805b9d53b0e09e3b4ba53f545d1e65c182b50d8145397f734222ba45c"
+}

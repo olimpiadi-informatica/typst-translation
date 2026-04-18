@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO contestant_print_status (contestant_id, contest_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "c9ad8891b3fda65166478f5de3ab5e19841bb1f5c24b4e23b6e83064ad2947c3"
+}

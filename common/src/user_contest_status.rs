@@ -7,6 +7,7 @@ pub struct UserContestStatus {
     pub user_id: i64,
     pub contest_id: i64,
     pub finalized_translations: bool,
+    pub finalized_at: Option<NaiveDateTime>,
     pub skip_envelope_verification: bool,
     pub envelope_received_at: Option<NaiveDateTime>,
 }

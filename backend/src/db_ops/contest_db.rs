@@ -111,10 +111,21 @@ pub async fn get_all_contests_with_all(pool: &sqlx::Pool<Sqlite>) -> Result<All,
             });
         }
 
+        let printed_contestants = sqlx::query!(
+            "SELECT contestant_id FROM contestant_print_status WHERE contest_id = ?",
+            contest.id
+        )
+        .fetch_all(pool)
+        .await?
+        .into_iter()
+        .map(|r| r.contestant_id)
+        .collect();
+
         result.push(ContestWithAll {
             contest,
             user_contest_status,
             tasks,
+            printed_contestants,
         });
     }
 

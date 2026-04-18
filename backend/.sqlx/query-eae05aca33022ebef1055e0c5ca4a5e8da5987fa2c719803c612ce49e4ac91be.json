@@ -32,6 +32,11 @@
         "name": "envelope_received_at",
         "ordinal": 5,
         "type_info": "Datetime"
+      },
+      {
+        "name": "finalized_at",
+        "ordinal": 6,
+        "type_info": "Datetime"
       }
     ],
     "parameters": {
@@ -43,6 +48,7 @@
       false,
       false,
       false,
+      true,
       true
     ]
   },

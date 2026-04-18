@@ -24,6 +24,7 @@ pub struct ContestWithAll {
     pub contest: Contest,
     pub user_contest_status: Vec<UserContestStatus>,
     pub tasks: Vec<Task>,
+    pub printed_contestants: Vec<i64>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]

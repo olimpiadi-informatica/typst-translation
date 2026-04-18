@@ -171,6 +171,10 @@ impl AppState {
                 "/api/admin/create_contest",
                 post(api_handlers::admin::create_contest),
             )
+            .route(
+                "/api/admin/contest/contestant/print_status",
+                post(api_handlers::admin::update_contestant_print_status),
+            )
             .route("/api/all", get(api_handlers::contest::all))
             .route("/files/{hash}/{filename}", get(file_storage::get_file))
             .fallback_service(

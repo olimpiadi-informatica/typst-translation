@@ -43,3 +43,10 @@ pub struct UpdateTaskFilesRequest {
 pub struct CreateContestRequest {
     pub name: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateContestantPrintStatusRequest {
+    pub contest_id: i64,
+    pub contestant_id: i64,
+    pub printed: bool,
+}

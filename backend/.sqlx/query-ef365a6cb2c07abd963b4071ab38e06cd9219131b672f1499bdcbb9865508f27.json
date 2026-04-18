@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM contestant_print_status WHERE contestant_id = ? AND contest_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "ef365a6cb2c07abd963b4071ab38e06cd9219131b672f1499bdcbb9865508f27"
+}

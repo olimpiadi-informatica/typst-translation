@@ -40,7 +40,7 @@ pub async fn finalize_translation(
     let result = query!(
         r#"
         UPDATE user_contest_status
-        SET finalized_translations = TRUE
+        SET finalized_translations = TRUE, finalized_at = CURRENT_TIMESTAMP
         WHERE contest_id = ? AND user_id = ?
         "#,
         contest_id,
