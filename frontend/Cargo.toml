@@ -44,6 +44,7 @@ typst-assets = { version = "0.13.1", features = ["fonts"] }
 gloo-storage = "0.3.0"
 uuid = { version = "1.18.1", features = ["v4", "js"] }
 wasm-bindgen-futures = "0.4.54"
+lopdf = { version = "0.40.0", features = ["wasm_js"] }
 
 [profile.release]
 opt-level = 'z'

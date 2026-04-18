@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 use common::admin::UpdateContestantPrintStatusRequest;
 use common::contest::All;
+use common::contestant::Contestant;
 use common::statement_version::StatementVersion;
-use common::task::Task;
 use common::translation::Translation;
 use futures::StreamExt;
 use gloo_worker::Spawnable;
@@ -196,82 +196,165 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
     });
 
     let owner = Owner::new();
-    let do_print = move |task: Task, lang_id: Option<i64>| {
+    let do_print = move |contestant: Contestant, lang_id: Option<i64>| {
+        let tasks = tasks.get();
         owner.with(move || {
             spawn_local_scoped(async move {
-                let url = format!("/api/tasks/{}/statement_versions/latest", task.id);
-                let statement: StatementVersion = match api_get(&url).await {
-                    Ok(statements) => statements,
-                    Err(e) => {
-                        show_error!("Failed to fetch statement version: {}", e);
-                        return;
-                    }
-                };
+                let mut task_pdfs = Vec::new();
 
-                let futures = futures::stream::FuturesUnordered::new();
-                for (key, value) in &statement.content_manifest {
-                    let key = key.clone();
-                    let value = value.clone();
-                    futures.push(async move {
-                        let name = key.rsplit('/').next().unwrap_or(&key);
-                        let content = file_get(&value, name).await?;
-                        Ok((key.into(), content))
-                    });
-                }
+                let mut typst_worker =
+                    TypstWorker::spawner().spawn_with_loader("/typst_translation_worker_loader.js");
 
-                let files: Vec<Result<(PathBuf, _), Error>> = futures.collect().await;
-                let files: Result<HashMap<PathBuf, _>, Error> = files.into_iter().collect();
-
-                let mut files = match files {
-                    Ok(files) => files,
-                    Err(e) => {
-                        show_error!("Failed to fetch statement files: {e}");
-                        return;
-                    }
-                };
-
-                if let Some(lang_id) = lang_id {
-                    let translation = task
-                        .translations
-                        .into_iter()
-                        .find(|t| t.language_id == lang_id);
-                    let Some(Translation {
-                        content_hash: Some(hash),
-                        ..
-                    }) = translation
-                    else {
-                        show_error!("Untranslated statement!");
-                        return;
-                    };
-
-                    let statement = match file_get(&hash, "statement.typ").await {
-                        Ok(statement) => statement,
+                for task in tasks {
+                    let url = format!("/api/tasks/{}/statement_versions/latest", task.id);
+                    let statement: StatementVersion = match api_get(&url).await {
+                        Ok(statements) => statements,
                         Err(e) => {
-                            show_error!("Failed to fetch statement translation: {e}");
+                            show_error!("Failed to fetch statement version: {}", e);
                             return;
                         }
                     };
 
-                    files.insert(
-                        PathBuf::from(format!("{}/statement/statement.typ", task.name)),
-                        statement,
-                    );
+                    let futures = futures::stream::FuturesUnordered::new();
+                    for (key, value) in &statement.content_manifest {
+                        let key = key.clone();
+                        let value = value.clone();
+                        futures.push(async move {
+                            let name = key.rsplit('/').next().unwrap_or(&key);
+                            let content = file_get(&value, name).await?;
+                            Ok((key.into(), content))
+                        });
+                    }
+
+                    let files: Vec<Result<(PathBuf, _), Error>> = futures.collect().await;
+                    let files: Result<HashMap<PathBuf, _>, Error> = files.into_iter().collect();
+
+                    let mut files = match files {
+                        Ok(files) => files,
+                        Err(e) => {
+                            show_error!("Failed to fetch statement files: {e}");
+                            return;
+                        }
+                    };
+
+                    if let Some(lang_id) = lang_id {
+                        let translation = task
+                            .translations
+                            .into_iter()
+                            .find(|t| t.language_id == lang_id);
+                        let Some(Translation {
+                            content_hash: Some(hash),
+                            ..
+                        }) = translation
+                        else {
+                            show_error!("Untranslated statement!");
+                            return;
+                        };
+
+                        let statement = match file_get(&hash, "statement.typ").await {
+                            Ok(statement) => statement,
+                            Err(e) => {
+                                show_error!("Failed to fetch statement translation: {e}");
+                                return;
+                            }
+                        };
+
+                        files.insert(
+                            PathBuf::from(format!("{}/statement/statement.typ", task.name)),
+                            statement,
+                        );
+                    }
+
+                    typst_worker.send_input(files);
+                    let response = typst_worker.next().await.unwrap();
+
+                    let document = match response.document {
+                        Some(doc) => doc,
+                        None => {
+                            show_error!("Failed to compile statement translation: no output");
+                            return;
+                        }
+                    };
+                    task_pdfs.push(document.pdf);
                 }
 
-                let mut typst_worker =
-                    TypstWorker::spawner().spawn_with_loader("/typst_translation_worker_loader.js");
-                typst_worker.send_input(files);
-                let response = typst_worker.next().await.unwrap();
+                if task_pdfs.is_empty() {
+                    return;
+                }
 
-                let document = match response.document {
-                    Some(doc) => doc,
-                    None => {
-                        show_error!("Failed to compile statement translation: no output");
-                        return;
+                use lopdf::{Dictionary, Document, Object};
+
+                let mut merged_doc = Document::with_version("1.7");
+                let mut pages_kids = Vec::new();
+                let mut total_pages = 0;
+
+                let mut pages_dict = Dictionary::new();
+                pages_dict.set("Type", Object::Name(b"Pages".to_vec()));
+                pages_dict.set("Kids", Object::Array(vec![]));
+                pages_dict.set("Count", Object::Integer(0));
+                let pages_id = merged_doc.add_object(pages_dict);
+
+                for (i, pdf_bytes) in task_pdfs.into_iter().enumerate() {
+                    let mut doc = Document::load_mem(&pdf_bytes).unwrap();
+
+                    if i > 0 && total_pages % 2 != 0 {
+                        // Add blank page
+                        let last_page_ref = match pages_kids.last().unwrap() {
+                            Object::Reference(r) => *r,
+                            _ => unreachable!(),
+                        };
+                        let last_page = merged_doc
+                            .get_object(last_page_ref)
+                            .unwrap()
+                            .as_dict()
+                            .unwrap();
+                        let media_box = last_page.get(b"MediaBox").unwrap().clone();
+
+                        let mut blank_page = Dictionary::new();
+                        blank_page.set("Type", Object::Name(b"Page".to_vec()));
+                        blank_page.set("Parent", Object::Reference(pages_id));
+                        blank_page.set("MediaBox", media_box);
+                        blank_page.set("Contents", Object::Array(vec![]));
+                        blank_page.set("Resources", Dictionary::new());
+
+                        let blank_page_id = merged_doc.add_object(blank_page);
+                        pages_kids.push(Object::Reference(blank_page_id));
+                        total_pages += 1;
                     }
-                };
 
-                let array8 = js_sys::Uint8Array::from(document.pdf.as_slice());
+                    doc.renumber_objects_with(merged_doc.max_id + 1);
+                    let pages = doc.get_pages();
+
+                    for (_, page_id) in pages {
+                        let page = doc.get_object_mut(page_id).unwrap().as_dict_mut().unwrap();
+                        page.set("Parent", Object::Reference(pages_id));
+                        pages_kids.push(Object::Reference(page_id));
+                        total_pages += 1;
+                    }
+
+                    for (id, object) in doc.objects {
+                        merged_doc.objects.insert(id, object);
+                    }
+                    merged_doc.max_id = doc.max_id;
+                }
+
+                if let Some(Object::Dictionary(dict)) = merged_doc.objects.get_mut(&pages_id) {
+                    dict.set("Kids", Object::Array(pages_kids));
+                    dict.set("Count", Object::Integer(total_pages));
+                }
+
+                let mut catalog_dict = Dictionary::new();
+                catalog_dict.set("Type", Object::Name(b"Catalog".to_vec()));
+                catalog_dict.set("Pages", Object::Reference(pages_id));
+                let catalog_id = merged_doc.add_object(catalog_dict);
+                merged_doc
+                    .trailer
+                    .set("Root", Object::Reference(catalog_id));
+
+                let mut merged_pdf = Vec::new();
+                merged_doc.save_to(&mut merged_pdf).unwrap();
+
+                let array8 = js_sys::Uint8Array::from(merged_pdf.as_slice());
                 let array = js_sys::Array::of1(&array8);
                 let opts = web_sys::BlobPropertyBag::new();
                 opts.set_type("application/pdf");
@@ -283,6 +366,8 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                     .unwrap()
                     .open_with_url(&url)
                     .unwrap_or(None);
+
+                toggle_printed(contestant.id, true);
             });
         });
     };
@@ -308,7 +393,6 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                 <tr>
                                     <th>"Contestant"</th>
                                     <th>"Language"</th>
-                                    <th>"Tasks"</th>
                                     <th>"Action"</th>
                                 </tr>
                             </thead>
@@ -316,7 +400,14 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                 <For each=move || queue_items.get() key=|c| c.id let:c>
                                     {
                                         let user_lang = Signal::derive(move || {
-                                            languages.get().into_iter().find(|l| l.user_id == c.user_id)
+                                            if let Some(lang_id) = c.language_id {
+                                                languages.get().into_iter().find(|l| l.id == lang_id)
+                                            } else {
+                                                languages
+                                                    .get()
+                                                    .into_iter()
+                                                    .find(|l| l.user_id == c.user_id)
+                                            }
                                         });
                                         let lang_name = move || {
                                             user_lang
@@ -325,6 +416,7 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                                 .unwrap_or_else(|| "Original".into())
                                         };
                                         let lang_id = move || user_lang.get().map(|l| l.id);
+                                        let contestant = c.clone();
                                         view! {
                                             <tr>
                                                 <td>
@@ -335,24 +427,12 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                                     <span class="badge badge-outline">{lang_name}</span>
                                                 </td>
                                                 <td>
-                                                    <div class="flex gap-1">
-                                                        <For each=move || tasks.get() key=|t| t.id let:task>
-                                                            <button
-                                                                class="btn btn-ghost btn-xs btn-square tooltip"
-                                                                data-tip=task.name.clone()
-                                                                on:click=move |_| do_print.read()(task.clone(), lang_id())
-                                                            >
-                                                                <Icon icon=icondata::BsFileEarmarkPdfFill />
-                                                            </button>
-                                                        </For>
-                                                    </div>
-                                                </td>
-                                                <td>
                                                     <button
                                                         class="btn btn-accent btn-sm"
-                                                        on:click=move |_| toggle_printed(c.id, true)
+                                                        on:click=move |_| do_print
+                                                            .read()(contestant.clone(), lang_id())
                                                     >
-                                                        "Mark Printed"
+                                                        "Print"
                                                     </button>
                                                 </td>
                                             </tr>
@@ -425,26 +505,6 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                     .as_ref()
                                     .map_or_else(|| "No extra lang".into(), |l| l.code.clone())}
                             </h3>
-                            <div class="flex flex-wrap gap-2">
-                                <For
-                                    each=move || tasks.get()
-                                    key=move |t| t.id
-                                    children=move |task| {
-                                        let task_name = task.name.clone();
-                                        let lang = lang.clone();
-                                        view! {
-                                            <button
-                                                class="btn btn-outline btn-primary btn-sm gap-2"
-                                                on:click=move |_| do_print
-                                                    .read()(task.clone(), lang.as_ref().map(|l| l.id))
-                                            >
-                                                <Icon icon=icondata::BsFileEarmarkPdfFill />
-                                                {task_name}
-                                            </button>
-                                        }
-                                    }
-                                />
-                            </div>
                         </div>
 
                         <div class="overflow-x-auto">
@@ -453,6 +513,7 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                     <tr>
                                         <th>"Code"</th>
                                         <th>"Printed"</th>
+                                        <th>"Action"</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -460,6 +521,9 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                         each=move || contestants.clone()
                                         key=|c| c.id
                                         children=move |c| {
+                                            let lang = lang.clone();
+                                            let lang_id = lang.as_ref().map(|l| l.id);
+                                            let contestant = c.clone();
                                             view! {
                                                 <tr>
                                                     <td>{c.code.clone()}</td>
@@ -472,6 +536,15 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                                                 toggle_printed(c.id, event_target_checked(&ev));
                                                             }
                                                         />
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            class="btn btn-primary btn-xs"
+                                                            on:click=move |_| do_print
+                                                                .read()(contestant.clone(), lang_id)
+                                                        >
+                                                            "Print"
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             }
