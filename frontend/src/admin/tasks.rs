@@ -273,7 +273,7 @@ pub fn AdminTasksPage() -> impl IntoView {
                                                         class="btn btn-outline btn-sm"
                                                         href=format!(
                                                             "/api/admin/export/translations/{}",
-                                                            c.contest.id
+                                                            c.contest.id,
                                                         )
                                                         target="_blank"
                                                     >

@@ -13,7 +13,7 @@ use tracing::info;
 use web_time::Instant;
 
 use crate::TypstWorker;
-use crate::typst::TypstCompilationResult;
+use crate::typst::{TypstCompilationResult, TypstWorkerInput};
 
 pub enum CompilationStatus {
     Ready,
@@ -33,6 +33,7 @@ pub struct CompilationManagerInner {
     epoch: RwSignal<usize>,
     wait_until: RwSignal<Instant>,
     inputs: Mutex<HashMap<PathBuf, Signal<Vec<u8>>>>,
+    extra_fonts: Mutex<Vec<String>>,
 }
 
 #[derive(Debug, Clone)]
@@ -49,6 +50,7 @@ impl CompilationManager {
             epoch: RwSignal::new(0),
             wait_until: RwSignal::new(Instant::now()),
             inputs: Mutex::new(HashMap::new()),
+            extra_fonts: Mutex::new(Vec::new()),
         }));
         spawn_local(ret.clone().compile_loop(recv));
         ret
@@ -56,6 +58,10 @@ impl CompilationManager {
 
     pub fn set_inputs(&self, inputs: HashMap<PathBuf, Signal<Vec<u8>>>) {
         *self.0.inputs.lock().unwrap() = inputs;
+    }
+
+    pub fn set_extra_fonts(&self, extra_fonts: Vec<String>) {
+        *self.0.extra_fonts.lock().unwrap() = extra_fonts;
     }
 
     pub fn get_result(&self) -> Signal<TypstCompilationResult> {
@@ -108,7 +114,8 @@ impl CompilationManager {
                 .iter()
                 .map(|(k, v)| (k.clone(), v.get_untracked().to_vec()))
                 .collect::<HashMap<_, _>>();
-            typst_worker.send_input(files);
+            let extra_fonts = self.0.extra_fonts.lock().unwrap().clone();
+            typst_worker.send_input(TypstWorkerInput { files, extra_fonts });
             let response = typst_worker.next().await.unwrap();
             if got_manual_request || response.document.is_some() {
                 self.set_result(response, epoch);

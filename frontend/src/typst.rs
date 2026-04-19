@@ -164,6 +164,12 @@ impl TypstCompiler {
         self.files = files;
     }
 
+    fn add_fonts(&mut self, font_bytes: Vec<u8>) {
+        let new_fonts = Font::iter(Bytes::new(font_bytes));
+        self.fonts.extend(new_fonts);
+        self.book = LazyHash::new(FontBook::from_fonts(&self.fonts));
+    }
+
     /// Compile the Typst file.
     fn compile(&mut self) -> Result<TypstCompilationResult> {
         let mut inputs = Dict::new();
@@ -285,14 +291,50 @@ impl World for TypstCompiler {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TypstWorkerInput {
+    pub files: HashMap<PathBuf, Vec<u8>>,
+    pub extra_fonts: Vec<String>,
+}
+
 // TODO(veluca): better interface.
 #[reactor]
-pub async fn TypstWorker(
-    mut scope: ReactorScope<HashMap<PathBuf, Vec<u8>>, TypstCompilationResult>,
-) {
+pub async fn TypstWorker(mut scope: ReactorScope<TypstWorkerInput, TypstCompilationResult>) {
     let mut compiler = TypstCompiler::new();
-    while let Some(files) = scope.next().await {
-        compiler.set_files(files);
+    let mut loaded_extra_fonts = std::collections::HashSet::new();
+
+    while let Some(input) = scope.next().await {
+        for font_code in input.extra_fonts {
+            if loaded_extra_fonts.contains(&font_code) {
+                continue;
+            }
+            info!("Loading extra font: {}", font_code);
+            for weight in ["Regular", "Bold"] {
+                let url = format!(
+                    "/cjk/NotoSerifCJK{}-{}.otf",
+                    font_code.to_lowercase(),
+                    weight
+                );
+                let xhr = XmlHttpRequest::new().unwrap();
+                xhr.open_with_async("GET", &url, false).unwrap();
+                xhr.set_response_type(web_sys::XmlHttpRequestResponseType::Arraybuffer);
+                xhr.send().unwrap();
+                if xhr.status().unwrap() >= 200 && xhr.status().unwrap() < 300 {
+                    let res = xhr.response().unwrap();
+                    let array: js_sys::Uint8Array = js_sys::Uint8Array::new(&res);
+                    compiler.add_fonts(array.to_vec());
+                } else {
+                    tracing::error!(
+                        "Failed to load font {}: HTTP {}",
+                        url,
+                        xhr.status().unwrap()
+                    );
+                }
+            }
+            loaded_extra_fonts.insert(font_code);
+        }
+
+        compiler.set_files(input.files);
         let result = compiler.compile().unwrap();
         if scope.send(result).await.is_err() {
             break;

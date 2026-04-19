@@ -14,7 +14,7 @@ use leptos::task::spawn_local_scoped;
 
 use crate::api_wrapper::{api_get, api_post, file_get};
 use crate::util::Icon;
-use crate::{TypstWorker, show_error};
+use crate::{TypstWorker, TypstWorkerInput, show_error};
 
 #[component]
 pub fn PrintingPage() -> impl IntoView {
@@ -265,7 +265,10 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                         );
                     }
 
-                    typst_worker.send_input(files);
+                    typst_worker.send_input(TypstWorkerInput {
+                        files,
+                        extra_fonts: vec!["SC".into(), "TC".into(), "JP".into(), "KR".into()],
+                    });
                     let response = typst_worker.next().await.unwrap();
 
                     let document = match response.document {
@@ -403,10 +406,7 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                             if let Some(lang_id) = c.language_id {
                                                 languages.get().into_iter().find(|l| l.id == lang_id)
                                             } else {
-                                                languages
-                                                    .get()
-                                                    .into_iter()
-                                                    .find(|l| l.user_id == c.user_id)
+                                                languages.get().into_iter().find(|l| l.user_id == c.user_id)
                                             }
                                         });
                                         let lang_name = move || {

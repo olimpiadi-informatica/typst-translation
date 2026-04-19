@@ -8,6 +8,22 @@ pub fn embedded_font_files() -> impl Iterator<Item = &'static [u8]> {
         include_bytes!("../../fonts/lmroman-regular.ttf"),
         include_bytes!("../../fonts/majalla.ttf"),
         include_bytes!("../../fonts/majallab.ttf"),
+        include_bytes!("../../fonts/NotoSerifArmenian-Regular.ttf"),
+        include_bytes!("../../fonts/NotoSerifArmenian-Bold.ttf"),
+        include_bytes!("../../fonts/NotoSerifBengali-Regular.ttf"),
+        include_bytes!("../../fonts/NotoSerifBengali-Bold.ttf"),
+        include_bytes!("../../fonts/NotoSerifDevanagari-Regular.ttf"),
+        include_bytes!("../../fonts/NotoSerifDevanagari-Bold.ttf"),
+        include_bytes!("../../fonts/NotoSerifGeorgian-Regular.ttf"),
+        include_bytes!("../../fonts/NotoSerifGeorgian-Bold.ttf"),
+        include_bytes!("../../fonts/NotoSerifHebrew-Regular.ttf"),
+        include_bytes!("../../fonts/NotoSerifHebrew-Bold.ttf"),
+        include_bytes!("../../fonts/NotoSerifSinhala-Regular.ttf"),
+        include_bytes!("../../fonts/NotoSerifSinhala-Bold.ttf"),
+        include_bytes!("../../fonts/NotoSerifTamil-Regular.ttf"),
+        include_bytes!("../../fonts/NotoSerifTamil-Bold.ttf"),
+        include_bytes!("../../fonts/NotoSerifThai-Regular.ttf"),
+        include_bytes!("../../fonts/NotoSerifThai-Bold.ttf"),
     ]
     .into_iter()
 }

@@ -314,22 +314,25 @@ pub fn EditPage() -> impl IntoView {
 
     let compilation_manager = expect_context::<CompilationManager>();
 
-    Effect::new(move |_| {
-        throttled.with(|_| ());
-        let mut files = files
-            .get()
-            .flatten()
-            .unwrap_or_default()
-            .into_iter()
-            .map(|(k, v)| (k.into(), v.into()))
-            .collect::<HashMap<PathBuf, Signal<Vec<u8>>>>();
-        files.insert(
-            PathBuf::from(statement_path.get()),
-            Signal::derive(move || contents.get_untracked().as_bytes().to_vec()),
-        );
-        compilation_manager.set_inputs(files);
-        compilation_manager.do_compile(false);
-    });
+    {
+        let compilation_manager = compilation_manager.clone();
+        Effect::new(move |_| {
+            throttled.with(|_| ());
+            let mut files = files
+                .get()
+                .flatten()
+                .unwrap_or_default()
+                .into_iter()
+                .map(|(k, v)| (k.into(), v.into()))
+                .collect::<HashMap<PathBuf, Signal<Vec<u8>>>>();
+            files.insert(
+                PathBuf::from(statement_path.get()),
+                Signal::derive(move || contents.get_untracked().as_bytes().to_vec()),
+            );
+            compilation_manager.set_inputs(files);
+            compilation_manager.do_compile(false);
+        });
+    }
 
     let throttled: Signal<String> = signal_throttled(contents, INTERVAL as f64);
     let stored = RwSignal::new("".to_owned());
@@ -367,10 +370,35 @@ pub fn EditPage() -> impl IntoView {
 
     let saved = Memo::new(move |_| stored.get() == contents.get());
 
+    let (cjk_fonts_all, set_cjk_fonts_all, _) =
+        use_local_storage::<bool, JsonSerdeCodec>("typst-translation-cjk-fonts-all");
+
+    {
+        let compilation_manager = compilation_manager.clone();
+        Effect::new(move || {
+            let mut extra_fonts = Vec::new();
+            if cjk_fonts_all.get() {
+                extra_fonts = vec!["SC".into(), "TC".into(), "JP".into(), "KR".into()];
+            } else if let Some(Some(Some(lang))) = lang.get() {
+                let code = lang.code.to_lowercase();
+                if code.contains("zh") {
+                    extra_fonts.push("SC".into());
+                    extra_fonts.push("TC".into());
+                }
+                if code.contains("ja") {
+                    extra_fonts.push("JP".into());
+                }
+                if code.contains("ko") {
+                    extra_fonts.push("KR".into());
+                }
+            }
+            compilation_manager.set_extra_fonts(extra_fonts);
+            compilation_manager.do_compile(false);
+        });
+    }
+
     let (kb_mode, set_kb_mode, _) =
         use_local_storage::<KeyboardMode, JsonSerdeCodec>("typst-translation-kb-mode");
-
-    let compilation_manager = expect_context::<CompilationManager>();
 
     let on_change = Box::new(move || {});
 
@@ -434,6 +462,17 @@ pub fn EditPage() -> impl IntoView {
                 }
                     .into_any()
             >
+                <div class="flex items-center gap-2 mr-4">
+                    <span class="text-sm">"Download all CJK fonts"</span>
+                    <input
+                        type="checkbox"
+                        class="toggle toggle-sm"
+                        checked=move || cjk_fonts_all.get()
+                        on:change=move |ev| {
+                            set_cjk_fonts_all.set(event_target_checked(&ev));
+                        }
+                    />
+                </div>
                 <Show when=move || readonly.get() && can_edit.get()>
                     <button class="btn btn-primary btn-sm" on:click=move |_| on_ask_edit()>
                         "Edit"

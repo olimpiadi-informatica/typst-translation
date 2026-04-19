@@ -125,7 +125,9 @@ pub fn AdminUsersPage() -> impl IntoView {
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <Card title="Update Passwords (JSONL)">
                     <div class="flex flex-col gap-4">
-                        <p class="text-sm opacity-70">"Format: {\"username\": \"...\", \"password\": \"...\"}"</p>
+                        <p class="text-sm opacity-70">
+                            "Format: {\"username\": \"...\", \"password\": \"...\"}"
+                        </p>
                         <div class="flex gap-4 items-center">
                             <div class="join">
                                 <input
@@ -180,7 +182,9 @@ pub fn AdminUsersPage() -> impl IntoView {
                                 >
                                     {move || {
                                         if bulk_import_loading.get() {
-                                            view! { <span class="loading loading-spinner loading-xs"></span> }
+                                            view! {
+                                                <span class="loading loading-spinner loading-xs"></span>
+                                            }
                                                 .into_any()
                                         } else {
                                             view! { "Import" }.into_any()
@@ -194,7 +198,9 @@ pub fn AdminUsersPage() -> impl IntoView {
 
                 <Card title="Set Everyone's Budget">
                     <div class="flex flex-col gap-4">
-                        <p class="text-sm opacity-70">"Set the translation budget for ALL users."</p>
+                        <p class="text-sm opacity-70">
+                            "Set the translation budget for ALL users."
+                        </p>
                         <div class="flex gap-4 items-center">
                             <div class="join">
                                 <span class="join-item btn btn-disabled no-animation">"$"</span>
@@ -231,7 +237,7 @@ pub fn AdminUsersPage() -> impl IntoView {
                         <tbody>
                             <For
                                 each=move || users_resource.get().flatten().unwrap_or_default()
-                                key=|u| u.user.id
+                                key=|u| u.clone()
                                 let(overview)
                             >
                                 <UserRow
@@ -339,7 +345,9 @@ fn UserRow(
                 <div class="flex flex-col gap-1">
                     <div class="text-[10px] flex justify-between">
                         <span>"Rem: $" {move || format!("{:.2}", budget_dollars())}</span>
-                        <span class="opacity-50">"Used: $" {move || format!("{:.2}", used_dollars())}</span>
+                        <span class="opacity-50">
+                            "Used: $" {move || format!("{:.2}", used_dollars())}
+                        </span>
                     </div>
                     <div class="join">
                         <input
@@ -491,11 +499,7 @@ fn ContestantRow(
                 </label>
             </td>
             <td>
-                <button
-                    class="btn btn-primary btn-sm w-full"
-                    on:click=do_update
-                    disabled=loading
-                >
+                <button class="btn btn-primary btn-sm w-full" on:click=do_update disabled=loading>
                     {move || if loading.get() { "..." } else { "Save" }}
                 </button>
             </td>

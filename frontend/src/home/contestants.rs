@@ -100,7 +100,9 @@ fn ContestantLangSelect(
                 set_value.set(event_target_value(&ev));
             }
         >
-            <option value="" selected=selected.is_none()>"Original (English) - No translation requested"</option>
+            <option value="" selected=selected.is_none()>
+                "Original (English) - No translation requested"
+            </option>
             <optgroup label="Your Languages">
                 {langs
                     .iter()

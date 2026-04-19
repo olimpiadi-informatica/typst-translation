@@ -170,6 +170,12 @@ pub fn AdminEditTaskPage() -> impl IntoView {
                 });
 
                 compilation_manager.set_inputs(inputs);
+                compilation_manager.set_extra_fonts(vec![
+                    "SC".into(),
+                    "TC".into(),
+                    "JP".into(),
+                    "KR".into(),
+                ]);
                 compilation_manager.do_compile(false);
             }
         });

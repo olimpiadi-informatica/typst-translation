@@ -19,4 +19,4 @@ mod util;
 
 pub use app::App;
 pub use logging::init_logging;
-pub use typst::TypstWorker;
+pub use typst::{TypstWorker, TypstWorkerInput};
