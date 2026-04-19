@@ -186,7 +186,9 @@ impl AppState {
             .route("/api/all", get(api_handlers::contest::all))
             .route("/files/{hash}/{filename}", get(file_storage::get_file))
             .fallback_service(
-                ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
+                ServeDir::new("dist")
+                    .precompressed_br()
+                    .not_found_service(ServeFile::new("dist/index.html")),
             )
             .layer(axum::middleware::from_fn(trace_requests))
             .layer(DefaultBodyLimit::max(1024 * 1024 * 1024))
