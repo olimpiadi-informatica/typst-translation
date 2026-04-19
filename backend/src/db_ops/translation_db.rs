@@ -66,7 +66,7 @@ pub async fn set_translation_session_token(
     let user_contest_status = query_as!(
         UserContestStatus,
         r#"
-            SELECT user_contest_status.*
+            SELECT user_contest_status.id, user_contest_status.user_id, user_contest_status.contest_id, finalized_translations, finalized_at
             FROM user_contest_status
             JOIN tasks ON user_contest_status.contest_id = tasks.contest_id
             WHERE tasks.id = ? AND user_contest_status.user_id = ?

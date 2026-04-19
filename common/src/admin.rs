@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::contestant::Contestant;
 use crate::language::Language;
 use crate::user::User;
 
@@ -7,6 +8,7 @@ use crate::user::User;
 pub struct AdminUserOverview {
     pub user: User,
     pub languages: Vec<Language>,
+    pub contestants: Vec<Contestant>,
 }
 
 pub type AdminUserOverviewResponse = Vec<AdminUserOverview>;
@@ -29,8 +31,13 @@ pub struct AddUserLanguageRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdatePasswordsCsvRequest {
-    pub csv_content: String,
+pub struct UpdatePasswordsJsonlRequest {
+    pub jsonl_content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImportUsersRequest {
+    pub jsonl_content: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,4 +56,12 @@ pub struct UpdateContestantPrintStatusRequest {
     pub contest_id: i64,
     pub contestant_id: i64,
     pub printed: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateContestantRequest {
+    pub id: i64,
+    pub code: String,
+    pub name: String,
+    pub online_bit: bool,
 }

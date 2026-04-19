@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT languages.code, content_hash AS \"content_hash!\", tasks.name\n        FROM translations\n          JOIN languages ON translations.language_id = languages.id\n          JOIN tasks ON translations.task_id = tasks.id\n        WHERE content_hash IS NOT NULL\n        ",
+  "query": "\n        SELECT languages.code, content_hash AS \"content_hash!\", tasks.name\n        FROM translations\n          JOIN languages ON translations.language_id = languages.id\n          JOIN tasks ON translations.task_id = tasks.id\n        WHERE tasks.contest_id = ? AND content_hash IS NOT NULL\n        ",
   "describe": {
     "columns": [
       {
@@ -20,7 +20,7 @@
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
       false,
@@ -28,5 +28,5 @@
       false
     ]
   },
-  "hash": "a45c10d110131bb66f54ad4dc730abb8b6982bbeb07b8e657dd50b1dc07f552f"
+  "hash": "dcd70dcdef96b51ec2c5deda67d8b49b072b5db38a8bff5d44f610eeeb56079e"
 }

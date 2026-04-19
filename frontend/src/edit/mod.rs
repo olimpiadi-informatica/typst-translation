@@ -12,6 +12,7 @@ use gloo_timers::future::TimeoutFuture;
 use leptos::prelude::*;
 use leptos::server::codee::string::JsonSerdeCodec;
 use leptos::task::{spawn_local, spawn_local_scoped};
+use leptos_router::components::A;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use leptos_use::signal_throttled;
 use leptos_use::storage::use_local_storage;
@@ -427,9 +428,9 @@ pub fn EditPage() -> impl IntoView {
                 title
                 kb_mode=(kb_mode, set_kb_mode)
                 left_action=view! {
-                    <a href="/" class="btn btn-ghost btn-sm">
+                    <A href="/" attr:class="btn btn-ghost btn-sm">
                         "Home"
-                    </a>
+                    </A>
                 }
                     .into_any()
             >

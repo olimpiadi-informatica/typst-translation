@@ -15,10 +15,16 @@ pub fn Translations(
     contests: Vec<ContestWithTasksAndStatus>,
     all_langs: Vec<Language>,
 ) -> impl IntoView {
-    contests
-        .into_iter()
-        .map(move |contest| view! { <Contest contest all_langs=all_langs.clone() /> })
-        .collect::<Vec<_>>()
+    view! {
+        <div class="flex flex-col gap-8">
+            {contests
+                .into_iter()
+                .map(move |contest| {
+                    view! { <Contest contest all_langs=all_langs.clone() /> }
+                })
+                .collect::<Vec<_>>()}
+        </div>
+    }
 }
 
 #[component]
@@ -90,10 +96,11 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
         let draw_edit = move |lang: Language| {
             view! {
                 <td>
-                    <A href=format!("/task/{}/lang/{}", task_id, lang.id)>
-                        <button class="btn btn-primary btn-sm">
-                            {move || if finalized.get() { "View" } else { "Edit" }}
-                        </button>
+                    <A
+                        href=format!("/task/{}/lang/{}", task_id, lang.id)
+                        attr:class="btn btn-primary btn-sm"
+                    >
+                        {move || if finalized.get() { "View" } else { "Edit" }}
                     </A>
                 </td>
             }
@@ -105,8 +112,8 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
                 <td>{task.name}</td>
                 <For each=move || transl_langs2.clone() key=|lang| lang.id children=draw_edit />
                 <td>
-                    <A href=format!("/task/{}", task_id)>
-                        <button class="btn btn-secondary btn-sm">"View"</button>
+                    <A href=format!("/task/{}", task_id) attr:class="btn btn-secondary btn-sm">
+                        "View"
                     </A>
                 </td>
             </tr>

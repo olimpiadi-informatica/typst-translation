@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE contestants\n        SET\n            code = ?,\n            name = ?,\n            online_bit = ?\n        WHERE\n            id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "333f03eaf4d96117724cca1d3de68562000fcfe92cd7ee4469d8fa51e86bc807"
+}

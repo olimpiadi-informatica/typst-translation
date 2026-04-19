@@ -171,6 +171,36 @@ where
     Ok(contestants)
 }
 
+pub async fn update_contestant<'e, E>(
+    executor: E,
+    id: i64,
+    code: String,
+    name: String,
+    online_bit: bool,
+) -> Result<(), Error>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    sqlx::query!(
+        r###"
+        UPDATE contestants
+        SET
+            code = ?,
+            name = ?,
+            online_bit = ?
+        WHERE
+            id = ?
+        "###,
+        code,
+        name,
+        online_bit,
+        id
+    )
+    .execute(executor)
+    .await?;
+    Ok(())
+}
+
 pub async fn assign_language_to_contestant(
     pool: &Pool<Sqlite>,
     contestant_id: i64,

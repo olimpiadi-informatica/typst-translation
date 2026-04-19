@@ -265,9 +265,21 @@ pub fn AdminTasksPage() -> impl IntoView {
                                     >
                                         <div class="card bg-base-100 shadow-md">
                                             <div class="card-body p-4">
-                                                <h3 class="card-title text-lg border-b pb-2 mb-4">
-                                                    "Contest: " {c.contest.name}
-                                                </h3>
+                                                <div class="flex justify-between items-center border-b pb-2 mb-4">
+                                                    <h3 class="card-title text-lg">
+                                                        "Contest: " {c.contest.name}
+                                                    </h3>
+                                                    <a
+                                                        class="btn btn-outline btn-sm"
+                                                        href=format!(
+                                                            "/api/admin/export/translations/{}",
+                                                            c.contest.id
+                                                        )
+                                                        target="_blank"
+                                                    >
+                                                        "Export Translations"
+                                                    </a>
+                                                </div>
                                                 <div class="overflow-x-auto">
                                                     <table class="table table-zebra w-full">
                                                         <thead>
@@ -281,10 +293,11 @@ pub fn AdminTasksPage() -> impl IntoView {
                                                                 <tr>
                                                                     <td>{t.name}</td>
                                                                     <td class="whitespace-nowrap">
-                                                                        <A href=format!("/admin/task/{}/edit", t.id)>
-                                                                            <button class="btn btn-secondary btn-sm">
-                                                                                "Edit Files"
-                                                                            </button>
+                                                                        <A
+                                                                            href=format!("/admin/task/{}/edit", t.id)
+                                                                            attr:class="btn btn-secondary btn-sm"
+                                                                        >
+                                                                            "Edit Files"
                                                                         </A>
                                                                     </td>
                                                                 </tr>

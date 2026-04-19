@@ -165,7 +165,7 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
         let mut items: Vec<_> = all_contestants
             .get()
             .into_iter()
-            .filter(|c| finalized.contains(&c.user_id) && !printed.contains(&c.id))
+            .filter(|c| finalized.contains(&c.user_id) && !printed.contains(&c.id) && !c.online_bit)
             .collect();
 
         items.sort_by_key(|c| statuses.get(&c.user_id).and_then(|s| s.finalized_at));

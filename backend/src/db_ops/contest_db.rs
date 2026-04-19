@@ -21,7 +21,7 @@ pub async fn get_user_contest_statuses_and_tasks(
     for contest in contests {
         let user_contest_status = query_as!(
             UserContestStatus,
-            "SELECT * FROM user_contest_status WHERE user_id = ? AND contest_id = ?",
+            "SELECT id, user_id, contest_id, finalized_translations, finalized_at FROM user_contest_status WHERE user_id = ? AND contest_id = ?",
             user_id,
             contest.id
         )
@@ -85,7 +85,7 @@ pub async fn get_all_contests_with_all(pool: &sqlx::Pool<Sqlite>) -> Result<All,
     for contest in contests {
         let user_contest_status = query_as!(
             UserContestStatus,
-            "SELECT * FROM user_contest_status WHERE contest_id = ?",
+            "SELECT id, user_id, contest_id, finalized_translations, finalized_at FROM user_contest_status WHERE contest_id = ?",
             contest.id
         )
         .fetch_all(pool)

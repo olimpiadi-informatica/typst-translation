@@ -98,10 +98,6 @@ impl AppState {
                 get(api_handlers::user::get_user_translation_status),
             )
             .route(
-                "/api/user/skip_envelope_verification",
-                post(api_handlers::user::skip_envelope_verification),
-            )
-            .route(
                 "/api/user/finalize_translation",
                 post(api_handlers::user::finalize_translation),
             )
@@ -161,7 +157,15 @@ impl AppState {
             )
             .route(
                 "/api/admin/users/update_passwords",
-                post(api_handlers::admin::update_passwords_csv),
+                post(api_handlers::admin::update_passwords_jsonl),
+            )
+            .route(
+                "/api/admin/users/import",
+                post(api_handlers::admin::import_users),
+            )
+            .route(
+                "/api/admin/export/translations/{contest_id}",
+                get(api_handlers::admin::export_translations),
             )
             .route(
                 "/api/admin/update_task_files",
@@ -174,6 +178,10 @@ impl AppState {
             .route(
                 "/api/admin/contest/contestant/print_status",
                 post(api_handlers::admin::update_contestant_print_status),
+            )
+            .route(
+                "/api/admin/contestant/update",
+                post(api_handlers::admin::update_contestant),
             )
             .route("/api/all", get(api_handlers::contest::all))
             .route("/files/{hash}/{filename}", get(file_storage::get_file))

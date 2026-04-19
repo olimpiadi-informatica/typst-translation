@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT * FROM user_contest_status WHERE user_id = ? AND contest_id = ?",
+  "query": "SELECT id, user_id, contest_id, finalized_translations, finalized_at FROM user_contest_status WHERE user_id = ? AND contest_id = ?",
   "describe": {
     "columns": [
       {
@@ -24,18 +24,8 @@
         "type_info": "Bool"
       },
       {
-        "name": "skip_envelope_verification",
-        "ordinal": 4,
-        "type_info": "Bool"
-      },
-      {
-        "name": "envelope_received_at",
-        "ordinal": 5,
-        "type_info": "Datetime"
-      },
-      {
         "name": "finalized_at",
-        "ordinal": 6,
+        "ordinal": 4,
         "type_info": "Datetime"
       }
     ],
@@ -47,10 +37,8 @@
       false,
       false,
       false,
-      false,
-      true,
       true
     ]
   },
-  "hash": "44cd7ca093b1fcb2df9af16012843a385b40bb596ffae0aaca210233d7c7b67c"
+  "hash": "eddcb38829e35128ba611a1f0d714c823f3203c5732bf595c23ff96adb79a3f1"
 }

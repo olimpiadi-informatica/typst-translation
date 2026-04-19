@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n            SELECT user_contest_status.*\n            FROM user_contest_status\n            JOIN tasks ON user_contest_status.contest_id = tasks.contest_id\n            WHERE tasks.id = ? AND user_contest_status.user_id = ?\n        ",
+  "query": "\n            SELECT user_contest_status.id, user_contest_status.user_id, user_contest_status.contest_id, finalized_translations, finalized_at\n            FROM user_contest_status\n            JOIN tasks ON user_contest_status.contest_id = tasks.contest_id\n            WHERE tasks.id = ? AND user_contest_status.user_id = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -24,18 +24,8 @@
         "type_info": "Bool"
       },
       {
-        "name": "skip_envelope_verification",
-        "ordinal": 4,
-        "type_info": "Bool"
-      },
-      {
-        "name": "envelope_received_at",
-        "ordinal": 5,
-        "type_info": "Datetime"
-      },
-      {
         "name": "finalized_at",
-        "ordinal": 6,
+        "ordinal": 4,
         "type_info": "Datetime"
       }
     ],
@@ -47,10 +37,8 @@
       false,
       false,
       false,
-      false,
-      true,
       true
     ]
   },
-  "hash": "eae05aca33022ebef1055e0c5ca4a5e8da5987fa2c719803c612ce49e4ac91be"
+  "hash": "067bc0dfdb1f2756deaeee72bb16a3c3e0e18df4a642e5898f53da7463160680"
 }

@@ -8,14 +8,6 @@ pub struct UserContestStatus {
     pub contest_id: i64,
     pub finalized_translations: bool,
     pub finalized_at: Option<NaiveDateTime>,
-    pub skip_envelope_verification: bool,
-    pub envelope_received_at: Option<NaiveDateTime>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct SkipEnvelopeVerificationRequest {
-    pub contest_id: i64,
-    pub skip: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]

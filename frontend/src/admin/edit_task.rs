@@ -9,6 +9,7 @@ use leptos::ev;
 use leptos::prelude::*;
 use leptos::server::codee::string::JsonSerdeCodec;
 use leptos::task::spawn_local_scoped;
+use leptos_router::components::A;
 use leptos_router::hooks::use_params_map;
 use leptos_use::storage::use_local_storage;
 use leptos_use::use_event_listener;
@@ -297,9 +298,9 @@ pub fn AdminEditTaskPage() -> impl IntoView {
             <Header
                 title
                 left_action=view! {
-                    <a href="/admin/tasks" class="btn btn-ghost btn-sm">
+                    <A href="/admin/tasks" attr:class="btn btn-ghost btn-sm">
                         "Back to Tasks"
-                    </a>
+                    </A>
                 }
                     .into_any()
             >

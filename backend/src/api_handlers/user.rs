@@ -2,13 +2,11 @@ use axum::Json;
 use axum::extract::State;
 use common::contest::ContestWithTasksAndStatus;
 use common::error::Error;
-use common::user_contest_status::{
-    SetTranslationSessionTokenRequest, SkipEnvelopeVerificationRequest,
-};
+use common::user_contest_status::SetTranslationSessionTokenRequest;
 
 use crate::AppState;
 use crate::auth::AuthUser;
-use crate::db_ops::{contest_db, translation_db, user_db};
+use crate::db_ops::{contest_db, translation_db};
 
 pub async fn get_user_translation_status(
     State(app_state): State<AppState>,
@@ -18,21 +16,6 @@ pub async fn get_user_translation_status(
         contest_db::get_user_contest_statuses_and_tasks(app_state.db(), user.id).await?;
 
     Ok(Json(statuses_with_tasks))
-}
-
-pub async fn skip_envelope_verification(
-    State(app_state): State<AppState>,
-    user: AuthUser,
-    Json(payload): Json<SkipEnvelopeVerificationRequest>,
-) -> Result<Json<()>, Error> {
-    user_db::set_skip_envelope_verification(
-        app_state.db(),
-        user.id,
-        payload.contest_id,
-        payload.skip,
-    )
-    .await?;
-    Ok(Json(()))
 }
 
 pub async fn finalize_translation(

@@ -512,7 +512,6 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "chrono",
- "csv",
  "gloo-net",
  "serde",
  "serde_json",

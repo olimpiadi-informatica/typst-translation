@@ -1,18 +1,20 @@
 use axum::Json;
-use axum::extract::State;
+use axum::extract::{Path, State};
+use axum::response::IntoResponse;
 use common::admin::{
     AddUserLanguageRequest, AdminUserOverview, AdminUserOverviewResponse, CreateContestRequest,
-    SetAllBudgetsRequest, SetBudgetRequest, UpdateContestantPrintStatusRequest,
-    UpdatePasswordsCsvRequest, UpdateTaskFilesRequest,
+    ImportUsersRequest, SetAllBudgetsRequest, SetBudgetRequest, UpdateContestantPrintStatusRequest,
+    UpdateContestantRequest, UpdatePasswordsJsonlRequest, UpdateTaskFilesRequest,
 };
 use common::error::Error;
 use common::language::Language;
 use common::statement_version::StatementVersion;
+use serde::Deserialize;
 
 use crate::AppState;
 use crate::auth::AuthAdmin;
-use crate::db_ops::{language_db, statement_version_db, user_db};
-use crate::file_storage::save_file;
+use crate::db_ops::{contestant_db, language_db, statement_version_db, user_db};
+use crate::file_storage::{path_of_file, save_file};
 
 pub async fn get_users_overview(
     State(app_state): State<AppState>,
@@ -21,6 +23,7 @@ pub async fn get_users_overview(
     let pool = app_state.db();
     let users = user_db::get_all(pool).await?;
     let all_languages = language_db::get_all(pool).await?;
+    let all_contestants = contestant_db::get_all(pool).await?;
 
     let mut overview = Vec::new();
     for user in users {
@@ -29,9 +32,15 @@ pub async fn get_users_overview(
             .filter(|l| l.user_id == user.id)
             .cloned()
             .collect();
+        let user_contestants = all_contestants
+            .iter()
+            .filter(|c| c.user_id == user.id)
+            .cloned()
+            .collect();
         overview.push(AdminUserOverview {
             user,
             languages: user_languages,
+            contestants: user_contestants,
         });
     }
 
@@ -84,38 +93,155 @@ pub async fn add_user_language(
     Ok(Json(()))
 }
 
-pub async fn update_passwords_csv(
+#[derive(Debug, Deserialize)]
+struct PasswordUpdateRow {
+    username: String,
+    password: String,
+}
+
+pub async fn update_passwords_jsonl(
     State(app_state): State<AppState>,
     _admin: AuthAdmin,
-    Json(payload): Json<UpdatePasswordsCsvRequest>,
+    Json(payload): Json<UpdatePasswordsJsonlRequest>,
 ) -> Result<Json<()>, Error> {
-    let mut reader = csv::Reader::from_reader(payload.csv_content.as_bytes());
     let mut tx = app_state.db().begin().await?;
 
-    for result in reader.records() {
-        let record: csv::StringRecord =
-            result.map_err(|e| Error::InvalidInput(format!("CSV error: {e}")))?;
-        // Expected format: username,password
-        let username = record
-            .get(0)
-            .ok_or_else(|| Error::InvalidInput("Missing username".to_string()))?;
-        let password = record
-            .get(1)
-            .ok_or_else(|| Error::InvalidInput("Missing password".to_string()))?;
+    for line in payload.jsonl_content.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let row: PasswordUpdateRow = serde_json::from_str(line)
+            .map_err(|e| Error::InvalidInput(format!("JSON error: {e}")))?;
 
-        let existing_user = user_db::get_user_by_username(&mut *tx, username).await?;
+        let existing_user = user_db::get_user_by_username(&mut *tx, &row.username).await?;
 
         if let Some(mut user) = existing_user {
-            user.password = password.to_string();
+            user.password = row.password;
             user.login_epoch += 1;
             user_db::update(&user, &mut *tx).await?;
         } else {
-            return Err(Error::InvalidInput(format!("User not found: {username}")));
+            return Err(Error::InvalidInput(format!(
+                "User not found: {}",
+                row.username
+            )));
         }
     }
 
     tx.commit().await?;
     Ok(Json(()))
+}
+
+#[derive(Debug, Deserialize)]
+struct ImportUserContestant {
+    name: String,
+    code: String,
+    #[serde(default)]
+    online_bit: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ImportUserRow {
+    contestants: Vec<ImportUserContestant>,
+    username: String,
+    languages: Vec<String>,
+}
+
+pub async fn import_users(
+    State(app_state): State<AppState>,
+    _admin: AuthAdmin,
+    Json(payload): Json<ImportUsersRequest>,
+) -> Result<Json<()>, Error> {
+    let mut tx = app_state.db().begin().await?;
+
+    for line in payload.jsonl_content.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let user_row: ImportUserRow = serde_json::from_str(line)
+            .map_err(|e| Error::InvalidInput(format!("JSON error: {e}")))?;
+
+        let password = uuid::Uuid::new_v4().to_string();
+        let user_id = sqlx::query!(
+            "INSERT INTO users(username, password, login_epoch) VALUES (?, ?, 0) RETURNING id;",
+            user_row.username,
+            password
+        )
+        .fetch_one(&mut *tx)
+        .await?
+        .id;
+
+        for lang in user_row.languages {
+            let _lang_id = sqlx::query!(
+                "INSERT INTO languages(code, user_id) VALUES (?, ?) RETURNING id;",
+                lang,
+                user_id
+            )
+            .fetch_one(&mut *tx)
+            .await?
+            .id;
+        }
+
+        for contestant in user_row.contestants {
+            let _contestant_id = sqlx::query!(
+                "INSERT INTO contestants(code, name, online_bit, user_id) VALUES (?, ?, ?, ?) RETURNING id;",
+                contestant.code,
+                contestant.name,
+                contestant.online_bit,
+                user_id
+            )
+            .fetch_one(&mut *tx)
+            .await?
+            .id;
+        }
+    }
+
+    tx.commit().await?;
+    Ok(Json(()))
+}
+
+pub async fn export_translations(
+    State(app_state): State<AppState>,
+    _admin: AuthAdmin,
+    Path(contest_id): Path<i64>,
+) -> Result<impl IntoResponse, Error> {
+    let pool = app_state.db();
+
+    let translations = sqlx::query!(
+        r#"
+        SELECT languages.code, content_hash AS "content_hash!", tasks.name
+        FROM translations
+          JOIN languages ON translations.language_id = languages.id
+          JOIN tasks ON translations.task_id = tasks.id
+        WHERE tasks.contest_id = ? AND content_hash IS NOT NULL
+        "#,
+        contest_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut buf = Vec::new();
+    {
+        let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
+        for translation in translations {
+            let in_path = path_of_file(&translation.content_hash)?;
+            let content = std::fs::read(in_path)?;
+            let out_path = format!("{}/{}.typ", translation.name, translation.code);
+            zip.start_file::<_, ()>(out_path, zip::write::FileOptions::default())?;
+            std::io::Write::write_all(&mut zip, &content)?;
+        }
+        zip.finish()?;
+    }
+
+    Ok((
+        [
+            (axum::http::header::CONTENT_TYPE, "application/zip"),
+            (
+                axum::http::header::CONTENT_DISPOSITION,
+                "attachment; filename=\"translations.zip\"",
+            ),
+        ],
+        buf,
+    ))
 }
 
 pub async fn update_task_files(
@@ -204,5 +330,21 @@ pub async fn update_contestant_print_status(
         .execute(pool)
         .await?;
     }
+    Ok(Json(()))
+}
+
+pub async fn update_contestant(
+    State(app_state): State<AppState>,
+    _admin: AuthAdmin,
+    Json(payload): Json<UpdateContestantRequest>,
+) -> Result<Json<()>, Error> {
+    contestant_db::update_contestant(
+        app_state.db(),
+        payload.id,
+        payload.code,
+        payload.name,
+        payload.online_bit,
+    )
+    .await?;
     Ok(Json(()))
 }
