@@ -42,14 +42,10 @@ pub fn Header(
                     set_kb_mode.set(kb_mode_from_str(&event_target_value(&ev)));
                 }
             >
-                <For
-                    each=move || KeyboardMode::VARIANTS
-                    key=|x| *x
-                    let(v)
-                >
-                    <option selected=move || kb_mode.get() == *v>
-                        {move || select_kb_mode_str(*v)}
-                    </option>
+                <For each=move || KeyboardMode::VARIANTS key=|x| *x let(v)>
+                    <option selected=move || {
+                        kb_mode.get() == *v
+                    }>{move || select_kb_mode_str(*v)}</option>
                 </For>
             </select>
         }
@@ -88,15 +84,11 @@ pub fn Header(
                         .map(|title| {
                             view! { <h1 class="text-xl font-bold">{title}</h1> }
                         })
-                }}
-                {kb_mode_view}
+                }} {kb_mode_view}
             </div>
-            <div class="navbar-center flex overflow-x-auto">
-                {tabs}
-            </div>
+            <div class="navbar-center flex overflow-x-auto">{tabs}</div>
             <div class="navbar-end flex items-center gap-4">
-                {children.map(|c| c())}
-                <div class="flex items-center gap-2">
+                {children.map(|c| c())} <div class="flex items-center gap-2">
                     <Show when=move || user_context.get_ext_user_untracked().user.is_some()>
                         <p class="text-sm">"User: "</p>
                         <code class="bg-base-200 px-2 py-1 rounded">

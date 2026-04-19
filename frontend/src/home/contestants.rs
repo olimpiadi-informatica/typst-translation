@@ -62,6 +62,7 @@ fn ContestantLangSelect(
 ) -> impl IntoView {
     let (value, set_value) = signal(selected.map(|id| id.to_string()).unwrap_or_default());
     let (original, set_original) = signal(selected);
+    let contestants = expect_context::<LocalResource<Option<Vec<Contestant>>>>();
 
     Effect::new(move |_| {
         let val_str = value.get();
@@ -84,6 +85,7 @@ fn ContestantLangSelect(
                 Ok(()) => {
                     show_success!("Contestant language updated successfully");
                     set_original.set(val);
+                    contestants.refetch();
                 }
                 Err(e) => {
                     show_error!("Failed to update contestant language: {e}");

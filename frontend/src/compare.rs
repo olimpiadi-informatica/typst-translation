@@ -133,21 +133,22 @@ pub fn Compare() -> impl IntoView {
     };
 
     view! {
-        <div
-            class="flex justify-center items-center h-screen"
-            class:hidden=move || loaded.get()
-        >
+        <div class="flex justify-center items-center h-screen" class:hidden=move || loaded.get()>
             <span class="loading loading-spinner loading-lg"></span>
             <span class="ml-2">"Loading..."</span>
         </div>
         <div class="h-screen flex flex-col" class:hidden=move || !loaded.get()>
-            <Header title=Signal::derive(move || {
-                format!("Comparing ISC versions for task {}", task_name.get())
-            }) left_action=view! {
-                <button class="btn btn-ghost btn-sm gap-2" on:click=go_back>
-                    "Back to Editing"
-                </button>
-            }.into_any()></Header>
+            <Header
+                title=Signal::derive(move || {
+                    format!("Comparing ISC versions for task {}", task_name.get())
+                })
+                left_action=view! {
+                    <button class="btn btn-ghost btn-sm gap-2" on:click=go_back>
+                        "Back to Editing"
+                    </button>
+                }
+                    .into_any()
+            ></Header>
             <div class="flex-1 overflow-hidden">
                 <DiffViewer
                     color_mode

@@ -114,12 +114,15 @@ pub fn AdminPanelLayout() -> impl IntoView {
         <PanelLayout
             title=Signal::derive(|| "Admin Panel".to_string())
             tabs=view! {
-                <NavTabs tabs=Signal::derive(|| vec![
-                    ("Users".to_string(), "/admin/users".to_string()),
-                    ("Tasks".to_string(), "/admin/tasks".to_string()),
-                    ("Printing".to_string(), "/admin/printing".to_string()),
-                ]) />
-            }.into_any()
+                <NavTabs tabs=Signal::derive(|| {
+                    vec![
+                        ("Users".to_string(), "/admin/users".to_string()),
+                        ("Tasks".to_string(), "/admin/tasks".to_string()),
+                        ("Printing".to_string(), "/admin/printing".to_string()),
+                    ]
+                }) />
+            }
+                .into_any()
         />
     }
 }
@@ -154,10 +157,11 @@ pub fn StaffPanelLayout() -> impl IntoView {
         <PanelLayout
             title=Signal::derive(|| "Staff Panel".to_string())
             tabs=view! {
-                <NavTabs tabs=Signal::derive(|| vec![
-                    ("Printing".to_string(), "/staff/printing".to_string()),
-                ]) />
-            }.into_any()
+                <NavTabs tabs=Signal::derive(|| {
+                    vec![("Printing".to_string(), "/staff/printing".to_string())]
+                }) />
+            }
+                .into_any()
         />
     }
 }

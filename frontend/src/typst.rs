@@ -33,9 +33,11 @@ pub struct TypstCompilationMessage {
     pub hints: EcoVec<EcoString>,
     // TODO(veluca): handle warnings outside the main file.
     pub span: std::ops::Range<usize>,
+    pub line: Option<usize>,
+    pub column: Option<usize>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct TypstCompiledDocument {
     pub svg_pages: Vec<String>,
     pub pdf: Vec<u8>,
@@ -52,7 +54,7 @@ impl Debug for TypstCompiledDocument {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TypstCompilationResult {
     pub document: Option<TypstCompiledDocument>,
     pub messages: EcoVec<TypstCompilationMessage>,
@@ -196,11 +198,27 @@ impl TypstCompiler {
         let mut messages = EcoVec::new();
         let mut add_errors = |msgs: &[SourceDiagnostic]| {
             for msg in msgs {
+                let range = self.range(msg.span).unwrap_or(0..0);
+                let (line, column) = if let Some(id) = msg.span.id() {
+                    self.source(id)
+                        .ok()
+                        .map(|source| {
+                            (
+                                source.byte_to_line(range.start).map(|l| l + 1),
+                                source.byte_to_column(range.start).map(|c| c + 1),
+                            )
+                        })
+                        .unwrap_or((None, None))
+                } else {
+                    (None, None)
+                };
                 let message = TypstCompilationMessage {
                     is_fatal: msg.severity == Severity::Error,
                     message: msg.message.clone(),
                     hints: msg.hints.clone(),
-                    span: self.range(msg.span).unwrap_or(0..0),
+                    span: range,
+                    line,
+                    column,
                 };
                 messages.push(message);
             }

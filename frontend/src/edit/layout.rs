@@ -46,6 +46,16 @@ pub fn SplitEditorLayout(
     let compilation_manager = expect_context::<CompilationManager>();
     let color_mode = expect_context::<Signal<ColorMode>>();
 
+    let cm = compilation_manager.clone();
+    let diagnostics = Signal::derive(move || {
+        cm.get_result()
+            .get()
+            .messages
+            .iter()
+            .cloned()
+            .collect::<Vec<_>>()
+    });
+
     view! {
         <div
             class="flex-1 flex overflow-hidden relative"
@@ -59,6 +69,7 @@ pub fn SplitEditorLayout(
                     ctrl_enter
                     on_change
                     kb_mode
+                    diagnostics=diagnostics
                     color_mode=color_mode
                     attr:class="h-full"
                 />

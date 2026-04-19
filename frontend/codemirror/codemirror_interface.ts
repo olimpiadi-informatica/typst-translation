@@ -9,6 +9,7 @@ import {vim} from "@replit/codemirror-vim";
 import {indentWithTab} from "@codemirror/commands"
 import {solarizedLight, solarizedDark} from "@uiw/codemirror-theme-solarized";
 import {MergeView} from "@codemirror/merge"
+import {linter, lintGutter, Diagnostic} from "@codemirror/lint";
 
 
 // TODO(veluca): add support for typst syntax highlighting.
@@ -18,6 +19,7 @@ export class CM6Editor {
   language: Compartment = new Compartment();
   keymap: Compartment = new Compartment();
   dark: Compartment = new Compartment();
+  diagnostics: Compartment = new Compartment();
   execCallback: () => void = () => {};
   onchangeCallback: () => void = () => {};
   isReadOnly = new Compartment();
@@ -47,6 +49,8 @@ export class CM6Editor {
         basicSetup,
         this.dark.of(solarizedLight),
         this.isReadOnly.of(EditorState.readOnly.of(false)),
+        this.diagnostics.of(linter(() => [])),
+        lintGutter(),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             this.onchangeCallback();
@@ -78,6 +82,12 @@ export class CM6Editor {
     } else {
       this.view.dispatch({effects: this.keymap.reconfigure([])});
     }
+  }
+
+  setDiagnostics(diagnostics: Diagnostic[]) {
+    this.view.dispatch({
+      effects: this.diagnostics.reconfigure(linter(() => diagnostics)),
+    });
   }
 
   setExec(exec: () => void) {

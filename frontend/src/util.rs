@@ -41,8 +41,7 @@ pub fn Card(
                     view! { <h2 class="card-title mb-4">{title}</h2> }.into_any()
                 } else {
                     ().into_any()
-                }}
-                {children()}
+                }} {children()}
             </div>
         </div>
     }
@@ -55,19 +54,11 @@ pub fn NavTabs(
     let location = leptos_router::hooks::use_location();
     view! {
         <div role="tablist" class="tabs tabs-boxed">
-            <For
-                each=move || tabs.get()
-                key=|(label, href)| format!("{}-{}", label, href)
-                let(tab)
-            >
+            <For each=move || tabs.get() key=|(label, href)| format!("{}-{}", label, href) let(tab)>
                 <A
                     href=tab.1.clone()
                     attr:class=move || {
-                        if location.pathname.get() == tab.1 {
-                            "tab tab-active"
-                        } else {
-                            "tab"
-                        }
+                        if location.pathname.get() == tab.1 { "tab tab-active" } else { "tab" }
                     }
                 >
                     {tab.0}

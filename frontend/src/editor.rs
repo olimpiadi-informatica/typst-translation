@@ -32,8 +32,19 @@ extern "C" {
     #[wasm_bindgen(method, js_name = "setKeymap")]
     fn set_keymap(this: &CM6Editor, kbh: &str);
 
+    #[wasm_bindgen(method, js_name = "setDiagnostics")]
+    fn set_diagnostics(this: &CM6Editor, diagnostics: JsValue);
+
     #[wasm_bindgen(js_name = "makeMergeView")]
     fn make_merge_view(id: &str, first: &str, second: &str, dark: bool);
+}
+
+#[derive(Serialize)]
+struct JsDiagnostic {
+    from: usize,
+    to: usize,
+    severity: &'static str,
+    message: String,
 }
 
 #[derive(
@@ -54,6 +65,7 @@ pub fn Editor(
     #[prop(optional)] ctrl_enter: Option<Box<dyn Fn()>>,
     #[prop(optional)] on_change: Option<Box<dyn Fn()>>,
     #[prop(into)] kb_mode: Signal<KeyboardMode>,
+    #[prop(optional)] diagnostics: Option<Signal<Vec<crate::typst::TypstCompilationMessage>>>,
     color_mode: Signal<ColorMode>,
 ) -> impl IntoView {
     let cm6 = RwSignal::new_local(None);
@@ -95,6 +107,40 @@ pub fn Editor(
                     .unchecked_into(),
             );
             cm6.set(Some(editor));
+        });
+    }
+
+    if let Some(diagnostics) = diagnostics {
+        Effect::new(move |_| {
+            cm6.with(|x| {
+                let Some(cm6) = x else {
+                    return;
+                };
+                let msgs = diagnostics.get();
+                let text = contents.get_untracked();
+                let js_diagnostics = msgs
+                    .into_iter()
+                    .map(|msg| {
+                        let from = text
+                            .get(..msg.span.start)
+                            .unwrap_or(&text)
+                            .encode_utf16()
+                            .count();
+                        let to = text
+                            .get(..msg.span.end)
+                            .unwrap_or(&text)
+                            .encode_utf16()
+                            .count();
+                        JsDiagnostic {
+                            from,
+                            to,
+                            severity: if msg.is_fatal { "error" } else { "warning" },
+                            message: msg.message.to_string(),
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                cm6.set_diagnostics(serde_wasm_bindgen::to_value(&js_diagnostics).unwrap());
+            });
         });
     }
 

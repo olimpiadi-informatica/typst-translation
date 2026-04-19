@@ -148,12 +148,28 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
             .unwrap_or_default()
     });
 
+    let lang_owner_map = Signal::derive(move || {
+        languages
+            .get()
+            .into_iter()
+            .map(|l| (l.id, l.user_id))
+            .collect::<HashMap<i64, i64>>()
+    });
+
     let finalized_contestants = Signal::derive(move || {
         let finalized = finalized_users.get();
+        let owner_map = lang_owner_map.get();
         all_contestants
             .get()
             .into_iter()
-            .filter(|c| finalized.contains(&c.user_id))
+            .filter(|c| {
+                let owner_id = c
+                    .language_id
+                    .and_then(|id| owner_map.get(&id))
+                    .copied()
+                    .unwrap_or(c.user_id);
+                finalized.contains(&owner_id)
+            })
             .collect::<Vec<_>>()
     });
 
@@ -161,14 +177,32 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
         let printed = printed_contestants.get();
         let finalized = finalized_users.get();
         let statuses = user_status_map.get();
+        let owner_map = lang_owner_map.get();
 
         let mut items: Vec<_> = all_contestants
             .get()
             .into_iter()
-            .filter(|c| finalized.contains(&c.user_id) && !printed.contains(&c.id) && !c.online_bit)
+            .filter(|c| {
+                let lang_id = match c.language_id {
+                    Some(id) => id,
+                    None => return false,
+                };
+                let owner_id = match owner_map.get(&lang_id) {
+                    Some(id) => *id,
+                    None => return false,
+                };
+                finalized.contains(&owner_id) && !printed.contains(&c.id) && !c.online_bit
+            })
             .collect();
 
-        items.sort_by_key(|c| statuses.get(&c.user_id).and_then(|s| s.finalized_at));
+        items.sort_by_key(|c| {
+            let owner_id = c
+                .language_id
+                .and_then(|id| owner_map.get(&id))
+                .copied()
+                .unwrap_or(c.user_id);
+            statuses.get(&owner_id).and_then(|s| s.finalized_at)
+        });
         items
     });
 

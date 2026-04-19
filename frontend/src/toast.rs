@@ -52,11 +52,7 @@ pub fn ToastProvider(children: Children) -> impl IntoView {
     view! {
         {children()}
         <div class="toast toast-end">
-            <For
-                each=move || toasts.get()
-                key=|toast| toast.id
-                let(toast)
-            >
+            <For each=move || toasts.get() key=|toast| toast.id let(toast)>
                 <div class=format!(
                     "alert {}",
                     match toast.kind {

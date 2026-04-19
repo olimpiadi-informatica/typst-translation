@@ -52,6 +52,10 @@ pub fn HomePage() -> impl IntoView {
     let user = user_context.get_user_untracked();
     let user_id = user.id;
 
+    provide_context(contestants);
+    provide_context(all_langs);
+    provide_context(contests);
+
     move || match (
         contestants.get().flatten(),
         all_langs.get().flatten(),
@@ -73,13 +77,13 @@ pub fn HomePage() -> impl IntoView {
                     <Header title=Signal::derive(|| "Translation System".to_string()) />
                     <div class="flex flex-col md:flex-row gap-8">
                         <div class="flex-1">
-                            <ContestantsTable contestants avail_langs />
+                            <ContestantsTable contestants=contestants.clone() avail_langs />
                         </div>
                         <div class="flex-1">
                             <LanguagesTable transl_langs />
                         </div>
                     </div>
-                    <Translations contests all_langs />
+                    <Translations contests all_langs contestants />
                 </div>
             })
         }

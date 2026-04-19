@@ -41,6 +41,7 @@ pub fn LanguagesTable(transl_langs: Vec<Language>) -> impl IntoView {
 fn LanguagePublicCheckbox(language_id: i64, public: bool) -> impl IntoView {
     let (checked, set_checked) = signal(public);
     let (original, set_original) = signal(public);
+    let all_langs = expect_context::<LocalResource<Option<Vec<Language>>>>();
 
     Effect::new(move |_| {
         let val = checked.get();
@@ -58,6 +59,7 @@ fn LanguagePublicCheckbox(language_id: i64, public: bool) -> impl IntoView {
                 Ok(()) => {
                     show_success!("Language public status updated successfully");
                     set_original.set(val);
+                    all_langs.refetch();
                 }
                 Err(e) => {
                     show_error!("Failed to update language public status: {e}");

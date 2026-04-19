@@ -32,7 +32,11 @@ fn CompilationMessage(message: Signal<TypstCompilationMessage>) -> impl IntoView
             <code class="bg-base-200 px-1 rounded">
                 {move || {
                     let m = message.get();
-                    format!("{}..{}", m.span.start, m.span.end)
+                    if let (Some(l), Some(c)) = (m.line, m.column) {
+                        format!("L{}:C{}", l, c)
+                    } else {
+                        format!("{}..{}", m.span.start, m.span.end)
+                    }
                 }}
             </code>
             <span class="ml-2">{move || message.get().message.to_string()}</span>
@@ -95,10 +99,7 @@ pub fn CompilationResults(
 
     view! {
         <div class=move || {
-            format!(
-                "flex flex-col bg-base-200 {}",
-                class.as_ref().cloned().unwrap_or_default(),
-            )
+            format!("flex flex-col bg-base-200 {}", class.as_ref().cloned().unwrap_or_default())
         }>
             <div class="flex justify-between items-center p-2 bg-base-100 border-b border-base-300">
                 <div class="tabs tabs-boxed">
@@ -115,9 +116,9 @@ pub fn CompilationResults(
                         on:click=move |_| set_tab.set(MESSAGES.to_string())
                     >
                         "Messages"
-                        <span class=move || format!("badge badge-sm {}", badge_class.get())>
-                            {num_messages}
-                        </span>
+                        <span class=move || {
+                            format!("badge badge-sm {}", badge_class.get())
+                        }>{num_messages}</span>
                     </button>
                 </div>
                 <button
@@ -161,11 +162,7 @@ pub fn CompilationResults(
                     class:hidden=move || tab.get() != MESSAGES
                     class="bg-base-100 p-4 rounded-lg shadow-inner"
                 >
-                    <For
-                        each=move || { 0..results.read().messages.len() }
-                        key=|x| *x
-                        let(idx)
-                    >
+                    <For each=move || { 0..results.read().messages.len() } key=|x| *x let(idx)>
                         <CompilationMessage message=Signal::derive(move || {
                             results.read().messages.get(idx).cloned().unwrap_or_default()
                         }) />

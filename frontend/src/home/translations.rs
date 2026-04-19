@@ -1,7 +1,7 @@
 use common::contest::ContestWithTasksAndStatus;
+use common::contestant::Contestant;
 use common::language::Language;
 use common::task::Task;
-use leptos::either::Either;
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 use leptos_router::components::A;
@@ -14,13 +14,20 @@ use crate::{show_error, show_success};
 pub fn Translations(
     contests: Vec<ContestWithTasksAndStatus>,
     all_langs: Vec<Language>,
+    contestants: Vec<Contestant>,
 ) -> impl IntoView {
     view! {
         <div class="flex flex-col gap-8">
             {contests
                 .into_iter()
                 .map(move |contest| {
-                    view! { <Contest contest all_langs=all_langs.clone() /> }
+                    view! {
+                        <Contest
+                            contest
+                            all_langs=all_langs.clone()
+                            contestants=contestants.clone()
+                        />
+                    }
                 })
                 .collect::<Vec<_>>()}
         </div>
@@ -28,7 +35,11 @@ pub fn Translations(
 }
 
 #[component]
-fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl IntoView {
+fn Contest(
+    contest: ContestWithTasksAndStatus,
+    all_langs: Vec<Language>,
+    contestants: Vec<Contestant>,
+) -> impl IntoView {
     let ContestWithTasksAndStatus {
         contest,
         tasks,
@@ -40,6 +51,26 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
         .filter(|lang| lang.user_id == user_contest_status.user_id)
         .cloned()
         .collect::<Vec<_>>();
+
+    let mut missing_translations = Vec::new();
+    let my_contestants = contestants
+        .iter()
+        .filter(|c| c.user_id == user_contest_status.user_id);
+    let assigned_lang_ids: std::collections::HashSet<i64> =
+        my_contestants.filter_map(|c| c.language_id).collect();
+
+    for lang in &transl_langs {
+        if !assigned_lang_ids.contains(&lang.id) && !lang.public {
+            continue;
+        }
+        for task in &tasks {
+            let translation = task.translations.iter().find(|t| t.language_id == lang.id);
+            let has_translation = translation.and_then(|t| t.content_hash.as_ref()).is_some();
+            if !has_translation {
+                missing_translations.push(format!("Task '{}' in '{}'", task.name, lang.code));
+            }
+        }
+    }
 
     let finalized = RwSignal::new(user_contest_status.finalized_translations);
     let dialog_ref = NodeRef::<leptos::html::Dialog>::new();
@@ -75,17 +106,32 @@ fn Contest(contest: ContestWithTasksAndStatus, all_langs: Vec<Language>) -> impl
 
     let finalize_view = move || {
         if finalized.get() {
-            Either::Left(view! {
+            view! {
                 <button class="btn btn-primary btn-sm" disabled=true>
                     "Finalized"
                 </button>
-            })
+            }
+            .into_any()
+        } else if !missing_translations.is_empty() {
+            let msg = format!(
+                "Cannot finalize: missing translations for: {}",
+                missing_translations.join(", ")
+            );
+            view! {
+                <div class="tooltip tooltip-left" data-tip=msg>
+                    <button class="btn btn-primary btn-sm" disabled=true>
+                        "Finalize"
+                    </button>
+                </div>
+            }
+            .into_any()
         } else {
-            Either::Right(view! {
+            view! {
                 <button class="btn btn-primary btn-sm" on:click=open_dialog>
                     "Finalize"
                 </button>
-            })
+            }
+            .into_any()
         }
     };
 
