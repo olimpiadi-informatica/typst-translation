@@ -4,7 +4,7 @@ use common::contest::{All, Contest};
 use common::error::Error;
 
 use crate::AppState;
-use crate::auth::{AuthAdmin, AuthAny};
+use crate::auth::{AuthAny, AuthStaff};
 use crate::db_ops::contest_db;
 
 pub async fn get_all_contests(
@@ -16,7 +16,7 @@ pub async fn get_all_contests(
     Ok(Json(contests))
 }
 
-pub async fn all(State(app_state): State<AppState>, _admin: AuthAdmin) -> Result<Json<All>, Error> {
+pub async fn all(State(app_state): State<AppState>, _: AuthStaff) -> Result<Json<All>, Error> {
     let pool = app_state.db();
     let contests = contest_db::get_all_contests_with_all(pool).await?;
     Ok(Json(contests))
