@@ -25,14 +25,14 @@ popd
 
 rsync -avL backend/target/release/backend frontend/dist "$DIR"
 
-if ! [ -f "$DIR/db.sqlite3" ]; then
-  touch "$DIR/db.sqlite3"
+if ! [ -f "$DIR/db.sqlite" ]; then
+  touch "$DIR/db.sqlite"
 fi
 
 if ! [ -f "$DIR/.env" ]; then
   echo 'DATABASE_URL="sqlite:./db.sqlite"' >"$DIR/.env"
 fi
 
-set +e
+set +x
 
 echo "Done. After ensuring a configuration file is present, you can run the translation system from $DIR."
