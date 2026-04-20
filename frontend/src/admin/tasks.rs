@@ -153,7 +153,12 @@ pub fn AdminTasksPage() -> impl IntoView {
 
                                             <div class="form-control w-full">
                                                 <label class="label">
-                                                    <span class="label-text">"Task ZIP files"</span>
+                                                    <span class="label-text">
+                                                        "Task ZIP files ("
+                                                        <code class="text-primary">
+                                                            "task-maker-tools export-booklet"
+                                                        </code> ")"
+                                                    </span>
                                                 </label>
                                                 <input
                                                     type="file"
