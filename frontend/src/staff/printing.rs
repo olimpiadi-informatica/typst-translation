@@ -158,50 +158,41 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
 
     let finalized_contestants = Signal::derive(move || {
         let finalized = finalized_users.get();
-        let owner_map = lang_owner_map.get();
+        let lang_owners = lang_owner_map.get();
         all_contestants
             .get()
             .into_iter()
             .filter(|c| {
-                let owner_id = c
-                    .language_id
-                    .and_then(|id| owner_map.get(&id))
-                    .copied()
-                    .unwrap_or(c.user_id);
-                finalized.contains(&owner_id)
+                let Some(lang_id) = c.language_id else {
+                    return false;
+                };
+                let Some(lang_owner_id) = lang_owners.get(&lang_id) else {
+                    return false;
+                };
+                finalized.contains(&c.user_id) && finalized.contains(lang_owner_id)
             })
             .collect::<Vec<_>>()
     });
 
     let queue_items = Signal::derive(move || {
         let printed = printed_contestants.get();
-        let finalized = finalized_users.get();
+        let lang_owners = lang_owner_map.get();
         let statuses = user_status_map.get();
-        let owner_map = lang_owner_map.get();
 
-        let mut items: Vec<_> = all_contestants
+        let mut items: Vec<_> = finalized_contestants
             .get()
             .into_iter()
-            .filter(|c| {
-                let lang_id = match c.language_id {
-                    Some(id) => id,
-                    None => return false,
-                };
-                let owner_id = match owner_map.get(&lang_id) {
-                    Some(id) => *id,
-                    None => return false,
-                };
-                finalized.contains(&owner_id) && !printed.contains(&c.id) && !c.online_bit
-            })
+            .filter(|c| !printed.contains(&c.id) && !c.online_bit)
             .collect();
 
         items.sort_by_key(|c| {
-            let owner_id = c
+            let contestant_finalized_at = statuses.get(&c.user_id).and_then(|s| s.finalized_at);
+            let language_finalized_at = c
                 .language_id
-                .and_then(|id| owner_map.get(&id))
-                .copied()
-                .unwrap_or(c.user_id);
-            statuses.get(&owner_id).and_then(|s| s.finalized_at)
+                .and_then(|lang_id| lang_owners.get(&lang_id))
+                .and_then(|owner_id| statuses.get(owner_id))
+                .and_then(|s| s.finalized_at);
+            contestant_finalized_at.max(language_finalized_at)
         });
         items
     });
@@ -213,10 +204,8 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
             .get()
             .into_iter()
             .filter(|lang| finalized.contains(&lang.user_id))
-            .map(Some)
-            .chain(std::iter::once(None))
             .map(|lang| {
-                let lang_id = lang.as_ref().map(|l| l.id);
+                let lang_id = Some(lang.id);
                 (
                     lang,
                     fc.iter()
@@ -437,11 +426,10 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                 <For each=move || queue_items.get() key=|c| c.id let:c>
                                     {
                                         let user_lang = Signal::derive(move || {
-                                            if let Some(lang_id) = c.language_id {
-                                                languages.get().into_iter().find(|l| l.id == lang_id)
-                                            } else {
-                                                languages.get().into_iter().find(|l| l.user_id == c.user_id)
-                                            }
+                                            c.language_id
+                                                .and_then(|lang_id| {
+                                                    languages.get().into_iter().find(|l| l.id == lang_id)
+                                                })
                                         });
                                         let lang_name = move || {
                                             user_lang
@@ -528,16 +516,14 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
 
             <For
                 each=move || finalized_languages.get()
-                key=|(lang, _contestants)| lang.as_ref().map(|l| l.id)
+                key=|(lang, _contestants)| lang.id
                 let((lang, contestants))
             >
                 <div class="card bg-base-100 shadow-md">
                     <div class="card-body">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="card-title text-xl">
-                                {lang
-                                    .as_ref()
-                                    .map_or_else(|| "No extra lang".into(), |l| l.code.clone())}
+                                {lang.code.clone()}
                             </h3>
                         </div>
 
@@ -555,8 +541,7 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                                         each=move || contestants.clone()
                                         key=|c| c.id
                                         children=move |c| {
-                                            let lang = lang.clone();
-                                            let lang_id = lang.as_ref().map(|l| l.id);
+                                            let lang_id = Some(lang.id);
                                             let contestant = c.clone();
                                             view! {
                                                 <tr>
