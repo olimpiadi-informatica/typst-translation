@@ -209,6 +209,24 @@ pub async fn assign_language_to_contestant(
 ) -> Result<(), Error> {
     let mut tx = pool.begin().await?;
 
+    let finalized_status = sqlx::query!(
+        r###"
+        SELECT id
+        FROM user_contest_status
+        WHERE user_id = ? AND finalized_translations = FALSE
+        LIMIT 1
+        "###,
+        user_id
+    )
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    if finalized_status.is_none() {
+        return Err(Error::InvalidInput(
+            "Cannot assign language to contestant after a contest has been finalized.".to_string(),
+        ));
+    }
+
     if let Some(lang_id) = language_id {
         let language = language_db::get_by_id(&mut *tx, lang_id).await?;
 
