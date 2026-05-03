@@ -32,17 +32,25 @@ pub fn AdminTasksPage() -> impl IntoView {
 
     let do_import = move || {
         spawn_local_scoped(async move {
-            loading.set(true);
-
-            let contest_id = contest_id_signal
-                .get_untracked()
-                .parse::<i64>()
-                .expect("Invalid contest ID");
+            let contest_id = match contest_id_signal.get_untracked().parse::<i64>() {
+                Ok(contest_id) => contest_id,
+                Err(_) => {
+                    show_error!("Please select a contest before importing.");
+                    return;
+                }
+            };
             let update_val = update_signal.get_untracked();
-            let files = input_ref
-                .get_untracked()
-                .and_then(|input| input.files())
-                .expect("No files selected");
+            let Some(files) = input_ref.get_untracked().and_then(|input| input.files()) else {
+                show_error!("Please select at least one ZIP file to import.");
+                return;
+            };
+
+            if files.length() == 0 {
+                show_error!("Please select at least one ZIP file to import.");
+                return;
+            }
+
+            loading.set(true);
 
             for idx in 0..files.length() {
                 let file = files.get(idx).expect("Failed to get file from FileList");
@@ -76,10 +84,14 @@ pub fn AdminTasksPage() -> impl IntoView {
 
     let do_create_contest = move || {
         spawn_local_scoped(async move {
+            let name = new_contest_name.get_untracked().trim().to_string();
+            if name.is_empty() {
+                show_error!("Please enter a contest name.");
+                return;
+            }
+
             contest_loading.set(true);
-            let payload = CreateContestRequest {
-                name: new_contest_name.get_untracked(),
-            };
+            let payload = CreateContestRequest { name };
             match api_post("/api/admin/create_contest", &payload).await {
                 Ok(()) => {
                     show_success!("Created contest: {}", payload.name);
@@ -117,11 +129,13 @@ pub fn AdminTasksPage() -> impl IntoView {
                                                 </label>
                                                 <select
                                                     class="select select-bordered w-full"
+                                                    required=true
                                                     on:change=move |ev| {
                                                         contest_id_signal.set(event_target_value(&ev));
                                                     }
                                                 >
                                                     <option
+                                                        value=""
                                                         disabled
                                                         selected=move || contest_id_signal.get().is_empty()
                                                     >
@@ -165,6 +179,7 @@ pub fn AdminTasksPage() -> impl IntoView {
                                                     class="file-input file-input-bordered w-full"
                                                     accept="application/zip"
                                                     multiple=true
+                                                    required=true
                                                     node_ref=input_ref
                                                 />
                                             </div>
@@ -226,6 +241,7 @@ pub fn AdminTasksPage() -> impl IntoView {
                                     type="text"
                                     class="input input-bordered w-full"
                                     placeholder="e.g. Day 1"
+                                    required=true
                                     prop:value=new_contest_name
                                     on:input=move |ev| {
                                         new_contest_name.set(event_target_value(&ev));
