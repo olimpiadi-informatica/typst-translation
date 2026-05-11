@@ -170,8 +170,15 @@ pub async fn import_users(
         .await?
         .id;
 
+        sqlx::query!(
+            "INSERT INTO user_contest_status (user_id, contest_id) SELECT ?, id FROM contests",
+            user_id
+        )
+        .execute(&mut *tx)
+        .await?;
+
         for lang in user_row.languages {
-            let _lang_id = sqlx::query!(
+            let lang_id = sqlx::query!(
                 "INSERT INTO languages(code, user_id) VALUES (?, ?) RETURNING id;",
                 lang,
                 user_id
@@ -179,6 +186,13 @@ pub async fn import_users(
             .fetch_one(&mut *tx)
             .await?
             .id;
+
+            sqlx::query!(
+                "INSERT INTO translations (task_id, language_id) SELECT id, ? FROM tasks",
+                lang_id
+            )
+            .execute(&mut *tx)
+            .await?;
         }
 
         for contestant in user_row.contestants {
