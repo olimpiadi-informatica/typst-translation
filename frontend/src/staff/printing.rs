@@ -219,192 +219,211 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
     });
 
     let owner = Owner::new();
-    let do_print = move |contestant: Contestant, lang_id: Option<i64>| {
-        let tasks = tasks.get();
-        owner.with(move || {
-            spawn_local_scoped(async move {
-                let mut task_pdfs = Vec::new();
+    let print_document = StoredValue::new_local(
+        move |lang_id: Option<i64>, contestant_id_to_mark: Option<i64>| {
+            let tasks = tasks.get();
+            owner.with(move || {
+                spawn_local_scoped(async move {
+                    let mut task_pdfs = Vec::new();
 
-                let mut typst_worker =
-                    TypstWorker::spawner().spawn_with_loader("/typst_translation_worker_loader.js");
+                    let mut typst_worker = TypstWorker::spawner()
+                        .spawn_with_loader("/typst_translation_worker_loader.js");
 
-                for task in tasks {
-                    let url = format!("/api/tasks/{}/statement_versions/latest", task.id);
-                    let statement: StatementVersion = match api_get(&url).await {
-                        Ok(statements) => statements,
-                        Err(e) => {
-                            show_error!("Failed to fetch statement version: {}", e);
-                            return;
-                        }
-                    };
-
-                    let futures = futures::stream::FuturesUnordered::new();
-                    for (key, value) in &statement.content_manifest {
-                        let key = key.clone();
-                        let value = value.clone();
-                        futures.push(async move {
-                            let name = key.rsplit('/').next().unwrap_or(&key);
-                            let content = file_get(&value, name).await?;
-                            Ok((key.into(), content))
-                        });
-                    }
-
-                    let files: Vec<Result<(PathBuf, _), Error>> = futures.collect().await;
-                    let files: Result<HashMap<PathBuf, _>, Error> = files.into_iter().collect();
-
-                    let mut files = match files {
-                        Ok(files) => files,
-                        Err(e) => {
-                            show_error!("Failed to fetch statement files: {e}");
-                            return;
-                        }
-                    };
-
-                    if let Some(lang_id) = lang_id {
-                        let translation = task
-                            .translations
-                            .into_iter()
-                            .find(|t| t.language_id == lang_id);
-                        let Some(Translation {
-                            content_hash: Some(hash),
-                            ..
-                        }) = translation
-                        else {
-                            show_error!("Untranslated statement!");
-                            return;
-                        };
-
-                        let statement = match file_get(&hash, "statement.typ").await {
-                            Ok(statement) => statement,
+                    for task in tasks {
+                        let url = format!("/api/tasks/{}/statement_versions/latest", task.id);
+                        let statement: StatementVersion = match api_get(&url).await {
+                            Ok(statements) => statements,
                             Err(e) => {
-                                show_error!("Failed to fetch statement translation: {e}");
+                                show_error!("Failed to fetch statement version: {}", e);
                                 return;
                             }
                         };
 
-                        files.insert(
-                            PathBuf::from(format!("{}/statement/statement.typ", task.name)),
-                            statement,
-                        );
-                    }
-
-                    typst_worker.send_input(TypstWorkerInput {
-                        files,
-                        extra_fonts: vec!["SC".into(), "TC".into(), "JP".into(), "KR".into()],
-                    });
-                    let response = typst_worker.next().await.unwrap();
-
-                    let document = match response.document {
-                        Some(doc) => doc,
-                        None => {
-                            show_error!("Failed to compile statement translation: no output");
-                            return;
+                        let futures = futures::stream::FuturesUnordered::new();
+                        for (key, value) in &statement.content_manifest {
+                            let key = key.clone();
+                            let value = value.clone();
+                            futures.push(async move {
+                                let name = key.rsplit('/').next().unwrap_or(&key);
+                                let content = file_get(&value, name).await?;
+                                Ok((key.into(), content))
+                            });
                         }
-                    };
-                    task_pdfs.push(document.pdf);
-                }
 
-                if task_pdfs.is_empty() {
-                    return;
-                }
+                        let files: Vec<Result<(PathBuf, _), Error>> = futures.collect().await;
+                        let files: Result<HashMap<PathBuf, _>, Error> = files.into_iter().collect();
 
-                use lopdf::{Dictionary, Document, Object};
-
-                let mut merged_doc = Document::with_version("1.7");
-                let mut pages_kids = Vec::new();
-                let mut total_pages = 0;
-
-                let mut pages_dict = Dictionary::new();
-                pages_dict.set("Type", Object::Name(b"Pages".to_vec()));
-                pages_dict.set("Kids", Object::Array(vec![]));
-                pages_dict.set("Count", Object::Integer(0));
-                let pages_id = merged_doc.add_object(pages_dict);
-
-                for (i, pdf_bytes) in task_pdfs.into_iter().enumerate() {
-                    let mut doc = Document::load_mem(&pdf_bytes).unwrap();
-
-                    if i > 0 && total_pages % 2 != 0 {
-                        // Add blank page
-                        let last_page_ref = match pages_kids.last().unwrap() {
-                            Object::Reference(r) => *r,
-                            _ => unreachable!(),
+                        let mut files = match files {
+                            Ok(files) => files,
+                            Err(e) => {
+                                show_error!("Failed to fetch statement files: {e}");
+                                return;
+                            }
                         };
-                        let last_page = merged_doc
-                            .get_object(last_page_ref)
-                            .unwrap()
-                            .as_dict()
-                            .unwrap();
-                        let media_box = last_page.get(b"MediaBox").unwrap().clone();
 
-                        let mut blank_page = Dictionary::new();
-                        blank_page.set("Type", Object::Name(b"Page".to_vec()));
-                        blank_page.set("Parent", Object::Reference(pages_id));
-                        blank_page.set("MediaBox", media_box);
-                        blank_page.set("Contents", Object::Array(vec![]));
-                        blank_page.set("Resources", Dictionary::new());
+                        if let Some(lang_id) = lang_id {
+                            let translation = task
+                                .translations
+                                .into_iter()
+                                .find(|t| t.language_id == lang_id);
+                            let Some(Translation {
+                                content_hash: Some(hash),
+                                ..
+                            }) = translation
+                            else {
+                                show_error!("Untranslated statement!");
+                                return;
+                            };
 
-                        let blank_page_id = merged_doc.add_object(blank_page);
-                        pages_kids.push(Object::Reference(blank_page_id));
-                        total_pages += 1;
+                            let statement = match file_get(&hash, "statement.typ").await {
+                                Ok(statement) => statement,
+                                Err(e) => {
+                                    show_error!("Failed to fetch statement translation: {e}");
+                                    return;
+                                }
+                            };
+
+                            files.insert(
+                                PathBuf::from(format!("{}/statement/statement.typ", task.name)),
+                                statement,
+                            );
+                        }
+
+                        typst_worker.send_input(TypstWorkerInput {
+                            files,
+                            extra_fonts: vec!["SC".into(), "TC".into(), "JP".into(), "KR".into()],
+                        });
+                        let response = typst_worker.next().await.unwrap();
+
+                        let document = match response.document {
+                            Some(doc) => doc,
+                            None => {
+                                show_error!("Failed to compile statement translation: no output");
+                                return;
+                            }
+                        };
+                        task_pdfs.push(document.pdf);
                     }
 
-                    doc.renumber_objects_with(merged_doc.max_id + 1);
-                    let pages = doc.get_pages();
-
-                    for (_, page_id) in pages {
-                        let page = doc.get_object_mut(page_id).unwrap().as_dict_mut().unwrap();
-                        page.set("Parent", Object::Reference(pages_id));
-                        pages_kids.push(Object::Reference(page_id));
-                        total_pages += 1;
+                    if task_pdfs.is_empty() {
+                        return;
                     }
 
-                    for (id, object) in doc.objects {
-                        merged_doc.objects.insert(id, object);
+                    use lopdf::{Dictionary, Document, Object};
+
+                    let mut merged_doc = Document::with_version("1.7");
+                    let mut pages_kids = Vec::new();
+                    let mut total_pages = 0;
+
+                    let mut pages_dict = Dictionary::new();
+                    pages_dict.set("Type", Object::Name(b"Pages".to_vec()));
+                    pages_dict.set("Kids", Object::Array(vec![]));
+                    pages_dict.set("Count", Object::Integer(0));
+                    let pages_id = merged_doc.add_object(pages_dict);
+
+                    for (i, pdf_bytes) in task_pdfs.into_iter().enumerate() {
+                        let mut doc = Document::load_mem(&pdf_bytes).unwrap();
+
+                        if i > 0 && total_pages % 2 != 0 {
+                            // Add blank page
+                            let last_page_ref = match pages_kids.last().unwrap() {
+                                Object::Reference(r) => *r,
+                                _ => unreachable!(),
+                            };
+                            let last_page = merged_doc
+                                .get_object(last_page_ref)
+                                .unwrap()
+                                .as_dict()
+                                .unwrap();
+                            let media_box = last_page.get(b"MediaBox").unwrap().clone();
+
+                            let mut blank_page = Dictionary::new();
+                            blank_page.set("Type", Object::Name(b"Page".to_vec()));
+                            blank_page.set("Parent", Object::Reference(pages_id));
+                            blank_page.set("MediaBox", media_box);
+                            blank_page.set("Contents", Object::Array(vec![]));
+                            blank_page.set("Resources", Dictionary::new());
+
+                            let blank_page_id = merged_doc.add_object(blank_page);
+                            pages_kids.push(Object::Reference(blank_page_id));
+                            total_pages += 1;
+                        }
+
+                        doc.renumber_objects_with(merged_doc.max_id + 1);
+                        let pages = doc.get_pages();
+
+                        for (_, page_id) in pages {
+                            let page = doc.get_object_mut(page_id).unwrap().as_dict_mut().unwrap();
+                            page.set("Parent", Object::Reference(pages_id));
+                            pages_kids.push(Object::Reference(page_id));
+                            total_pages += 1;
+                        }
+
+                        for (id, object) in doc.objects {
+                            merged_doc.objects.insert(id, object);
+                        }
+                        merged_doc.max_id = doc.max_id;
                     }
-                    merged_doc.max_id = doc.max_id;
-                }
 
-                if let Some(Object::Dictionary(dict)) = merged_doc.objects.get_mut(&pages_id) {
-                    dict.set("Kids", Object::Array(pages_kids));
-                    dict.set("Count", Object::Integer(total_pages));
-                }
+                    if let Some(Object::Dictionary(dict)) = merged_doc.objects.get_mut(&pages_id) {
+                        dict.set("Kids", Object::Array(pages_kids));
+                        dict.set("Count", Object::Integer(total_pages));
+                    }
 
-                let mut catalog_dict = Dictionary::new();
-                catalog_dict.set("Type", Object::Name(b"Catalog".to_vec()));
-                catalog_dict.set("Pages", Object::Reference(pages_id));
-                let catalog_id = merged_doc.add_object(catalog_dict);
-                merged_doc
-                    .trailer
-                    .set("Root", Object::Reference(catalog_id));
+                    let mut catalog_dict = Dictionary::new();
+                    catalog_dict.set("Type", Object::Name(b"Catalog".to_vec()));
+                    catalog_dict.set("Pages", Object::Reference(pages_id));
+                    let catalog_id = merged_doc.add_object(catalog_dict);
+                    merged_doc
+                        .trailer
+                        .set("Root", Object::Reference(catalog_id));
 
-                let mut merged_pdf = Vec::new();
-                merged_doc.save_to(&mut merged_pdf).unwrap();
+                    let mut merged_pdf = Vec::new();
+                    merged_doc.save_to(&mut merged_pdf).unwrap();
 
-                let array8 = js_sys::Uint8Array::from(merged_pdf.as_slice());
-                let array = js_sys::Array::of1(&array8);
-                let opts = web_sys::BlobPropertyBag::new();
-                opts.set_type("application/pdf");
-                let blob =
-                    web_sys::Blob::new_with_u8_array_sequence_and_options(&array, &opts).unwrap();
+                    let array8 = js_sys::Uint8Array::from(merged_pdf.as_slice());
+                    let array = js_sys::Array::of1(&array8);
+                    let opts = web_sys::BlobPropertyBag::new();
+                    opts.set_type("application/pdf");
+                    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&array, &opts)
+                        .unwrap();
 
-                let url = web_sys::Url::create_object_url_with_blob(&blob).unwrap();
-                web_sys::window()
-                    .unwrap()
-                    .open_with_url(&url)
-                    .unwrap_or(None);
+                    let url = web_sys::Url::create_object_url_with_blob(&blob).unwrap();
+                    web_sys::window()
+                        .unwrap()
+                        .open_with_url(&url)
+                        .unwrap_or(None);
 
-                toggle_printed(contestant.id, true);
+                    if let Some(contestant_id) = contestant_id_to_mark {
+                        toggle_printed(contestant_id, true);
+                    }
+                });
             });
-        });
-    };
+        },
+    );
 
-    let do_print = Signal::stored(do_print);
+    let do_print = Signal::stored(move |contestant: Contestant, lang_id: Option<i64>| {
+        print_document.with_value(|print_document| {
+            print_document(lang_id, Some(contestant.id));
+        });
+    });
+    let print_isc = Signal::stored(move || {
+        print_document.with_value(|print_document| {
+            print_document(None, None);
+        });
+    });
 
     view! {
         <div class="flex flex-col gap-6">
             <h2 class="text-3xl font-bold border-b-2 border-primary pb-2">
                 {move || contest.get().map(|c| c.name).unwrap_or_default()}
             </h2>
+
+            <div class="flex justify-end">
+                <button class="btn btn-outline" on:click=move |_| print_isc.read()()>
+                    "Print en_ISC"
+                </button>
+            </div>
 
             <div class="card bg-base-200 shadow-xl border-l-4 border-accent">
                 <div class="card-body">
