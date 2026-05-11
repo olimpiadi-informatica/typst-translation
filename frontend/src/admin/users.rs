@@ -1,6 +1,7 @@
 use common::admin::{
-    AddUserLanguageRequest, AdminUserOverview, AdminUserOverviewResponse, ImportUsersRequest,
-    SetAllBudgetsRequest, SetBudgetRequest, UpdateContestantRequest, UpdatePasswordsJsonlRequest,
+    AddUserLanguageRequest, AdminUserOverview, AdminUserOverviewResponse, ImpersonateUserRequest,
+    ImportUsersRequest, SetAllBudgetsRequest, SetBudgetRequest, UpdateContestantRequest,
+    UpdatePasswordsJsonlRequest,
 };
 use common::contestant::Contestant;
 use js_sys::Uint8Array;
@@ -13,6 +14,7 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::HtmlInputElement;
 
 use crate::api_wrapper::{api_get, api_post};
+use crate::user::ExtUserContext;
 use crate::util::{Card, Icon};
 use crate::{show_error, show_success};
 
@@ -232,6 +234,7 @@ pub fn AdminUsersPage() -> impl IntoView {
                                 <th>"Password"</th>
                                 <th>"Budget"</th>
                                 <th>"Languages"</th>
+                                <th class="w-28">"Actions"</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -260,6 +263,7 @@ fn UserRow(
     overview: AdminUserOverview,
     refetch: impl Fn() + Copy + Send + 'static,
 ) -> impl IntoView {
+    let user_context = expect_context::<ExtUserContext>();
     let (overview, _) = signal(overview);
     let (new_lang_code, set_new_lang_code) = signal(String::new());
     let (new_budget_val, set_new_budget_val) = signal(format!(
@@ -322,6 +326,26 @@ fn UserRow(
     let budget_dollars = move || (overview.get().user.automatic_translation_budget as f64) / 1e9;
     let used_dollars = move || (overview.get().user.tokens_used as f64) / 1e9;
 
+    let impersonate_user = move |_| {
+        let user_id = overview.get_untracked().user.id;
+        spawn_local_scoped(async move {
+            match api_post(
+                "/api/admin/users/impersonate",
+                &ImpersonateUserRequest { user_id },
+            )
+            .await
+            {
+                Ok(()) => {
+                    user_context.refetch();
+                    show_success!("Now impersonating this user.");
+                }
+                Err(e) => {
+                    show_error!("Failed to impersonate user: {e}");
+                }
+            }
+        });
+    };
+
     view! {
         <tr class="hover:bg-base-200 transition-colors">
             <td>
@@ -381,13 +405,18 @@ fn UserRow(
                     </button>
                 </div>
             </td>
+            <td>
+                <button class="btn btn-secondary btn-sm w-full" on:click=impersonate_user>
+                    "Impersonate"
+                </button>
+            </td>
         </tr>
         {move || {
             if expanded.get() {
                 Either::Left(
                     view! {
                         <tr class="bg-base-200/50">
-                            <td colspan="6" class="p-4">
+                            <td colspan="7" class="p-4">
                                 <div class="flex flex-col gap-4 max-w-5xl mx-auto">
                                     <div class="flex justify-between items-center">
                                         <h4 class="font-bold text-sm">"Contestants Management"</h4>

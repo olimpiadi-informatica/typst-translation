@@ -1,10 +1,12 @@
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
+use axum_extra::extract::CookieJar;
 use common::admin::{
     AddUserLanguageRequest, AdminUserOverview, AdminUserOverviewResponse, CreateContestRequest,
-    ImportUsersRequest, SetAllBudgetsRequest, SetBudgetRequest, UpdateContestantPrintStatusRequest,
-    UpdateContestantRequest, UpdatePasswordsJsonlRequest, UpdateTaskFilesRequest,
+    ImpersonateUserRequest, ImportUsersRequest, SetAllBudgetsRequest, SetBudgetRequest,
+    UpdateContestantPrintStatusRequest, UpdateContestantRequest, UpdatePasswordsJsonlRequest,
+    UpdateTaskFilesRequest,
 };
 use common::error::Error;
 use common::language::Language;
@@ -12,7 +14,7 @@ use common::statement_version::StatementVersion;
 use serde::Deserialize;
 
 use crate::AppState;
-use crate::auth::AuthAdmin;
+use crate::auth::{AuthAdmin, AuthAny, Claims, add_cookie};
 use crate::db_ops::{contestant_db, language_db, statement_version_db, user_db};
 use crate::file_storage::{path_of_file, save_file};
 
@@ -91,6 +93,30 @@ pub async fn add_user_language(
     tx.commit().await?;
 
     Ok(Json(()))
+}
+
+pub async fn impersonate_user(
+    State(app_state): State<AppState>,
+    _admin: AuthAdmin,
+    current_user: Option<AuthAny>,
+    cookies: CookieJar,
+    Json(payload): Json<ImpersonateUserRequest>,
+) -> Result<CookieJar, Error> {
+    let user = user_db::get_by_id(app_state.db(), payload.user_id)
+        .await?
+        .ok_or(Error::NotFound)?;
+
+    Ok(add_cookie(
+        cookies,
+        Claims {
+            user_id: Some(user.id),
+            login_epoch: user.login_epoch,
+            admin: current_user.as_ref().is_some_and(|x| x.is_admin),
+            staff: current_user.as_ref().is_some_and(|x| x.is_staff),
+            exp: 0,
+        },
+        &app_state,
+    ))
 }
 
 #[derive(Debug, Deserialize)]

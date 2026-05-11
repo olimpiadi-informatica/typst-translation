@@ -156,6 +156,10 @@ impl AppState {
                 post(api_handlers::admin::add_user_language),
             )
             .route(
+                "/api/admin/users/impersonate",
+                post(api_handlers::admin::impersonate_user),
+            )
+            .route(
                 "/api/admin/users/update_passwords",
                 post(api_handlers::admin::update_passwords_jsonl),
             )

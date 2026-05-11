@@ -31,6 +31,11 @@ pub struct AddUserLanguageRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImpersonateUserRequest {
+    pub user_id: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdatePasswordsJsonlRequest {
     pub jsonl_content: String,
 }
