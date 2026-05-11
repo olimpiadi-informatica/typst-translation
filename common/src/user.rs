@@ -8,7 +8,6 @@ pub struct User {
     pub login_epoch: i64,
     pub automatic_translation_budget: i64,
     pub tokens_used: i64,
-    pub name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT\n            id,\n            username,\n            password,\n            login_epoch,\n            automatic_translation_budget,\n            tokens_used,\n            name\n        FROM\n            users\n        WHERE\n            username = ?\n        ",
+  "query": "\n        SELECT\n            id,\n            username,\n            password,\n            login_epoch,\n            automatic_translation_budget,\n            tokens_used\n        FROM\n            users\n        WHERE\n            username = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -32,11 +32,6 @@
         "name": "tokens_used",
         "ordinal": 5,
         "type_info": "Integer"
-      },
-      {
-        "name": "name",
-        "ordinal": 6,
-        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -48,9 +43,8 @@
       false,
       false,
       false,
-      false,
       false
     ]
   },
-  "hash": "bd060a3c68fbe098612499d207796b7e5b1a5881367adb911618c3be9fc6102b"
+  "hash": "72be11f543de3de69d19d752a1f7c540665415abf24cecfdf9c848b4e9b1293a"
 }

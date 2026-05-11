@@ -15,8 +15,7 @@ where
             password,
             login_epoch,
             automatic_translation_budget,
-            tokens_used,
-            name
+            tokens_used
         FROM
             users
         WHERE
@@ -40,10 +39,9 @@ where
             password,
             login_epoch,
             automatic_translation_budget,
-            tokens_used,
-            name
+            tokens_used
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
         RETURNING id
         "###,
         user.username,
@@ -51,7 +49,6 @@ where
         user.login_epoch,
         user.automatic_translation_budget,
         user.tokens_used,
-        user.name,
     )
     .fetch_one(executor)
     .await?;
@@ -71,8 +68,7 @@ where
             password = ?,
             login_epoch = ?,
             automatic_translation_budget = ?,
-            tokens_used = ?,
-            name = ?
+            tokens_used = ?
         WHERE
             id = ?
         "###,
@@ -81,7 +77,6 @@ where
         user.login_epoch,
         user.automatic_translation_budget,
         user.tokens_used,
-        user.name,
         user.id
     )
     .execute(executor)
@@ -112,8 +107,7 @@ where
             password,
             login_epoch,
             automatic_translation_budget,
-            tokens_used,
-            name
+            tokens_used
         FROM
             users
         WHERE
@@ -139,8 +133,7 @@ where
             password,
             login_epoch,
             automatic_translation_budget,
-            tokens_used,
-            name
+            tokens_used
         FROM
             users
         ORDER BY

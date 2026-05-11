@@ -32,18 +32,12 @@
         "name": "tokens_used",
         "ordinal": 5,
         "type_info": "Integer"
-      },
-      {
-        "name": "name",
-        "ordinal": 6,
-        "type_info": "Text"
       }
     ],
     "parameters": {
       "Right": 0
     },
     "nullable": [
-      false,
       false,
       false,
       false,

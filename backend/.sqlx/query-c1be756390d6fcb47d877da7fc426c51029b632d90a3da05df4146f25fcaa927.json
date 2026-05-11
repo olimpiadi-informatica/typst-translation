@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO users (\n            username,\n            password,\n            login_epoch,\n            automatic_translation_budget,\n            tokens_used\n        )\n        VALUES (?, ?, ?, ?, ?)\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c1be756390d6fcb47d877da7fc426c51029b632d90a3da05df4146f25fcaa927"
+}
