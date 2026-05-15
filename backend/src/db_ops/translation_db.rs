@@ -37,6 +37,27 @@ pub async fn finalize_translation(
     user_id: i64,
     contest_id: i64,
 ) -> Result<(), Error> {
+    let mut tx = pool.begin().await?;
+
+    let undecided_contestant = query!(
+        r#"
+        SELECT id
+        FROM contestants
+        WHERE user_id = ? AND language_decided = FALSE
+        LIMIT 1
+        "#,
+        user_id
+    )
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    if undecided_contestant.is_some() {
+        return Err(Error::InvalidInput(
+            "Cannot finalize contest while some contestants have not chosen a language."
+                .to_string(),
+        ));
+    }
+
     let result = query!(
         r#"
         UPDATE user_contest_status
@@ -46,11 +67,13 @@ pub async fn finalize_translation(
         contest_id,
         user_id
     )
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
     if result.rows_affected() == 0 {
         return Err(Error::NotFound);
     }
+
+    tx.commit().await?;
     Ok(())
 }
 

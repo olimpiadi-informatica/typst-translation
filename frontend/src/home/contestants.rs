@@ -37,6 +37,7 @@ pub fn ContestantsTable(contestants: Vec<Contestant>, avail_langs: Vec<Language>
                                         <td>
                                             <ContestantLangSelect
                                                 langs=avail_langs
+                                                decided=contestant.language_decided
                                                 selected=contestant.language_id
                                                 contestant_id=contestant.id
                                                 user_id=contestant.user_id
@@ -56,40 +57,54 @@ pub fn ContestantsTable(contestants: Vec<Contestant>, avail_langs: Vec<Language>
 #[component]
 fn ContestantLangSelect(
     langs: Vec<Language>,
+    decided: bool,
     selected: Option<i64>,
     contestant_id: i64,
     user_id: i64,
 ) -> impl IntoView {
-    let (value, set_value) = signal(selected.map(|id| id.to_string()).unwrap_or_default());
-    let (original, set_original) = signal(selected);
+    let initial_value = if !decided {
+        "__undecided__".to_string()
+    } else {
+        selected.map(|id| id.to_string()).unwrap_or_default()
+    };
+    let (value, set_value) = signal(initial_value.clone());
+    let (original, set_original) = signal((decided, selected));
     let contestants = expect_context::<LocalResource<Option<Vec<Contestant>>>>();
 
     Effect::new(move |_| {
         let val_str = value.get();
-        let val = if val_str.is_empty() {
-            None
+        if val_str == "__undecided__" {
+            return;
+        }
+
+        let state = if val_str.is_empty() {
+            (true, None)
         } else {
-            val_str.parse::<i64>().ok()
+            (true, val_str.parse::<i64>().ok())
         };
         let orig = original.get_untracked();
-        if val == orig {
+        if state == orig {
             return;
         }
 
         spawn_local_scoped(async move {
             let payload = AssignLanguagePayload {
                 contestant_id,
-                language_id: val,
+                language_id: state.1,
             };
             match api_post("/api/user/assign_language_to_contestant", &payload).await {
                 Ok(()) => {
                     show_success!("Contestant language updated successfully");
-                    set_original.set(val);
+                    set_original.set(state);
                     contestants.refetch();
                 }
                 Err(e) => {
                     show_error!("Failed to update contestant language: {e}");
-                    set_value.set(orig.map(|id| id.to_string()).unwrap_or_default());
+                    set_value.set(if !orig.0 {
+                        "__undecided__".to_string()
+                    } else {
+                        orig.1.map(|id| id.to_string()).unwrap_or_default()
+                    });
                 }
             }
         });
@@ -102,7 +117,18 @@ fn ContestantLangSelect(
                 set_value.set(event_target_value(&ev));
             }
         >
-            <option value="" selected=selected.is_none()>
+            {move || {
+                if !original.get().0 {
+                    view! {
+                        <option value="__undecided__" selected=true hidden>
+                        </option>
+                    }
+                        .into_any()
+                } else {
+                    ().into_any()
+                }
+            }}
+            <option value="" selected=decided && selected.is_none()>
                 "Original (English) - No translation requested"
             </option>
             <optgroup label="Your Languages">

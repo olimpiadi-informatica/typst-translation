@@ -163,6 +163,9 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
             .get()
             .into_iter()
             .filter(|c| {
+                if !c.language_decided {
+                    return false;
+                }
                 let Some(lang_id) = c.language_id else {
                     return false;
                 };

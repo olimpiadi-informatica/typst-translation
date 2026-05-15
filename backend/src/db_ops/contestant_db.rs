@@ -15,15 +15,17 @@ where
             name,
             online_bit,
             user_id,
+            language_decided,
             language_id
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
         RETURNING id
         "###,
         contestant.code,
         contestant.name,
         contestant.online_bit,
         contestant.user_id,
+        contestant.language_decided,
         contestant.language_id,
     )
     .fetch_one(executor)
@@ -44,6 +46,7 @@ where
             name = ?,
             online_bit = ?,
             user_id = ?,
+            language_decided = ?,
             language_id = ?
         WHERE
             id = ?
@@ -52,6 +55,7 @@ where
         contestant.name,
         contestant.online_bit,
         contestant.user_id,
+        contestant.language_decided,
         contestant.language_id,
         contestant.id
     )
@@ -83,6 +87,7 @@ where
             name,
             online_bit,
             user_id,
+            language_decided,
             language_id
         FROM
             contestants
@@ -109,6 +114,7 @@ where
             name,
             online_bit,
             user_id,
+            language_decided,
             language_id
         FROM
             contestants
@@ -137,6 +143,7 @@ where
             name,
             online_bit,
             user_id,
+            language_decided,
             language_id
         FROM
             contestants
@@ -159,11 +166,12 @@ where
 {
     let contestants = sqlx::query_as!(
         Contestant,
-        "SELECT *
+        r###"
+        SELECT *
         FROM contestants
         WHERE user_id = ?
         ORDER BY code ASC
-        ",
+        "###,
         user_id
     )
     .fetch_all(executor)
@@ -239,6 +247,7 @@ pub async fn assign_language_to_contestant(
         r###"
         UPDATE contestants
         SET
+            language_decided = true,
             language_id = ?
         WHERE
             id = ? AND user_id = ?

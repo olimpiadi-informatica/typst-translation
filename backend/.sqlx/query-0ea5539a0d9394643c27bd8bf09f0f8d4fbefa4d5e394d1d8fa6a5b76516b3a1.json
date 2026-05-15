@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT *\n        FROM contestants\n        WHERE user_id = ?\n        ORDER BY code ASC\n        ",
+  "query": "\n        SELECT\n            id,\n            code,\n            name,\n            online_bit,\n            user_id,\n            language_decided,\n            language_id\n        FROM\n            contestants\n        ORDER BY\n            id DESC\n        ",
   "describe": {
     "columns": [
       {
@@ -29,15 +29,21 @@
         "type_info": "Integer"
       },
       {
-        "name": "language_id",
+        "name": "language_decided",
         "ordinal": 5,
+        "type_info": "Bool"
+      },
+      {
+        "name": "language_id",
+        "ordinal": 6,
         "type_info": "Integer"
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 0
     },
     "nullable": [
+      false,
       false,
       false,
       false,
@@ -46,5 +52,5 @@
       true
     ]
   },
-  "hash": "64537e1bdfa024addfef9d77171b7ed63ad6fc09c1a68ae80f56fb410fecea7d"
+  "hash": "0ea5539a0d9394643c27bd8bf09f0f8d4fbefa4d5e394d1d8fa6a5b76516b3a1"
 }

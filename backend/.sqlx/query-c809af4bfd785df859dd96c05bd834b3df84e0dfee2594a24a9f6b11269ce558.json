@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE contestants\n        SET\n            language_decided = true,\n            language_id = ?\n        WHERE\n            id = ? AND user_id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "c809af4bfd785df859dd96c05bd834b3df84e0dfee2594a24a9f6b11269ce558"
+}

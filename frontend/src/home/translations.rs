@@ -53,11 +53,18 @@ fn Contest(
         .collect::<Vec<_>>();
 
     let mut missing_translations = Vec::new();
+    let undecided_contestants = contestants
+        .iter()
+        .filter(|c| c.user_id == user_contest_status.user_id && !c.language_decided)
+        .map(|c| c.code.clone())
+        .collect::<Vec<_>>();
     let my_contestants = contestants
         .iter()
         .filter(|c| c.user_id == user_contest_status.user_id);
-    let assigned_lang_ids: std::collections::HashSet<i64> =
-        my_contestants.filter_map(|c| c.language_id).collect();
+    let assigned_lang_ids: std::collections::HashSet<i64> = my_contestants
+        .filter(|c| c.language_decided)
+        .filter_map(|c| c.language_id)
+        .collect();
 
     for lang in &transl_langs {
         if !assigned_lang_ids.contains(&lang.id) && !lang.public {
@@ -110,6 +117,19 @@ fn Contest(
                 <button class="btn btn-primary btn-sm" disabled=true>
                     "Finalized"
                 </button>
+            }
+            .into_any()
+        } else if !undecided_contestants.is_empty() {
+            let msg = format!(
+                "Cannot finalize: some contestants still need a language decision: {}",
+                undecided_contestants.join(", ")
+            );
+            view! {
+                <div class="tooltip tooltip-left" data-tip=msg>
+                    <button class="btn btn-primary btn-sm" disabled=true>
+                        "Finalize"
+                    </button>
+                </div>
             }
             .into_any()
         } else if !missing_translations.is_empty() {

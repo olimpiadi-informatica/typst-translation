@@ -7,5 +7,6 @@ pub struct Contestant {
     pub name: String,
     pub online_bit: bool,
     pub user_id: i64,
+    pub language_decided: bool,
     pub language_id: Option<i64>, // NULL if no specific translation needed
 }
