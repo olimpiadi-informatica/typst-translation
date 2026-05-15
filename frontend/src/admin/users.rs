@@ -1,8 +1,9 @@
 use common::admin::{
     AddUserLanguageRequest, AdminUserOverview, AdminUserOverviewResponse, ImpersonateUserRequest,
-    ImportUsersRequest, SetAllBudgetsRequest, SetBudgetRequest, UpdateContestantRequest,
-    UpdatePasswordsJsonlRequest,
+    ImportUsersRequest, SetAllBudgetsRequest, SetBudgetRequest,
+    ToggleUserContestFinalizationRequest, UpdateContestantRequest, UpdatePasswordsJsonlRequest,
 };
+use common::contest::Contest;
 use common::contestant::Contestant;
 use js_sys::Uint8Array;
 use leptos::either::Either;
@@ -234,17 +235,43 @@ pub fn AdminUsersPage() -> impl IntoView {
                                 <th>"Password"</th>
                                 <th>"Budget"</th>
                                 <th>"Languages"</th>
+                                <For
+                                    each=move || {
+                                        users_resource
+                                            .get()
+                                            .flatten()
+                                            .map(|r| r.contests)
+                                            .unwrap_or_default()
+                                    }
+                                    key=|contest| contest.id
+                                    let(contest)
+                                >
+                                    <th class="min-w-32 text-center">{contest.name}</th>
+                                </For>
                                 <th class="w-28">"Actions"</th>
                             </tr>
                         </thead>
                         <tbody>
                             <For
-                                each=move || users_resource.get().flatten().unwrap_or_default()
-                                key=|u| u.clone()
+                                each=move || {
+                                    users_resource
+                                        .get()
+                                        .flatten()
+                                        .map(|r| r.users)
+                                        .unwrap_or_default()
+                                }
+                                key=|u| u.user.id
                                 let(overview)
                             >
                                 <UserRow
                                     overview
+                                    contests=move || {
+                                        users_resource
+                                            .get()
+                                            .flatten()
+                                            .map(|r| r.contests)
+                                            .unwrap_or_default()
+                                    }
                                     refetch=move || {
                                         users_resource.refetch();
                                     }
@@ -261,6 +288,7 @@ pub fn AdminUsersPage() -> impl IntoView {
 #[component]
 fn UserRow(
     overview: AdminUserOverview,
+    contests: impl Fn() -> Vec<Contest> + Copy + Send + 'static,
     refetch: impl Fn() + Copy + Send + 'static,
 ) -> impl IntoView {
     let user_context = expect_context::<ExtUserContext>();
@@ -271,6 +299,8 @@ fn UserRow(
         (overview.get_untracked().user.automatic_translation_budget as f64) / 1e9
     ));
     let (expanded, set_expanded) = signal(false);
+    let contest_status_overrides = RwSignal::new(std::collections::HashMap::<i64, bool>::new());
+    let contest_status_loading = RwSignal::new(None::<i64>);
 
     let set_budget = move |_| {
         let user_id = overview.get_untracked().user.id;
@@ -325,6 +355,14 @@ fn UserRow(
 
     let budget_dollars = move || (overview.get().user.automatic_translation_budget as f64) / 1e9;
     let used_dollars = move || (overview.get().user.tokens_used as f64) / 1e9;
+    let contest_statuses = Signal::derive(move || {
+        overview
+            .get()
+            .contest_statuses
+            .into_iter()
+            .map(|status| (status.contest_id, status))
+            .collect::<std::collections::HashMap<_, _>>()
+    });
 
     let impersonate_user = move |_| {
         let user_id = overview.get_untracked().user.id;
@@ -343,6 +381,35 @@ fn UserRow(
                     show_error!("Failed to impersonate user: {e}");
                 }
             }
+        });
+    };
+
+    let toggle_finalized = move |contest_id: i64, finalized: bool| {
+        let user_id = overview.get_untracked().user.id;
+        contest_status_loading.set(Some(contest_id));
+        spawn_local_scoped(async move {
+            match api_post(
+                "/api/admin/users/toggle_contest_finalization",
+                &ToggleUserContestFinalizationRequest {
+                    user_id,
+                    contest_id,
+                    finalized,
+                },
+            )
+            .await
+            {
+                Ok(()) => {
+                    contest_status_overrides.update(|overrides| {
+                        overrides.insert(contest_id, finalized);
+                    });
+                    show_success!("Contest status updated.");
+                    refetch();
+                }
+                Err(e) => {
+                    show_error!("Failed to update contest status: {e}");
+                }
+            }
+            contest_status_loading.set(None);
         });
     };
 
@@ -405,6 +472,54 @@ fn UserRow(
                     </button>
                 </div>
             </td>
+            <For each=move || contests() key=|contest| contest.id let(contest)>
+                {
+                    let status = Signal::derive(move || {
+                        contest_status_overrides
+                            .get()
+                            .get(&contest.id)
+                            .copied()
+                            .or_else(|| {
+                                contest_statuses
+                                    .get()
+                                    .get(&contest.id)
+                                    .map(|status| status.finalized_translations)
+                            })
+                    });
+                    let is_loading = Signal::derive(move || {
+                        contest_status_loading.get() == Some(contest.id)
+                    });
+                    let contest_id = contest.id;
+                    view! {
+                        <td class="text-center">
+                            <button
+                                class=move || {
+                                    if status.get().unwrap_or(false) {
+                                        "btn btn-warning btn-xs"
+                                    } else {
+                                        "btn btn-success btn-xs"
+                                    }
+                                }
+                                disabled=is_loading
+                                on:click=move |_| {
+                                    let finalized = !status.get().unwrap_or(false);
+                                    toggle_finalized(contest_id, finalized);
+                                }
+                            >
+                                {move || {
+                                    if is_loading.get() {
+                                        "Updating..."
+                                    } else if status.get().unwrap_or(false) {
+                                        "Unfinalize"
+                                    } else {
+                                        "Finalize"
+                                    }
+                                }}
+                            </button>
+                        </td>
+                    }
+                }
+            </For>
             <td>
                 <button class="btn btn-secondary btn-sm w-full" on:click=impersonate_user>
                     "Impersonate"
@@ -416,7 +531,7 @@ fn UserRow(
                 Either::Left(
                     view! {
                         <tr class="bg-base-200/50">
-                            <td colspan="7" class="p-4">
+                            <td colspan="100%" class="p-4">
                                 <div class="flex flex-col gap-4 max-w-5xl mx-auto">
                                     <div class="flex justify-between items-center">
                                         <h4 class="font-bold text-sm">"Contestants Management"</h4>

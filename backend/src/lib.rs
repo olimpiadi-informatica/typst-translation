@@ -152,6 +152,10 @@ impl AppState {
                 post(api_handlers::admin::set_all_users_budget),
             )
             .route(
+                "/api/admin/users/toggle_contest_finalization",
+                post(api_handlers::admin::toggle_user_contest_finalization),
+            )
+            .route(
                 "/api/admin/users/add_language",
                 post(api_handlers::admin::add_user_language),
             )

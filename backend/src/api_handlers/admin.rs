@@ -5,9 +5,10 @@ use axum_extra::extract::CookieJar;
 use common::admin::{
     AddUserLanguageRequest, AdminUserOverview, AdminUserOverviewResponse, CreateContestRequest,
     ImpersonateUserRequest, ImportUsersRequest, SetAllBudgetsRequest, SetBudgetRequest,
-    UpdateContestantPrintStatusRequest, UpdateContestantRequest, UpdatePasswordsJsonlRequest,
-    UpdateTaskFilesRequest,
+    ToggleUserContestFinalizationRequest, UpdateContestantPrintStatusRequest,
+    UpdateContestantRequest, UpdatePasswordsJsonlRequest, UpdateTaskFilesRequest,
 };
+use common::contest::Contest;
 use common::error::Error;
 use common::language::Language;
 use common::statement_version::StatementVersion;
@@ -24,8 +25,17 @@ pub async fn get_users_overview(
 ) -> Result<Json<AdminUserOverviewResponse>, Error> {
     let pool = app_state.db();
     let users = user_db::get_all(pool).await?;
+    let contests = sqlx::query_as!(Contest, "SELECT id, name FROM contests ORDER BY id DESC")
+        .fetch_all(pool)
+        .await?;
     let all_languages = language_db::get_all(pool).await?;
     let all_contestants = contestant_db::get_all(pool).await?;
+    let all_contest_statuses = sqlx::query_as!(
+        common::user_contest_status::UserContestStatus,
+        "SELECT id, user_id, contest_id, finalized_translations, finalized_at FROM user_contest_status"
+    )
+    .fetch_all(pool)
+    .await?;
 
     let mut overview = Vec::new();
     for user in users {
@@ -39,14 +49,23 @@ pub async fn get_users_overview(
             .filter(|c| c.user_id == user.id)
             .cloned()
             .collect();
+        let contest_statuses = all_contest_statuses
+            .iter()
+            .filter(|s| s.user_id == user.id)
+            .cloned()
+            .collect();
         overview.push(AdminUserOverview {
             user,
             languages: user_languages,
             contestants: user_contestants,
+            contest_statuses,
         });
     }
 
-    Ok(Json(overview))
+    Ok(Json(AdminUserOverviewResponse {
+        users: overview,
+        contests,
+    }))
 }
 
 pub async fn set_user_budget(
@@ -65,6 +84,44 @@ pub async fn set_all_users_budget(
     Json(payload): Json<SetAllBudgetsRequest>,
 ) -> Result<Json<()>, Error> {
     user_db::set_all_automatic_translation_budgets(app_state.db(), payload.new_budget).await?;
+    Ok(Json(()))
+}
+
+pub async fn toggle_user_contest_finalization(
+    State(app_state): State<AppState>,
+    _admin: AuthAdmin,
+    Json(payload): Json<ToggleUserContestFinalizationRequest>,
+) -> Result<Json<()>, Error> {
+    let result = if payload.finalized {
+        sqlx::query!(
+            r#"
+            UPDATE user_contest_status
+            SET finalized_translations = TRUE, finalized_at = CURRENT_TIMESTAMP
+            WHERE user_id = ? AND contest_id = ?
+            "#,
+            payload.user_id,
+            payload.contest_id
+        )
+        .execute(app_state.db())
+        .await?
+    } else {
+        sqlx::query!(
+            r#"
+            UPDATE user_contest_status
+            SET finalized_translations = FALSE, finalized_at = NULL
+            WHERE user_id = ? AND contest_id = ?
+            "#,
+            payload.user_id,
+            payload.contest_id
+        )
+        .execute(app_state.db())
+        .await?
+    };
+
+    if result.rows_affected() == 0 {
+        return Err(Error::NotFound);
+    }
+
     Ok(Json(()))
 }
 

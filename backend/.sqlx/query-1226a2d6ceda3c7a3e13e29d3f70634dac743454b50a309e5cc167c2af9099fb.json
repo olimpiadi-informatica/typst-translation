@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, user_id, contest_id, finalized_translations, finalized_at FROM user_contest_status",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "user_id",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "contest_id",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "finalized_translations",
+        "ordinal": 3,
+        "type_info": "Bool"
+      },
+      {
+        "name": "finalized_at",
+        "ordinal": 4,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "1226a2d6ceda3c7a3e13e29d3f70634dac743454b50a309e5cc167c2af9099fb"
+}
