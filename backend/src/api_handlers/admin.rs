@@ -14,7 +14,7 @@ use common::statement_version::StatementVersion;
 use serde::Deserialize;
 
 use crate::AppState;
-use crate::auth::{AuthAdmin, AuthAny, Claims, add_cookie};
+use crate::auth::{AuthAdmin, AuthAny, AuthStaff, Claims, add_cookie};
 use crate::db_ops::{contestant_db, language_db, statement_version_db, user_db};
 use crate::file_storage::{path_of_file, save_file};
 
@@ -349,7 +349,7 @@ pub async fn create_contest(
 
 pub async fn update_contestant_print_status(
     State(app_state): State<AppState>,
-    _admin: AuthAdmin,
+    _staff: AuthStaff,
     Json(payload): Json<UpdateContestantPrintStatusRequest>,
 ) -> Result<Json<()>, Error> {
     let pool = app_state.db();
