@@ -5,6 +5,7 @@ use common::admin::UpdateContestantPrintStatusRequest;
 use common::contest::All;
 use common::contestant::Contestant;
 use common::statement_version::StatementVersion;
+use common::task::Task;
 use common::translation::Translation;
 use futures::StreamExt;
 use gloo_worker::Spawnable;
@@ -223,8 +224,7 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
 
     let owner = Owner::new();
     let print_document = StoredValue::new_local(
-        move |lang_id: Option<i64>, contestant_id_to_mark: Option<i64>| {
-            let tasks = tasks.get();
+        move |tasks_to_print: Vec<Task>, lang_id: Option<i64>, contestant_id_to_mark: Option<i64>| {
             owner.with(move || {
                 spawn_local_scoped(async move {
                     let mut task_pdfs = Vec::new();
@@ -232,7 +232,7 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                     let mut typst_worker = TypstWorker::spawner()
                         .spawn_with_loader("/typst_translation_worker_loader.js");
 
-                    for task in tasks {
+                    for task in tasks_to_print {
                         let url = format!("/api/tasks/{}/statement_versions/latest", task.id);
                         let statement: StatementVersion = match api_get(&url).await {
                             Ok(statements) => statements,
@@ -406,13 +406,20 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
     );
 
     let do_print = Signal::stored(move |contestant: Contestant, lang_id: Option<i64>| {
+        let tasks = tasks.get();
         print_document.with_value(|print_document| {
-            print_document(lang_id, Some(contestant.id));
+            print_document(tasks, lang_id, Some(contestant.id));
         });
     });
     let print_isc = Signal::stored(move || {
+        let tasks = tasks.get();
         print_document.with_value(|print_document| {
-            print_document(None, None);
+            print_document(tasks, None, None);
+        });
+    });
+    let print_task_isc = Signal::stored(move |task: Task| {
+        print_document.with_value(|print_document| {
+            print_document(vec![task], None, None);
         });
     });
 
@@ -422,10 +429,46 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                 {move || contest.get().map(|c| c.name).unwrap_or_default()}
             </h2>
 
-            <div class="flex justify-end">
-                <button class="btn btn-outline" on:click=move |_| print_isc.read()()>
-                    "Print en_ISC"
-                </button>
+            <div class="card bg-base-100 shadow-md">
+                <div class="card-body">
+                    <div class="flex justify-between items-center gap-4">
+                        <h3 class="card-title text-xl">"Task en_ISC"</h3>
+                        <button class="btn btn-outline btn-sm" on:click=move |_| print_isc.read()()>
+                            "Print all en_ISC"
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="table table-sm w-full">
+                            <thead>
+                                <tr>
+                                    <th>"Task"</th>
+                                    <th>"Action"</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <For each=move || tasks.get() key=|task| task.id let:task>
+                                    {
+                                        let task_to_print = task.clone();
+                                        view! {
+                                            <tr>
+                                                <td>{task.name}</td>
+                                                <td>
+                                                    <button
+                                                        class="btn btn-outline btn-xs"
+                                                        on:click=move |_| print_task_isc
+                                                            .read()(task_to_print.clone())
+                                                    >
+                                                        "Print en_ISC"
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </For>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <div class="card bg-base-200 shadow-xl border-l-4 border-accent">
