@@ -320,3 +320,30 @@ impl OptionalFromRequestParts<AppState> for AuthAny {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_jwt_generation_and_decoding() {
+        let claims = Claims {
+            user_id: Some(1),
+            login_epoch: 12345,
+            admin: true,
+            staff: false,
+            exp: 0,
+        };
+        let secret = "secret_test_key_12345";
+        let token = generate_jwt(claims, secret);
+        assert!(!token.is_empty());
+
+        let decoding_key = DecodingKey::from_secret(secret.as_bytes());
+        let validation = Validation::new(jsonwebtoken::Algorithm::HS256);
+        let token_data = decode::<Claims>(&token, &decoding_key, &validation).unwrap();
+        assert_eq!(token_data.claims.user_id, Some(1));
+        assert_eq!(token_data.claims.login_epoch, 12345);
+        assert!(token_data.claims.admin);
+        assert!(!token_data.claims.staff);
+    }
+}

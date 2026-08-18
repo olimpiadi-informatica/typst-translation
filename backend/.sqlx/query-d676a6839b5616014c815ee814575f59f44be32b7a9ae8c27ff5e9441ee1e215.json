@@ -1,10 +1,10 @@
 {
   "db_name": "SQLite",
-  "query": "INSERT INTO languages(code, user_id) VALUES (?, ?) RETURNING id;",
+  "query": "\n        INSERT INTO languages (\n            code,\n            user_id,\n            public\n        )\n        VALUES (?, ?, ?)\n        RETURNING id as \"id!\"\n        ",
   "describe": {
     "columns": [
       {
-        "name": "id",
+        "name": "id!",
         "ordinal": 0,
         "type_info": "Integer",
         "origin": {
@@ -16,11 +16,11 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 3
     },
     "nullable": [
       null
     ]
   },
-  "hash": "44be21ec722cfe4ddd7c33ed565be814372c2571d8ee931c2607d6572bb7e074"
+  "hash": "d676a6839b5616014c815ee814575f59f44be32b7a9ae8c27ff5e9441ee1e215"
 }

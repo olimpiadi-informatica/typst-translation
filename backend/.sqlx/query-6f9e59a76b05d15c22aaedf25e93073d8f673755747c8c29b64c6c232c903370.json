@@ -6,32 +6,68 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "id"
+          }
+        }
       },
       {
         "name": "username",
         "ordinal": 1,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "username"
+          }
+        }
       },
       {
         "name": "password",
         "ordinal": 2,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "password"
+          }
+        }
       },
       {
         "name": "login_epoch",
         "ordinal": 3,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "login_epoch"
+          }
+        }
       },
       {
         "name": "automatic_translation_budget",
         "ordinal": 4,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "automatic_translation_budget"
+          }
+        }
       },
       {
         "name": "tokens_used",
         "ordinal": 5,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "tokens_used"
+          }
+        }
       }
     ],
     "parameters": {

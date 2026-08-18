@@ -14,7 +14,7 @@ where
             public
         )
         VALUES (?, ?, ?)
-        RETURNING id
+        RETURNING id as "id!"
         "###,
         language.code,
         language.user_id,

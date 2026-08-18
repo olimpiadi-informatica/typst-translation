@@ -6,32 +6,68 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "translations",
+            "name": "id"
+          }
+        }
       },
       {
         "name": "task_id",
         "ordinal": 1,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "translations",
+            "name": "task_id"
+          }
+        }
       },
       {
         "name": "language_id",
         "ordinal": 2,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "translations",
+            "name": "language_id"
+          }
+        }
       },
       {
         "name": "content_hash",
         "ordinal": 3,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "translations",
+            "name": "content_hash"
+          }
+        }
       },
       {
         "name": "last_updated_at",
         "ordinal": 4,
-        "type_info": "Datetime"
+        "type_info": "Datetime",
+        "origin": {
+          "Table": {
+            "table": "translations",
+            "name": "last_updated_at"
+          }
+        }
       },
       {
         "name": "session_token",
         "ordinal": 5,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "translations",
+            "name": "session_token"
+          }
+        }
       }
     ],
     "parameters": {

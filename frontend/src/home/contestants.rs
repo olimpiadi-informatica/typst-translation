@@ -119,10 +119,7 @@ fn ContestantLangSelect(
         >
             {move || {
                 if !original.get().0 {
-                    view! {
-                        <option value="__undecided__" selected=true hidden>
-                        </option>
-                    }
+                    view! { <option value="__undecided__" selected=true hidden></option> }
                         .into_any()
                 } else {
                     ().into_any()

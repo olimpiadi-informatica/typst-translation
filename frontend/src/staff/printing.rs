@@ -224,13 +224,17 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
 
     let owner = Owner::new();
     let print_document = StoredValue::new_local(
-        move |tasks_to_print: Vec<Task>, lang_id: Option<i64>, contestant_id_to_mark: Option<i64>| {
+        move |tasks_to_print: Vec<Task>,
+              lang_id: Option<i64>,
+              contestant_id_to_mark: Option<i64>| {
             owner.with(move || {
                 spawn_local_scoped(async move {
-                    let mut task_pdfs = Vec::new();
+                    let mut task_pdfs: Vec<Vec<u8>> = Vec::new();
 
                     let mut typst_worker = TypstWorker::spawner()
-                        .spawn_with_loader("/typst_translation_worker_loader.js");
+                        .with_loader(true)
+                        .as_module(false)
+                        .spawn("/typst_translation_worker_loader.js");
 
                     for task in tasks_to_print {
                         let url = format!("/api/tasks/{}/statement_versions/latest", task.id);
@@ -587,9 +591,7 @@ pub fn Contest(contest_id: i64) -> impl IntoView {
                 <div class="card bg-base-100 shadow-md">
                     <div class="card-body">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="card-title text-xl">
-                                {lang.code.clone()}
-                            </h3>
+                            <h3 class="card-title text-xl">{lang.code.clone()}</h3>
                         </div>
 
                         <div class="overflow-x-auto">
