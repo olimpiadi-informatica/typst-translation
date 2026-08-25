@@ -5,35 +5,37 @@ edition = "2024"
 default-run = "backend"
 
 [dependencies]
-sqlx = { version = "0.8.6", features = [
-  "runtime-tokio-rustls",
+sqlx = { version = "0.9.0", features = [
+  "runtime-tokio",
+  "tls-rustls",
   "sqlite",
   "migrate",
 ] }
 common = { path = "../common", features = ["server-side"] }
-axum = { version = "0.8.4", features = ["macros"] }
-axum-extra = { version = "0.10.1", features = ["cookie", "attachment"] }
-jsonwebtoken = "9.3.1"
-time = "0.3.36"
+axum = { version = "0.8.9", features = ["macros"] }
+axum-extra = { version = "0.12.6", features = ["cookie", "attachment"] }
+jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
+time = "0.3.55"
 color-eyre = "0.6.5"
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-blake3 = "1.8.2"
-tokio = { version = "1.38.0", features = ["full"] }
-chrono = "0.4.38"
-serde = { version = "1.0.221", features = ["derive"] }
-clap = { version = "4.5.4", features = ["derive"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+tracing-error = "0.2.1"
+blake3 = "1.8.7"
+tokio = { version = "1.53.1", features = ["full"] }
+chrono = "0.4.45"
+serde = { version = "1.0.229", features = ["derive"] }
+clap = { version = "4.6.6", features = ["derive"] }
 dotenvy = "0.15.7"
-tower-http = { version = "0.5.2", features = ["fs"] }
-toml = "0.9.7"
-derive_more = { version = "2.0.1", features = ["deref", "deref_mut"] }
-zip = "5.1.1"
-tempfile = "3.23.0"
-dashmap = "6.1.0"
-reqwest = { version = "0.12.23", features = ["json"] }
-serde_json = "1.0.145"
+tower-http = { version = "0.7.0", features = ["fs"] }
+toml = "1.1.4"
+derive_more = { version = "2.1.1", features = ["deref", "deref_mut"] }
+zip = "8.6.0"
+tempfile = "3.27.0"
+dashmap = "6.2.1"
+reqwest = { version = "0.13.4", features = ["json"] }
+serde_json = "1.0.151"
 serde-jsonlines = "0.7.0"
-uuid = { version = "1.18.1", features = ["v4"] }
+uuid = { version = "1.25.0", features = ["v4"] }
 
 [profile.dev.package."*"]
 opt-level = 3

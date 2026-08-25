@@ -16,14 +16,15 @@ use typst::diag::{
     Warned,
 };
 use typst::ecow::{EcoString, EcoVec};
-use typst::foundations::{Bytes, Datetime, Dict, Str, Value};
-use typst::layout::PagedDocument;
+use typst::foundations::{Bytes, Datetime, Dict, Duration, Str, Value};
 use typst::syntax::package::PackageSpec;
-use typst::syntax::{FileId, Source, VirtualPath};
+use typst::syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
-use typst::{Library, World, WorldExt};
+use typst::{Library, LibraryExt, World, WorldExt};
+use typst_layout::PagedDocument;
 use typst_pdf::PdfOptions;
+use typst_svg::SvgOptions;
 use web_sys::XmlHttpRequest;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash, Default)]
@@ -156,7 +157,10 @@ impl TypstCompiler {
             library: LazyHash::new(library),
             book: LazyHash::new(book),
             fonts,
-            main: FileId::new(None, VirtualPath::new("booklet.typ")),
+            main: FileId::new(RootedPath::new(
+                VirtualRoot::Project,
+                VirtualPath::new("booklet.typ").unwrap(),
+            )),
             files: HashMap::new(),
             packages: Mutex::new(PackagesCache::default()),
         }
@@ -204,8 +208,8 @@ impl TypstCompiler {
                         .ok()
                         .map(|source| {
                             (
-                                source.byte_to_line(range.start).map(|l| l + 1),
-                                source.byte_to_column(range.start).map(|c| c + 1),
+                                source.lines().byte_to_line(range.start).map(|l| l + 1),
+                                source.lines().byte_to_column(range.start).map(|c| c + 1),
                             )
                         })
                         .unwrap_or((None, None))
@@ -215,7 +219,7 @@ impl TypstCompiler {
                 let message = TypstCompilationMessage {
                     is_fatal: msg.severity == Severity::Error,
                     message: msg.message.clone(),
-                    hints: msg.hints.clone(),
+                    hints: msg.hints.iter().map(|h| h.v.clone()).collect(),
                     span: range,
                     line,
                     column,
@@ -237,8 +241,8 @@ impl TypstCompiler {
         };
 
         let mut svg_pages = vec![];
-        for page in document.pages.iter() {
-            svg_pages.push(typst_svg::svg(page));
+        for page in document.pages() {
+            svg_pages.push(typst_svg::svg(page, &SvgOptions::default()));
         }
 
         let pdf = match typst_pdf::pdf(&document, &PdfOptions::default()) {
@@ -259,12 +263,11 @@ impl TypstCompiler {
 
     fn get_file(&self, id: FileId) -> FileResult<Vec<u8>> {
         let mut packages = self.packages.try_lock().expect("lock poisoned");
-        let file_store = if let Some(package) = id.package() {
-            packages.get_package_files(package)?
-        } else {
-            &self.files
+        let file_store = match id.root() {
+            VirtualRoot::Package(package) => packages.get_package_files(package)?,
+            VirtualRoot::Project => &self.files,
         };
-        let path = id.vpath().as_rootless_path();
+        let path = std::path::Path::new(id.vpath().get_without_slash());
         let path = path.strip_prefix("./").unwrap_or(path);
         Ok(file_store
             .get(path)
@@ -300,9 +303,17 @@ impl World for TypstCompiler {
         Ok(Bytes::new(bytes.to_vec()))
     }
 
-    fn today(&self, offset: Option<i64>) -> Option<Datetime> {
-        let offset = offset.unwrap_or(0).try_into().ok()?;
-        let offset = time::UtcOffset::from_hms(offset, 0, 0).ok()?;
+    fn today(&self, offset: Option<Duration>) -> Option<Datetime> {
+        let offset = match offset {
+            Some(d) => {
+                let seconds = d.seconds().trunc();
+                if !seconds.is_finite() || seconds < i32::MIN as f64 || seconds > i32::MAX as f64 {
+                    return None;
+                }
+                time::UtcOffset::from_whole_seconds(seconds as i32).ok()?
+            }
+            None => time::UtcOffset::UTC,
+        };
         time::OffsetDateTime::now_utc()
             .checked_to_offset(offset)
             .map(|time| Datetime::Date(time.date()))

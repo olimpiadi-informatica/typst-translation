@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO contestants (\n            code,\n            name,\n            online_bit,\n            user_id,\n            language_decided,\n            language_id\n        )\n        VALUES (?, ?, ?, ?, ?, ?)\n        RETURNING id as \"id!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "contestants",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "3d694b28614f667f2492490b77037bb275d99ef345b9509066b2e45af227c4c6"
+}

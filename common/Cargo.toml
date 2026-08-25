@@ -4,23 +4,24 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-serde = { version = "1.0.221", features = ["derive"] }
-sqlx = { version = "0.8.6", features = [
+serde = { version = "1.0.229", features = ["derive"] }
+sqlx = { version = "0.9.0", features = [
   "sqlite",
-  "runtime-tokio-rustls",
+  "runtime-tokio",
+  "tls-rustls",
   "chrono",
   "json",
 ], optional = true }
-thiserror = "1.0.69"
-url = "2.5.0"
-chrono = { version = "0.4.42", features = ["serde"] }
-strum = { version = "0.27.2", features = ["derive"] }
-axum = { version = "0.8.4", optional = true }
-tracing = "0.1.41"
-gloo-net = { version = "0.6.0", optional = true }
-serde_json = { version = "1.0.145", optional = true }
-reqwest = { version = "0.12.23", optional = true }
-zip = { version = "5.1.1", optional = true }
+thiserror = "2.0.18"
+url = "2.5.8"
+chrono = { version = "0.4.45", features = ["serde"] }
+strum = { version = "0.28.0", features = ["derive"] }
+axum = { version = "0.8.9", optional = true }
+tracing = "0.1.44"
+gloo-net = { version = "0.7.0", optional = true }
+serde_json = { version = "1.0.151", optional = true }
+reqwest = { version = "0.13.4", optional = true }
+zip = { version = "8.6.0", optional = true }
 
 [features]
 server-side = ["dep:axum", "dep:sqlx", "dep:reqwest", "dep:zip"]

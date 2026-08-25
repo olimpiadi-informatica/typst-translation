@@ -6,7 +6,13 @@
       {
         "name": "contestant_id",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "contestant_print_status",
+            "name": "contestant_id"
+          }
+        }
       }
     ],
     "parameters": {

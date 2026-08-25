@@ -31,13 +31,15 @@ pub async fn trace_requests(request: extract::Request, next: Next) -> Response {
 }
 
 pub fn init_logging() {
-    let registry = tracing_subscriber::registry().with(
-        tracing_subscriber::fmt::layer().with_filter(
-            EnvFilter::builder()
-                .with_default_directive(LevelFilter::INFO.into())
-                .from_env_lossy(),
-        ),
-    );
+    let registry = tracing_subscriber::registry()
+        .with(tracing_error::ErrorLayer::default())
+        .with(
+            tracing_subscriber::fmt::layer().with_filter(
+                EnvFilter::builder()
+                    .with_default_directive(LevelFilter::INFO.into())
+                    .from_env_lossy(),
+            ),
+        );
 
     registry.init();
 }

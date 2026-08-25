@@ -354,7 +354,7 @@ pub fn AdminEditTaskPage() -> impl IntoView {
                                                         .unwrap_or(false)
                                                 });
                                             if is_file_modified {
-                                                format!("● {}", &f)
+                                                format!("● {}", f)
                                             } else {
                                                 f.clone()
                                             }

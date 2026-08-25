@@ -1,26 +1,26 @@
 {
   "db_name": "SQLite",
-  "query": "INSERT INTO contests (name) VALUES (?) RETURNING id",
+  "query": "INSERT INTO tasks(contest_id, name) VALUES (?, ?) RETURNING id as \"id!\";",
   "describe": {
     "columns": [
       {
-        "name": "id",
+        "name": "id!",
         "ordinal": 0,
         "type_info": "Integer",
         "origin": {
           "Table": {
-            "table": "contests",
+            "table": "tasks",
             "name": "id"
           }
         }
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 2
     },
     "nullable": [
-      false
+      null
     ]
   },
-  "hash": "d1d5922be81731c283d7c5709fdffaabcce225778c4ce7f4e378ee2eea1cdbd8"
+  "hash": "812bafb9278475bb9760b62b200f4656766127e3aede9c531920aea5639f54a6"
 }

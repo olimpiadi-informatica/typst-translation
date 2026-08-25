@@ -83,8 +83,10 @@ impl CompilationManager {
     }
 
     async fn compile_loop(self, compilation_requested: Receiver<()>) {
-        let mut typst_worker =
-            TypstWorker::spawner().spawn_with_loader("/typst_translation_worker_loader.js");
+        let mut typst_worker = TypstWorker::spawner()
+            .with_loader(true)
+            .as_module(false)
+            .spawn("/typst_translation_worker_loader.js");
         loop {
             compilation_requested.recv().await.unwrap();
             let mut got_manual_request = *self.0.got_manual_request.read_untracked();

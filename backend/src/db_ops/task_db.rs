@@ -83,7 +83,7 @@ pub async fn import_task(
         }
     } else {
         let id = query!(
-            "INSERT INTO tasks(contest_id, name) VALUES (?, ?) RETURNING id;",
+            r#"INSERT INTO tasks(contest_id, name) VALUES (?, ?) RETURNING id as "id!";"#,
             contest_id,
             task_name
         )

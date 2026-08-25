@@ -6,14 +6,20 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "contestants",
+            "name": "id"
+          }
+        }
       }
     ],
     "parameters": {
       "Right": 4
     },
     "nullable": [
-      false
+      null
     ]
   },
   "hash": "ce94505fc6b3623ec9aa57d51c5ea0cda9d4a2627e1d2dd9f67a9c98664189f5"

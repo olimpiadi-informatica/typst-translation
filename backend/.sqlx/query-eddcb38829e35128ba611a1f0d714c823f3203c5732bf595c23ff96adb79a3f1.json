@@ -6,27 +6,57 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "user_contest_status",
+            "name": "id"
+          }
+        }
       },
       {
         "name": "user_id",
         "ordinal": 1,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "user_contest_status",
+            "name": "user_id"
+          }
+        }
       },
       {
         "name": "contest_id",
         "ordinal": 2,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "user_contest_status",
+            "name": "contest_id"
+          }
+        }
       },
       {
         "name": "finalized_translations",
         "ordinal": 3,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "user_contest_status",
+            "name": "finalized_translations"
+          }
+        }
       },
       {
         "name": "finalized_at",
         "ordinal": 4,
-        "type_info": "Datetime"
+        "type_info": "Datetime",
+        "origin": {
+          "Table": {
+            "table": "user_contest_status",
+            "name": "finalized_at"
+          }
+        }
       }
     ],
     "parameters": {

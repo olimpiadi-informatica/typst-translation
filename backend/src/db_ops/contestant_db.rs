@@ -19,7 +19,7 @@ where
             language_id
         )
         VALUES (?, ?, ?, ?, ?, ?)
-        RETURNING id
+        RETURNING id as "id!"
         "###,
         contestant.code,
         contestant.name,
